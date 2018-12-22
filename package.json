@@ -1,0 +1,31 @@
+{
+  "name": "plasma-core",
+  "version": "0.0.1",
+  "description": "Core PG plasma node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "./node_modules/.bin/eslint src/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/plasma-group/plasma-core.git"
+  },
+  "keywords": [
+    "plasma"
+  ],
+  "author": "Plasma Group",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/plasma-group/plasma-core/issues"
+  },
+  "homepage": "https://github.com/plasma-group/plasma-core#readme",
+  "devDependencies": {
+    "eslint": "^5.10.0",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-node": "^8.0.0",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0"
+  }
+}
