@@ -5,8 +5,8 @@ const plasma = new PlasmaApp({
 })
 
 const test = async () => {
-  await plasma.dbService.set('test', 123)
-  let val = await plasma.dbService.get('test')
+  await plasma.services.db.set('test', 123)
+  let val = await plasma.services.db.get('test')
   console.log(val)
 }
 

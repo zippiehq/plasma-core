@@ -5,7 +5,9 @@ class PlasmaApp {
     this.config = config
 
     this.services = {}
-    this.services.db = new DBService(this)
+    this.services.db = new DBService({
+      app: this
+    })
   }
 }
 
