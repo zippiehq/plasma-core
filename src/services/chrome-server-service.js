@@ -1,6 +1,6 @@
 const BaseService = require('./base-service')
 
-class ChromeService extends BaseService {
+class ChromeServerService extends BaseService {
   constructor (options) {
     super()
   }
@@ -22,4 +22,4 @@ class ChromeService extends BaseService {
   }
 }
 
-module.exports = ChromeService
+module.exports = ChromeServerService
