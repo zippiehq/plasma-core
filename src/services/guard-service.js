@@ -11,11 +11,11 @@ class GuardService extends BaseService {
     return 'guard-service'
   }
 
-  start () {
+  async start () {
     throw new Error('Not implemented')
   }
 
-  stop () {
+  async stop () {
     throw new Error('Not implemented')
   }
 }

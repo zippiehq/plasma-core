@@ -13,12 +13,14 @@ class ChromeServerService extends BaseService {
     throw new Error('Not implemented')
   }
 
-  start () {
+  async start () {
     chrome.runtime.onMessageExternal.addListener(this.handleRequest)
+    this.started = true
   }
 
-  stop () {
+  async stop () {
     chrome.runtime.onMessageExternal.removeListener(this.handleRequest)
+    this.started = false
   }
 }
 
