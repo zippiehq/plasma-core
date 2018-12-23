@@ -1,4 +1,4 @@
-const EphemDB = require('../../db/ephem-db')
+const EphemDB = require('../db/ephem-db')
 
 const dbs = {
   'ephem': EphemDB
@@ -6,6 +6,7 @@ const dbs = {
 
 class DBService {
   constructor (app) {
+    this.app = app
     this.db = new dbs[app.config.db]()
   }
 

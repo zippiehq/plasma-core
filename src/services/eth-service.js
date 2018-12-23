@@ -1,12 +1,12 @@
 const Web3 = require('web3')
-const abi = require('./abi.json')
 
+const ABI = '' // TODO: Have this come from some config variable
 const CONTRACT_ADDRESS = '0x0' // TODO: Have this come from some config variable
 
-class EthWrapper {
+class ETHService {
   constructor (provider) {
     this.web3 = new Web3(provider)
-    const PlasmaContract = this.web3.eth.contract(abi)
+    const PlasmaContract = this.web3.eth.contract(ABI)
     this.contract = PlasmaContract.at(CONTRACT_ADDRESS)
   }
 
@@ -41,4 +41,4 @@ class EthWrapper {
   }
 }
 
-module.exports = EthWrapper
+module.exports = ETHService

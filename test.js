@@ -1,4 +1,4 @@
-const PlasmaApp = require('./src/plasma/plasma-app')
+const PlasmaApp = require('./src/plasma-app')
 
 const plasma = new PlasmaApp({
   db: 'ephem'
