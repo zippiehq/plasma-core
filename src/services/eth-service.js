@@ -1,3 +1,5 @@
+const util = require('util')
+
 const Web3 = require('web3')
 const BaseService = require('./base-service')
 
@@ -23,31 +25,13 @@ class ETHService extends BaseService {
   }
 
   deposit (amount) {
-    // TODO: Figure out a cleaner way to turn this into a promise
-    return new Promise((resolve, reject) => {
-      this.contract.deposit({
-        value: amount
-      }, (err, res) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(res)
-        }
-      })
-    })
+    return util.promisify(this.contract.deposit({
+      value: amount
+    }))
   }
 
   getBlock (number) {
-    // TODO: Figure out a cleaner way to turn this into a promise
-    return new Promise((resolve, reject) => {
-      this.contract.getBlock(number, (err, res) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(res)
-        }
-      })
-    })
+    return util.promisify(this.contract.getBlock(number))
   }
 }
 

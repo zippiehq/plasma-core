@@ -7,15 +7,15 @@ class BaseService {
   }
 
   get name () {
-    throw new Error('Not implemented')
+    throw new Error('Classes that extend BaseService must implement this method')
   }
 
   async start () {
-    throw new Error('Not implemented')
+    throw new Error('Classes that extend BaseService must implement this method')
   }
 
   async stop () {
-    throw new Error('Not implemented')
+    throw new Error('Classes that extend BaseService must implement this method')
   }
 }
 
