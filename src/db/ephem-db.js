@@ -3,19 +3,19 @@ class EphemDB {
     this.db = new Map()
   }
 
-  get (key) {
+  async get (key) {
     return this.db.get(key)
   }
 
-  set (key, value) {
+  async set (key, value) {
     this.db.set(key, value)
   }
 
-  delete (key) {
+  async delete (key) {
     this.db.delete(key)
   }
 
-  exists (key) {
+  async exists (key) {
     return this.db.has(key)
   }
 }
