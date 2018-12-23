@@ -1,13 +1,16 @@
+const BaseService = require('./base-service')
 const EphemDB = require('../db/ephem-db')
 
 const dbs = {
   'ephem': EphemDB
 }
 
-class DBService {
-  constructor (app) {
-    this.app = app
-    this.db = new dbs[app.config.db]()
+class DBService extends BaseService {
+  constructor (options) {
+    super()
+
+    this.app = options.app
+    this.db = new dbs[this.app.config.db]()
   }
 
   async get (key) {

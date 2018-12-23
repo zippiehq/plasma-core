@@ -4,7 +4,8 @@ class PlasmaApp {
   constructor (config) {
     this.config = config
 
-    this.dbService = new DBService(this)
+    this.services = {}
+    this.services.db = new DBService(this)
   }
 }
 

@@ -1,11 +1,15 @@
 const Web3 = require('web3')
+const BaseService = require('./base-service')
 
 const ABI = '' // TODO: Have this come from some config variable
 const CONTRACT_ADDRESS = '0x0' // TODO: Have this come from some config variable
 
-class ETHService {
-  constructor (provider) {
-    this.web3 = new Web3(provider)
+class ETHService extends BaseService {
+  constructor (options) {
+    super()
+
+    this.app = options.app
+    this.web3 = new Web3(options.app.config.ethProvider)
     const PlasmaContract = this.web3.eth.contract(ABI)
     this.contract = PlasmaContract.at(CONTRACT_ADDRESS)
   }
