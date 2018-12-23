@@ -10,6 +10,14 @@ class EphemDB {
   set (key, value) {
     this.db.set(key, value)
   }
+
+  delete (key) {
+    this.db.delete(key)
+  }
+
+  exists (key) {
+    return this.db.has(key)
+  }
 }
 
 module.exports = EphemDB
