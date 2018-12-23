@@ -10,7 +10,7 @@ class DBService extends BaseService {
     super()
 
     this.app = options.app
-    this.db = new dbs[this.app.config.db]()
+    this.db = new dbs[options.db]()
   }
 
   get name () {
