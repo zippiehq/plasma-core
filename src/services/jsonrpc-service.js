@@ -1,38 +1,34 @@
-const express = require('express')
-const bodyParser = require('body-parser')
-
 const BaseService = require('./base-service')
+
+const getAllFunctions = (cls) => {
+  return Object.getOwnPropertyNames(cls.prototype)
+}
 
 class JSONRPCService extends BaseService {
   constructor (options) {
     super()
 
-    this.subdispatchers = [ChainSubdispatcher]
-
-    this.port = options.port
-    this.server = express()
-    this.server.use(bodyParser.urlencoded({ extended: true }))
-    this.server.use(bodyParser.json())
+    this.subdispatchers = [new ChainSubdispatcher()]
   }
 
   get name () {
     return 'jsonrpc-service'
-  }
-
-  start () {
-    this.server.listen(this.port)
-    this.started = true
-  }
-
-  stop () {
-    this.server.close()
-    this.started = false
   }
 }
 
 class Subdispatcher {
   get prefix () {
     throw new Error('Classes that extend Subdispatcher must implement this method')
+  }
+
+  getMethods () {
+    const ignore = ['constructor', 'prefix']
+
+    return getAllFunctions(this.constructor).filter((fn) => {
+      return !ignore.includes(fn)
+    }).map((fn) => {
+      return this.prefix + fn
+    })
   }
 }
 

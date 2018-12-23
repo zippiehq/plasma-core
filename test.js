@@ -10,7 +10,10 @@ const test = async () => {
   let val = await plasma.services.db.get('test')
   console.log(val)
 
-  plasma.services.jsonrpc.start()
+  plasma.services.rpcServer.start()
+  plasma.services.jsonrpc.subdispatchers.forEach(element => {
+    console.log(element.getMethods())
+  })
 }
 
 test()
