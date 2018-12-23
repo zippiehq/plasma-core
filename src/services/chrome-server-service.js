@@ -3,14 +3,16 @@ const BaseService = require('./base-service')
 class ChromeServerService extends BaseService {
   constructor (options) {
     super()
+
+    this.app = options.app
   }
 
   get name () {
     return 'chrome-service'
   }
 
-  handleRequest (request, sender, sendResponse) {
-    throw new Error('Not implemented')
+  async handleRequest (request, _, sendResponse) {
+    sendResponse(await this.app.jsonrpc.handle(request))
   }
 
   async start () {

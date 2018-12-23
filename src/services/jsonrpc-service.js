@@ -14,6 +14,19 @@ class JSONRPCService extends BaseService {
   get name () {
     return 'jsonrpc-service'
   }
+
+  // TODO: Have this return an object, not a list of strings
+  getMethods () {
+    return this.subdispatchers.map((subdispatcher) => {
+      return subdispatcher.getMethods()
+    }).reduce((pre, cur) => {
+      return pre.concat(cur)
+    })
+  }
+
+  async handle (request) {
+    throw new Error('Not implemented')
+  }
 }
 
 class Subdispatcher {
