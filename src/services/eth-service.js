@@ -14,11 +14,16 @@ class ETHService extends BaseService {
     this.contract = PlasmaContract.at(CONTRACT_ADDRESS)
   }
 
+  get name () {
+    return 'eth-service'
+  }
+
   startExit () {
-    throw Error('Not implemented')
+    throw new Error('Not implemented')
   }
 
   deposit (amount) {
+    // TODO: Figure out a cleaner way to turn this into a promise
     return new Promise((resolve, reject) => {
       this.contract.deposit({
         value: amount
@@ -33,6 +38,7 @@ class ETHService extends BaseService {
   }
 
   getBlock (number) {
+    // TODO: Figure out a cleaner way to turn this into a promise
     return new Promise((resolve, reject) => {
       this.contract.getBlock(number, (err, res) => {
         if (err) {

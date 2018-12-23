@@ -10,8 +10,16 @@ class ChainService extends BaseService {
     this.chain = new Chain(this.db)
   }
 
+  get name () {
+    return 'chain-service'
+  }
+
   isSyncing () {
-    throw Error('Not implemented')
+    throw new Error('Not implemented')
+  }
+
+  addHistory (range, history) {
+    throw new Error('Not implemented')
   }
 }
 

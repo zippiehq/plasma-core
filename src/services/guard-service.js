@@ -7,12 +7,16 @@ class GuardService extends BaseService {
     this.app = options.app
   }
 
+  get name () {
+    return 'guard-service'
+  }
+
   start () {
-    throw Error('Not implemented')
+    throw new Error('Not implemented')
   }
 
   stop () {
-    throw Error('Not implemented')
+    throw new Error('Not implemented')
   }
 }
 

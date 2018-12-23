@@ -13,6 +13,10 @@ class DBService extends BaseService {
     this.db = new dbs[this.app.config.db]()
   }
 
+  get name () {
+    return 'db-service'
+  }
+
   async get (key) {
     return this.db.get(key)
   }
