@@ -1,7 +1,13 @@
 const BaseService = require('./base-service')
 
-const getAllFunctions = (cls) => {
-  return Object.getOwnPropertyNames(cls.prototype)
+const getAllFunctions = (instance, ignore = [], prefix = '') => {
+  let fns = {}
+  Object.getOwnPropertyNames(instance.constructor.prototype).forEach((prop) => {
+    if (!ignore.includes(prop)) {
+      fns[prefix + prop] = instance[prop]
+    }
+  })
+  return fns
 }
 
 class JSONRPCService extends BaseService {
@@ -15,12 +21,11 @@ class JSONRPCService extends BaseService {
     return 'jsonrpc-service'
   }
 
-  // TODO: Have this return an object, not a list of strings
   getMethods () {
     return this.subdispatchers.map((subdispatcher) => {
       return subdispatcher.getMethods()
     }).reduce((pre, cur) => {
-      return pre.concat(cur)
+      return { ...pre, ...cur }
     })
   }
 
@@ -36,12 +41,7 @@ class Subdispatcher {
 
   getMethods () {
     const ignore = ['constructor', 'prefix']
-
-    return getAllFunctions(this.constructor).filter((fn) => {
-      return !ignore.includes(fn)
-    }).map((fn) => {
-      return this.prefix + fn
-    })
+    return getAllFunctions(this, ignore, this.prefix)
   }
 }
 

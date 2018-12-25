@@ -11,9 +11,8 @@ const test = async () => {
   console.log(val)
 
   plasma.services.rpcServer.start()
-  plasma.services.jsonrpc.subdispatchers.forEach(element => {
-    console.log(element.getMethods())
-  })
+  const methods = plasma.services.jsonrpc.getMethods()
+  console.log(methods)
 }
 
 test()
