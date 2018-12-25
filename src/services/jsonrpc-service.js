@@ -21,7 +21,7 @@ class JSONRPCService extends BaseService {
     return 'jsonrpc-service'
   }
 
-  getMethods () {
+  getAllMethods () {
     return this.subdispatchers.map((subdispatcher) => {
       return subdispatcher.getMethods()
     }).reduce((pre, cur) => {
@@ -29,8 +29,35 @@ class JSONRPCService extends BaseService {
     })
   }
 
-  async handle (request) {
-    throw new Error('Not implemented')
+  getMethod (name) {
+    const methods = this.getAllMethods()
+    if (name in methods) {
+      return methods[name]
+    } else {
+      throw new Error('JSONRPC method not found')
+    }
+  }
+
+  async callMethod (name, params) {
+    const method = this.getMethod(name)
+    return method(...params)
+  }
+
+  // TODO: Handle Method Not Found errors.
+  // TODO: Handle Invalid Request errors.
+  // TODO: Handle Parse Error errors.
+  // TODO: Handle Invalid Params errors.
+  // TODO: Handle Internal Error errors.
+  // TODO: Handle Server Error errors (?).
+  async handle (jsonRequest) {
+    const request = JSON.parse(jsonRequest)
+    const result = this.callMethod(request.method, request.params)
+
+    return JSON.stringify({
+      jsonrpc: '2.0',
+      result: result,
+      id: request.id
+    })
   }
 }
 
