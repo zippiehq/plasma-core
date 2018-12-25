@@ -14,10 +14,19 @@ class ChainService extends BaseService {
     return 'chain-service'
   }
 
+  /**
+   * Determines whether the chain is currently syncing.
+   * @return {boolean} `true` if the chain is syncing, `false` otherwise.
+   */
   isSyncing () {
     throw new Error('Not implemented')
   }
 
+  /**
+   * Checks if a chunk of history is valid and adds it to the chain.
+   * @param {*} range A coin range identifier.
+   * @param {*} history A chunk of history to add.
+   */
   addHistory (range, history) {
     throw new Error('Not implemented')
   }

@@ -5,15 +5,17 @@ const RPCServerService = require('./services/rpc-server-service')
 class PlasmaApp {
   constructor (options) {
     this.options = options
-
     this.services = {}
+  }
+
+  startAllServices () {
     this.services.db = new DBService({
       app: this,
-      db: options.dbBackend
+      db: this.options.dbBackend
     })
     this.services.rpcServer = new RPCServerService({
       app: this,
-      port: options.rpcPort
+      port: this.options.rpcPort
     })
     this.services.jsonrpc = new JSONRPCService({
       app: this

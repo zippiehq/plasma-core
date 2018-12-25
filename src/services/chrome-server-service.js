@@ -11,7 +11,13 @@ class ChromeServerService extends BaseService {
     return 'chrome-service'
   }
 
-  async handleRequest (request, _, sendResponse) {
+  /**
+   * Handles a JSON-RPC request and sends a response back to the client.
+   * @param {*} request Request to be handled.
+   * @param {*} sender Sender of the request.
+   * @param {*} sendResponse Chrome-specific function used to send back a response.
+   */
+  async handleRequest (request, sender, sendResponse) {
     sendResponse(await this.app.jsonrpc.handle(request))
   }
 

@@ -18,7 +18,7 @@ class Chain {
   }
 
   getBlock (number) {
-    // TODO: Figure out block encoding & decode it here
+    // TODO: Figure out block encoding & decode it here.
     const block = this.db.get(`block:${number}`)
     return block
   }

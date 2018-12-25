@@ -25,6 +25,9 @@ class ETHService extends BaseService {
     return 'eth-service'
   }
 
+  /**
+   * Watches for and relays Ethereum events.
+   */
   watchEvents () {
     // TODO: Figure out how robust this is.
     this.contract.allEvents().watch((error, event) => {
@@ -36,22 +39,36 @@ class ETHService extends BaseService {
     })
   }
 
+  /**
+   * Deposits value into the plasma contract.
+   * @param {*} amount Amount to deposit.
+   */
   deposit (amount) {
     return util.promisify(this.contract.deposit({
       value: amount
     }))
   }
 
+  /**
+   * Starts an exit.
+   */
   startExit () {
     throw new Error('Not implemented')
   }
 
+  /**
+   * Starts an exit challenge.
+   */
   startChallenge () {
     throw new Error('Not implemented')
   }
 
-  getBlock (number) {
-    return util.promisify(this.contract.getBlock(number))
+  /**
+   * Returns data for a block by its number.
+   * @param {number} block Number (height) of the block to query.
+   */
+  getBlock (block) {
+    return util.promisify(this.contract.getBlock(block))
   }
 }
 
