@@ -3,9 +3,6 @@ const util = require('util')
 const Web3 = require('web3')
 const BaseService = require('./base-service')
 
-const ABI = '' // TODO: Have this come from some config variable
-const CONTRACT_ADDRESS = '0x0' // TODO: Have this come from some config variable
-
 class ETHService extends BaseService {
   constructor (options) {
     super()
@@ -13,9 +10,10 @@ class ETHService extends BaseService {
     this.app = options.app
 
     // Initialize Web3 and create a contract instance
-    this.web3 = new Web3(options.app.config.ethProvider)
-    const PlasmaContract = this.web3.eth.contract(ABI)
-    this.contract = PlasmaContract.at(CONTRACT_ADDRESS)
+    const config = this.app.config
+    this.web3 = new Web3(config.ethProvider)
+    const PlasmaContract = this.web3.eth.contract(config.contract.abi)
+    this.contract = PlasmaContract.at(config.contract.address)
 
     // Start watching for events
     this.watchEvents()
