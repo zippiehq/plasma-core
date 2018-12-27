@@ -14,7 +14,6 @@ const test = async () => {
   let val = await plasma.services.db.get('test')
   console.log(val)
 
-  plasma.services.rpcServer.start()
   const methods = plasma.services.jsonrpc.getMethods()
   console.log(methods)
 }

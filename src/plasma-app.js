@@ -1,6 +1,7 @@
 const DBService = require('./services/db-service')
 const JSONRPCService = require('./services/jsonrpc-service')
 const RPCServerService = require('./services/rpc-server-service')
+const ConsoleLogger = require('./logging/console-logger')
 
 /**
  * Main class that runs and manages all services.
@@ -9,12 +10,16 @@ class PlasmaApp {
   constructor (options) {
     this.options = options
     this.services = {}
+    this.logger = new ConsoleLogger()
+
+    this.initServices()
+    this.startServices()
   }
 
   /**
-   * Initializes and starts all available services.
+   * Initializes all available services.
    */
-  startAllServices () {
+  initServices () {
     this.services.db = new DBService({
       app: this,
       db: this.options.dbBackend
@@ -26,6 +31,18 @@ class PlasmaApp {
     this.services.jsonrpc = new JSONRPCService({
       app: this
     })
+  }
+
+  /**
+   * Starts all available services.
+   */
+  startServices () {
+    for (let serviceId in this.services) {
+      let service = this.services[serviceId]
+      service.start().then((success) => {
+        this.logger.log(`${service.name}: ${success ? 'RUNNING' : 'ERROR'}`)
+      })
+    }
   }
 }
 

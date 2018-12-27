@@ -23,11 +23,13 @@ class RPCServerService extends BaseService {
   async start () {
     this.server.listen(this.port)
     this.started = true
+    return true
   }
 
   async stop () {
     this.server.close()
     this.started = false
+    return true
   }
 }
 
