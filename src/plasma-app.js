@@ -39,8 +39,10 @@ class PlasmaApp {
   startServices () {
     for (let serviceId in this.services) {
       let service = this.services[serviceId]
-      service.start().then((success) => {
-        this.logger.log(`${service.name}: ${success ? 'RUNNING' : 'ERROR'}`)
+      service.start().then(() => {
+        this.logger.log(`${service.name}: OK`)
+      }).catch(() => {
+        // TODO: Figure out how to handle errors here.
       })
     }
   }

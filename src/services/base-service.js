@@ -25,14 +25,14 @@ class BaseService extends EventEmitter {
    * Starts the service.
    */
   async start () {
-    return true
+    throw new Error('Classes that extend BaseService must implement this method')
   }
 
   /**
    * Stops the service.
    */
   async stop () {
-    return true
+    throw new Error('Classes that extend BaseService must implement this method')
   }
 }
 

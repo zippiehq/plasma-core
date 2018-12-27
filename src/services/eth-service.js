@@ -11,7 +11,13 @@ class ETHService extends BaseService {
     super()
 
     this.app = options.app
+  }
 
+  get name () {
+    return 'eth-service'
+  }
+
+  async start () {
     // Initialize Web3 and create a contract instance
     const config = this.app.config
     this.web3 = new Web3(config.ethProvider)
@@ -20,10 +26,6 @@ class ETHService extends BaseService {
 
     // Start watching for events
     this.watchEvents()
-  }
-
-  get name () {
-    return 'eth-service'
   }
 
   /**
