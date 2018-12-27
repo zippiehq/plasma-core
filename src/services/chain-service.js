@@ -1,6 +1,9 @@
 const BaseService = require('./base-service')
 const Chain = require('../chain')
 
+/**
+ * Manages the local blockchain.
+ */
 class ChainService extends BaseService {
   constructor (options) {
     super()

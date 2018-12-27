@@ -3,6 +3,9 @@ const bodyParser = require('body-parser')
 
 const BaseService = require('./base-service')
 
+/**
+ * Runs a JSON-RPC server and handles incoming requests.
+ */
 class RPCServerService extends BaseService {
   constructor (options) {
     super()

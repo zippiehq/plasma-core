@@ -1,5 +1,8 @@
 const BaseService = require('./base-service')
 
+/**
+ * Watches for invalid exits and automatically starts challenges.
+ */
 class GuardService extends BaseService {
   constructor (options) {
     super()

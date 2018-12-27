@@ -1,3 +1,6 @@
+/**
+ * Simple ephemeral database for testing.
+ */
 class EphemDB {
   constructor () {
     this.db = new Map()

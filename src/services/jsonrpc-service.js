@@ -17,6 +17,9 @@ const getAllFunctions = (instance, ignore = [], prefix = '') => {
   return fns
 }
 
+/**
+ * Service that handles and responds to JSON-RPC requests.
+ */
 class JSONRPCService extends BaseService {
   constructor (options) {
     super()
@@ -88,7 +91,13 @@ class JSONRPCService extends BaseService {
   }
 }
 
+/**
+ * Base class for JSON-RPC subdispatchers that handle requests.
+ */
 class Subdispatcher {
+  /**
+   * Returns the JSON-RPC prefix of this subdispatcher.
+   */
   get prefix () {
     throw new Error('Classes that extend Subdispatcher must implement this method')
   }
@@ -102,6 +111,9 @@ class Subdispatcher {
   }
 }
 
+/**
+ * Subdispatcher that handles chain-related requests.
+ */
 class ChainSubdispatcher extends Subdispatcher {
   get prefix () {
     return 'pg_'

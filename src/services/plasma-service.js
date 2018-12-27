@@ -1,5 +1,8 @@
 const BaseService = require('./base-service')
 
+/**
+ * Wraps functionality to pull data from the operator.
+ */
 class PlasmaService extends BaseService {
   constructor (options) {
     super()

@@ -5,6 +5,9 @@ const dbs = {
   'ephem': EphemDB
 }
 
+/**
+ * Wraps and simplifies database calls.
+ */
 class DBService extends BaseService {
   constructor (options) {
     super()

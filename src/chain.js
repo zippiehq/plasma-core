@@ -1,5 +1,8 @@
 const MAX_BLOCK_NUMBER = 2 ** 63 - 1
 
+/**
+ * Core blockchain logic.
+ */
 class Chain {
   constructor (db) {
     this.db = db

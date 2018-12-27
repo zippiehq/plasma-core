@@ -1,5 +1,8 @@
 const BaseService = require('./base-service')
 
+/**
+ * Listens for requests from webpages when running a node in a chrome extension.
+ */
 class ChromeServerService extends BaseService {
   constructor (options) {
     super()

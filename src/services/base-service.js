@@ -2,6 +2,9 @@ const EventEmitter = require('events')
 
 const defaultOptions = {}
 
+/**
+ * A base class for services to extend.
+ */
 class BaseService extends EventEmitter {
   constructor (options) {
     super()
@@ -10,14 +13,24 @@ class BaseService extends EventEmitter {
     this.started = false
   }
 
+  /**
+   * Returns the name of this service.
+   * @returns {string} Name of the service.
+   */
   get name () {
     throw new Error('Classes that extend BaseService must implement this method')
   }
 
+  /**
+   * Starts the service.
+   */
   async start () {
     throw new Error('Classes that extend BaseService must implement this method')
   }
 
+  /**
+   * Stops the service.
+   */
   async stop () {
     throw new Error('Classes that extend BaseService must implement this method')
   }
