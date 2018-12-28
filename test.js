@@ -26,6 +26,27 @@ const getBlock = (number) => {
 }
 */
 
+const checkDepositsValid = (deposits, range) => {
+  // TODO: Check that the deposits are included in the specified blocks.
+}
+
+const getRequiredRanges = (deposits) => {
+  const sortedDeposits = deposits.sort((a, b) => {
+    return a.start - b.start
+  })
+  const firstDeposit = sortedDeposits[0]
+
+  let requiredRanges = {}
+  for (let deposit of deposits) {
+    requiredRanges[deposit.block] = {
+      start: firstDeposit.start,
+      end: deposit.end
+    }
+  }
+
+  return requiredRanges
+}
+
 const checkChunksTouch = (chunks) => {
   return chunks.every((chunk, i) => {
     return i === 0 || chunk.tx.start === chunks[i - 1].tx.end + 1
@@ -45,20 +66,57 @@ const checkX = (range, chunks) => {
   }
 }
 
-/*
 const checkValidHistoryChunk = (block, chunk) => {
+  /*
   const blockHash = getBlock(block).hash
   return utils.proofs.checkMerkleSumProof(blockHash, chunk.transaction, chunk.proof)
+  */
+  return true
 }
-*/
 
-const checkHistory = (range, history) => {
-  // TODO: Also check that start and end are within bounds
+const nextLowerValue = (obj, x) => {
+  x = parseInt(x)
+
+  let lowest = -1
+  for (let key in obj) {
+    key = parseInt(key)
+    if (key > lowest && key <= x) {
+      lowest = key
+    }
+  }
+  return obj[lowest]
+}
+
+const checkHistory = (transaction, range, deposits, history) => {
+  // TODO: Also check that start and end are within bounds.
   if (range.end <= range.start) {
     throw new Error('Invalid range')
   }
-  for (let chunks of history) {
-    checkX(range, chunks)
+  // TODO: Check that the history chunks are correctly formed.
+
+  // Check that the deposits are valid for the given range.
+  checkDepositsValid(deposits, range)
+
+  // Determine where to start checking the history.
+  const earliestDeposit = deposits.reduce((prev, curr) => {
+    return prev.block < curr.block ? prev : curr
+  })
+
+  // Check that the ranges are all covered.
+  const requiredRanges = getRequiredRanges(deposits)
+  for (let i = earliestDeposit.block; i < transaction.block; i++) {
+    let chunks = history[i]
+    let requiredRange = nextLowerValue(requiredRanges, i)
+    checkX(requiredRange, chunks)
+  }
+
+  // Check that the chunks are all valid.
+  // We do this in a separate loop because it's computationally intensive.
+  for (let block in history) {
+    let chunks = history[block]
+    for (let chunk of chunks) {
+      checkValidHistoryChunk(block, chunk)
+    }
   }
 }
 
@@ -68,8 +126,16 @@ const blocks = {
   }
 }
 
-const history = [
-  [
+const deposits = [
+  {
+    block: 0,
+    start: 0,
+    end: 50
+  }
+]
+
+const history = {
+  0: [
     {
       tx: {
         start: 0,
@@ -85,11 +151,15 @@ const history = [
       proof: ''
     }
   ]
-]
+}
 
 const range = {
   start: 0,
   end: 51
 }
-let v = checkHistory(range, history)
-console.log(v)
+
+const transaction = {
+  block: 1
+}
+
+checkHistory(transaction, range, deposits, history)
