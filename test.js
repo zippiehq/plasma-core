@@ -19,3 +19,77 @@ const test = async () => {
 }
 
 test()
+
+/*
+const getBlock = (number) => {
+  return ''
+}
+*/
+
+const checkChunksTouch = (chunks) => {
+  return chunks.every((chunk, i) => {
+    return i === 0 || chunk.tx.start === chunks[i - 1].tx.end + 1
+  })
+}
+
+const checkX = (range, chunks) => {
+  const sortedChunks = chunks.sort((a, b) => {
+    return a.tx.start - b.tx.start
+  })
+
+  const firstChunk = sortedChunks[0]
+  const lastChunk = sortedChunks[sortedChunks.length - 1]
+  const coversRange = range.start >= firstChunk.tx.start && range.end <= lastChunk.tx.end && checkChunksTouch(sortedChunks)
+  if (!coversRange) {
+    throw new Error('History chunks do not cover entire range')
+  }
+}
+
+/*
+const checkValidHistoryChunk = (block, chunk) => {
+  const blockHash = getBlock(block).hash
+  return utils.proofs.checkMerkleSumProof(blockHash, chunk.transaction, chunk.proof)
+}
+*/
+
+const checkHistory = (range, history) => {
+  // TODO: Also check that start and end are within bounds
+  if (range.end <= range.start) {
+    throw new Error('Invalid range')
+  }
+  for (let chunks of history) {
+    checkX(range, chunks)
+  }
+}
+
+const blocks = {
+  0: {
+    root: ''
+  }
+}
+
+const history = [
+  [
+    {
+      tx: {
+        start: 0,
+        end: 1
+      },
+      proof: ''
+    },
+    {
+      tx: {
+        start: 2,
+        end: 50
+      },
+      proof: ''
+    }
+  ]
+]
+
+const range = {
+  start: 0,
+  end: 51
+}
+let v = checkHistory(range, history)
+console.log(v)
