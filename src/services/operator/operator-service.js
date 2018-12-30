@@ -1,4 +1,4 @@
-const BaseService = require('./base-service')
+const BaseService = require('../base-service')
 
 /**
  * Wraps functionality to pull data from the operator.
@@ -6,6 +6,7 @@ const BaseService = require('./base-service')
 class OperatorService extends BaseService {
   constructor (options) {
     super()
+    this.provider = options.provider
   }
 
   get name () {
@@ -16,7 +17,7 @@ class OperatorService extends BaseService {
    * Queries the operator for a specific transaction.
    * @param {*} range A coin range identifier.
    * @param {*} block Block in which this transaction should be included.
-   * @returns {*} A transaction, or null, along with an inclusion proof.
+   * @return {*} A transaction, or null, along with an inclusion proof.
    */
   getTransaction (range, block) {
     // TODO: Should return null+proof or a transaction+proof

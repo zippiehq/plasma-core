@@ -5,7 +5,7 @@ const BaseService = require('./base-service')
  * @param {*} instance Class instance to be queried.
  * @param {*} ignore Names of functions to ignore.
  * @param {*} prefix A prefix to be added to each function.
- * @returns {Object} An object that maps function names to functions.
+ * @return {Object} An object that maps function names to functions.
  */
 const getAllFunctions = (instance, ignore = [], prefix = '') => {
   let fns = {}
@@ -56,7 +56,7 @@ class JSONRPCService extends BaseService {
 
   /**
    * Returns all methods of all subdispatchers.
-   * @returns {Object} All subdispatcher methods as a single object.
+   * @return {Object} All subdispatcher methods as a single object.
    */
   getAllMethods () {
     return this.subdispatchers.map((subdispatcher) => {
@@ -69,7 +69,7 @@ class JSONRPCService extends BaseService {
   /**
    * Returns a single method.
    * @param {*} name Name of the method to return.
-   * @returns {function} The method with the given name or
+   * @return {function} The method with the given name or
    * `undefined` if the method does not exist.
    */
   getMethod (name) {
@@ -83,7 +83,7 @@ class JSONRPCService extends BaseService {
    * Calls the method with the given name and parameters.
    * @param {*} name Name of the method to call.
    * @param {*} params Parameters to be used as arguments to the method.
-   * @returns {*} Result of the function call.
+   * @return {*} Result of the function call.
    */
   async callMethod (name, params) {
     const method = this.getMethod(name)
@@ -93,7 +93,7 @@ class JSONRPCService extends BaseService {
   /**
    * Handles a raw (JSON) JSON-RPC request.
    * @param {*} jsonRequest A stringified JSON-RPC request.
-   * @returns {*} Result of the JSON-RPC call.
+   * @return {*} Result of the JSON-RPC call.
    */
   async handle (jsonRequest) {
     let request
@@ -129,7 +129,7 @@ class JSONRPCService extends BaseService {
    * Builds a JSON-RPC error response.
    * @param {*} type Error type.
    * @param {*} id RPC command ID.
-   * @returns {Object} A stringified JSON-RPC error response.
+   * @return {Object} A stringified JSON-RPC error response.
    */
   _buildError (type, id) {
     return JSON.stringify({

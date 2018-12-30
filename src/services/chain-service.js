@@ -26,9 +26,17 @@ class ChainService extends BaseService {
   }
 
   /**
+   * Returns the list of ranges owned by the user.
+   * @return {*} A list of owned ranges.
+   */
+  getOwnedRanges () {
+    throw new Error('Not implemented')
+  }
+
+  /**
    * Checks if the chunks in a history are actually part of their respective blocks.
    * @param {*} history A set of history chunks.
-   * @returns {boolean} `true` if the chunks are included, `false` otherwise.
+   * @return {boolean} `true` if the chunks are included, `false` otherwise.
    */
   checkHistoryChunksValid (history) {
     throw new Error('Not implemented')
@@ -38,7 +46,7 @@ class ChainService extends BaseService {
    * Checks that a transaction proof is valid.
    * @param {*} range A range identifier.
    * @param {*} history A history that contains proofs.
-   * @returns {boolean} `true` if the proof is valid, `false` otherwise.
+   * @return {boolean} `true` if the proof is valid, `false` otherwise.
    */
   checkTransactionProof (range, history) {
     throw new Error('Not implemented')
