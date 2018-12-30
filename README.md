@@ -41,6 +41,4 @@ $ npm test
 
 ## Architecture
 
-This section describes the full architecture of `plasma-core`, including all of the different services that make `plasma-core` work.
-
 ![Architecture Diagram](docs/architecture/architecture.png)
