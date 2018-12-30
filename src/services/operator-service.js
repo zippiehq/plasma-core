@@ -3,7 +3,7 @@ const BaseService = require('./base-service')
 /**
  * Wraps functionality to pull data from the operator.
  */
-class PlasmaService extends BaseService {
+class OperatorService extends BaseService {
   constructor (options) {
     super()
   }
@@ -24,4 +24,4 @@ class PlasmaService extends BaseService {
   }
 }
 
-module.exports = PlasmaService
+module.exports = OperatorService
