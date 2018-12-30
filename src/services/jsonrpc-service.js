@@ -46,8 +46,8 @@ const JSONRPC_ERRORS = {
 class JSONRPCService extends BaseService {
   constructor (options) {
     super()
-
-    this.subdispatchers = [new ChainSubdispatcher()]
+    this.app = options.app
+    this.subdispatchers = [new ChainSubdispatcher({ app: this.app })]
   }
 
   get name () {
@@ -113,7 +113,7 @@ class JSONRPCService extends BaseService {
 
     let result
     try {
-      result = this.callMethod(request.method, request.params)
+      result = await this.callMethod(request.method, request.params)
     } catch (err) {
       return this._buildError('INTERNAL_ERROR', request.id)
     }
@@ -144,6 +144,10 @@ class JSONRPCService extends BaseService {
  * Base class for JSON-RPC subdispatchers that handle requests.
  */
 class Subdispatcher {
+  constructor (options) {
+    this.options = options
+  }
+
   /**
    * Returns the JSON-RPC prefix of this subdispatcher.
    */
@@ -164,16 +168,21 @@ class Subdispatcher {
  * Subdispatcher that handles chain-related requests.
  */
 class ChainSubdispatcher extends Subdispatcher {
+  constructor (options) {
+    super()
+    this.app = options.app
+  }
+
   get prefix () {
     return 'pg_'
   }
 
-  getBalance (address) {
-    throw new Error('Not implemented')
+  async getBalance (address) {
+    await this.app.chainService.getBalance(address)
   }
 
-  getBlock (block) {
-    throw new Error('Not implemented')
+  async getBlock (block) {
+    await this.app.chainService.getBlock(block)
   }
 }
 

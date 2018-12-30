@@ -29,7 +29,34 @@ class ChainService extends BaseService {
    * Returns the list of ranges owned by the user.
    * @return {*} A list of owned ranges.
    */
-  getOwnedRanges () {
+  async getOwnedRanges () {
+    throw new Error('Not implemented')
+  }
+
+  /**
+   * Returns the balance of an account.
+   * @param {string} address Address of the account to query.
+   * @return {*} A list of tokens and balances.
+   */
+  async getBalance (address) {
+    throw new Error('Not implemented')
+  }
+
+  /**
+   * Queries a block by number.
+   * @param {number} block Number of the block to query.
+   * @return {*} Information about the block.
+   */
+  async getBlock (block) {
+    throw new Error('Not implemented')
+  }
+
+  /**
+   * Adds a block header to the database.
+   * @param {*} block Number of the block to add.
+   * @param {*} header Header of the given block.
+   */
+  async addBlockHeader (block, header) {
     throw new Error('Not implemented')
   }
 
@@ -74,6 +101,14 @@ class ChainService extends BaseService {
       throw new Error('Transaction proof is not valid')
     }
     this._addHistory(history)
+  }
+
+  /**
+   * Adds a new transaction to a history if it's valid.
+   * @param {*} transaction A transaction object.
+   */
+  async addTransaction (transaction) {
+    throw new Error('Not implemented')
   }
 
   /**

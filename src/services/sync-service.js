@@ -23,10 +23,15 @@ class SyncService extends BaseService {
     this.app.ethService.off('event:BlockCreated', this._onBlockCreated)
   }
 
-  _onBlockCreated (event) {
-    // TODO: Figure out what ranges need to be queried
-    // TODO: Pull all transactions for those ranges in that block.
-    // TODO: Stuff them in the chain service.
+  async _onBlockCreated (event) {
+    await this.app.chainService.addBlockHeader(event.number, event.hash)
+
+    // TODO: Figure out what to do if the operator tries to cheat.
+    const ranges = await this.app.chainService.getOwnedRanges()
+    for (let range of ranges) {
+      let transaction = await this.app.operatorService.getTransaction(range, event.number)
+      await this.app.chainService.addTransaction(transaction)
+    }
   }
 }
 
