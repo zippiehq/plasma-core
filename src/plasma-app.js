@@ -1,7 +1,7 @@
 const DBService = require('./services/db-service')
 const JSONRPCService = require('./services/jsonrpc-service')
 const RPCServerService = require('./services/rpc-server-service')
-const ConsoleLogger = require('./logging/console-logger')
+const utils = require('plasma-utils')
 
 /**
  * Main class that runs and manages all services.
@@ -10,7 +10,7 @@ class PlasmaApp {
   constructor (options) {
     this.options = options
     this.services = {}
-    this.logger = new ConsoleLogger()
+    this.logger = new utils.logging.DefaultLogger()
 
     this.initServices()
     this.startServices()
