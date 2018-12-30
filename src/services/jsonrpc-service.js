@@ -17,6 +17,29 @@ const getAllFunctions = (instance, ignore = [], prefix = '') => {
   return fns
 }
 
+const JSONRPC_ERRORS = {
+  'PARSE_ERROR': {
+    code: -32700,
+    message: 'Parse error'
+  },
+  'INVALID_REQUEST': {
+    code: -32600,
+    message: 'Invalid request'
+  },
+  'METHOD_NOT_FOUND': {
+    code: -32601,
+    message: 'Method not found'
+  },
+  'INVALID_PARAMS': {
+    code: -32602,
+    message: 'Invalid params'
+  },
+  'INTERNAL_ERROR': {
+    code: -32603,
+    message: 'Internal error'
+  }
+}
+
 /**
  * Service that handles and responds to JSON-RPC requests.
  */
@@ -46,14 +69,13 @@ class JSONRPCService extends BaseService {
   /**
    * Returns a single method.
    * @param {*} name Name of the method to return.
-   * @returns {function} The method with the given name.
+   * @returns {function} The method with the given name or
+   * `undefined` if the method does not exist.
    */
   getMethod (name) {
     const methods = this.getAllMethods()
     if (name in methods) {
       return methods[name]
-    } else {
-      throw new Error('JSONRPC method not found')
     }
   }
 
@@ -74,19 +96,46 @@ class JSONRPCService extends BaseService {
    * @returns {*} Result of the JSON-RPC call.
    */
   async handle (jsonRequest) {
-    // TODO: Handle Method Not Found errors.
-    // TODO: Handle Invalid Request errors.
-    // TODO: Handle Parse Error errors.
-    // TODO: Handle Invalid Params errors.
-    // TODO: Handle Internal Error errors.
-    // TODO: Handle Server Error errors (?).
-    const request = JSON.parse(jsonRequest)
-    const result = this.callMethod(request.method, request.params)
+    let request
+    try {
+      request = JSON.parse(jsonRequest)
+    } catch (err) {
+      return this._buildError('PARSE_ERROR', null)
+    }
+
+    if (!(request.method && request.params && request.id)) {
+      return this._buildError('INVALID_REQUEST', null)
+    }
+
+    if (!this.getMethod(request.method)) {
+      return this._buildError('METHOD_NOT_FOUND', request.id)
+    }
+
+    let result
+    try {
+      result = this.callMethod(request.method, request.params)
+    } catch (err) {
+      return this._buildError('INTERNAL_ERROR', request.id)
+    }
 
     return JSON.stringify({
       jsonrpc: '2.0',
       result: result,
       id: request.id
+    })
+  }
+
+  /**
+   * Builds a JSON-RPC error response.
+   * @param {*} type Error type.
+   * @param {*} id RPC command ID.
+   * @returns {Object} A stringified JSON-RPC error response.
+   */
+  _buildError (type, id) {
+    return JSON.stringify({
+      jsonrpc: '2.0',
+      error: JSONRPC_ERRORS[type],
+      id: id
     })
   }
 }
