@@ -91,6 +91,12 @@ const test = async () => {
     console.log(ranges)
     const receipt = await plasma.services.chain.sendTransaction(transaction2)
     console.log(receipt)
+    const pending = await plasma.services.operator.getPendingTransactions(sender)
+    console.log(pending)
+    for (let hash of pending) {
+      const tx = await plasma.services.operator.getTransaction(hash)
+      console.log(tx)
+    }
   } catch (err) {
     console.log(err)
   }

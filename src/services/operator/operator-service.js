@@ -13,11 +13,13 @@ const providers = {
 class OperatorService extends BaseService {
   constructor (options) {
     super()
+    this.app = options.app
+    this.logger = this.app.logger
     this.provider = new providers[options.provider]()
   }
 
   get name () {
-    return 'plasma-service'
+    return 'operator-service'
   }
 
   async start () {
@@ -42,6 +44,7 @@ class OperatorService extends BaseService {
     setInterval(async () => {
       let pending = this.getPendingTransactions(accounts[0])
       for (let hash of pending) {
+        this.logger.log(`Importing new transaction: ${hash}`)
         let transaction = await this.getTransaction(hash)
         await this.app.services.chain.checkProofAndAddHistory(transaction)
       }

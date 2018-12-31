@@ -8,7 +8,7 @@ class BaseOperatorProvider {
    * @param {*} address Address to query.
    * @return {*} List of pending transaction hashes.
    */
-  getPendingTransactions (address) {
+  async getPendingTransactions (address) {
     throw new Error('Classes that extend BaseOperatorProvider must implement this method')
   }
 
@@ -17,7 +17,7 @@ class BaseOperatorProvider {
    * @param {string} hash Hash of the transaction to query.
    * @return {*} A transaction, or null, along with an inclusion proof.
    */
-  getTransaction (hash) {
+  async getTransaction (hash) {
     throw new Error('Classes that extend BaseOperatorProvider must implement this method')
   }
 
@@ -26,7 +26,7 @@ class BaseOperatorProvider {
    * @param {*} transaction A transaction object.
    * @return {*} A transaction receipt from the operator.
    */
-  sendTransaction (transaction) {
+  async sendTransaction (transaction) {
     throw new Error('Classes that extend BaseOperatorProvider must implement this method')
   }
 }
