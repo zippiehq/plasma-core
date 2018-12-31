@@ -117,7 +117,38 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object.
    */
   async addTransaction (transaction) {
-    throw new Error('Not implemented')
+    // TODO: Check if the transaction is valid.
+    let ranges = await this.getOwnedRanges(transaction.to) || []
+    ranges.push(transaction.range)
+    await this.db.set(`ranges:${transaction.to}`, ranges)
+  }
+
+  /**
+   * Sends a transaction to the operator.
+   * @param {*} transaction A transaction object.
+   */
+  async sendTransaction (transaction) {
+    let ranges = await this.getOwnedRanges(transaction.from)
+    // TODO: Check that the range being sent is valid.
+
+    let senderOwnsRange = false
+    for (let range of ranges) {
+      if (range.token === transaction.range.token &&
+          range.start <= transaction.range.start &&
+          range.end >= transaction.range.end) {
+        senderOwnsRange = true
+      }
+    }
+    if (!senderOwnsRange) {
+      throw new Error('Sender does not own the specified range')
+    }
+
+    const receipt = await this.app.services.operator.sendTransaction(transaction)
+    ranges = ranges.filter((item) => {
+      return item === transaction.range
+    })
+    await this.db.set(`ranges:${transaction.to}`, ranges)
+    return receipt
   }
 
   /**
