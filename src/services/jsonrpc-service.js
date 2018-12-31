@@ -11,7 +11,7 @@ const getAllFunctions = (instance, ignore = [], prefix = '') => {
   let fns = {}
   Object.getOwnPropertyNames(instance.constructor.prototype).forEach((prop) => {
     if (!ignore.includes(prop)) {
-      fns[prefix + prop] = instance[prop]
+      fns[prefix + prop] = instance[prop].bind(instance)
     }
   })
   return fns
@@ -47,7 +47,15 @@ class JSONRPCService extends BaseService {
   constructor (options) {
     super()
     this.app = options.app
-    this.subdispatchers = [new ChainSubdispatcher({ app: this.app })]
+
+    this.subdispatchers = []
+    const subdispatchers = [
+      ChainSubdispatcher,
+      WalletSubdispatcher
+    ]
+    for (let subdispatcher of subdispatchers) {
+      this._registerSubdispatcher(subdispatcher)
+    }
   }
 
   get name () {
@@ -85,25 +93,18 @@ class JSONRPCService extends BaseService {
    * @param {*} params Parameters to be used as arguments to the method.
    * @return {*} Result of the function call.
    */
-  async callMethod (name, params) {
+  async callMethod (name, params = []) {
     const method = this.getMethod(name)
     return method(...params)
   }
 
   /**
    * Handles a raw (JSON) JSON-RPC request.
-   * @param {*} jsonRequest A stringified JSON-RPC request.
+   * @param {*} request A JSON-RPC request.
    * @return {*} Result of the JSON-RPC call.
    */
-  async handle (jsonRequest) {
-    let request
-    try {
-      request = JSON.parse(jsonRequest)
-    } catch (err) {
-      return this._buildError('PARSE_ERROR', null)
-    }
-
-    if (!(request.method && request.params && request.id)) {
+  async handle (request) {
+    if (!(request.method && request.id)) {
       return this._buildError('INVALID_REQUEST', null)
     }
 
@@ -115,6 +116,7 @@ class JSONRPCService extends BaseService {
     try {
       result = await this.callMethod(request.method, request.params)
     } catch (err) {
+      console.log(err)
       return this._buildError('INTERNAL_ERROR', request.id)
     }
 
@@ -137,6 +139,16 @@ class JSONRPCService extends BaseService {
       error: JSONRPC_ERRORS[type],
       id: id
     })
+  }
+
+  /**
+   * Registers a new subdispatcher to this service.
+   * @param {*} Dispatcher Subdispatcher to register.
+   */
+  _registerSubdispatcher (Dispatcher) {
+    this.subdispatchers.push(new Dispatcher({
+      app: this.app
+    }))
   }
 }
 
@@ -178,11 +190,26 @@ class ChainSubdispatcher extends Subdispatcher {
   }
 
   async getBalances (address) {
-    await this.app.chainService.getBalances(address)
+    return this.app.services.chain.getBalances(address)
   }
 
   async getBlock (block) {
-    await this.app.chainService.getBlock(block)
+    return this.app.services.chain.getBlock(block)
+  }
+}
+
+class WalletSubdispatcher extends Subdispatcher {
+  constructor (options) {
+    super()
+    this.app = options.app
+  }
+
+  get prefix () {
+    return 'pg_'
+  }
+
+  async getAccounts () {
+    return this.app.services.wallet.getAccounts()
   }
 }
 
