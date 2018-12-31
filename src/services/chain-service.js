@@ -27,37 +27,46 @@ class ChainService extends BaseService {
 
   /**
    * Returns the list of ranges owned by the user.
+   * @param {string} address Address of the account to query.
    * @return {*} A list of owned ranges.
    */
-  async getOwnedRanges () {
-    throw new Error('Not implemented')
+  async getOwnedRanges (address) {
+    return this.db.get(`ranges:${address}`)
   }
 
   /**
-   * Returns the balance of an account.
+   * Returns the balances of an account.
    * @param {string} address Address of the account to query.
    * @return {*} A list of tokens and balances.
    */
-  async getBalance (address) {
-    throw new Error('Not implemented')
+  async getBalances (address) {
+    const ranges = await this.getOwnedRanges(address)
+    let balances = {}
+    for (let range of ranges) {
+      if (!(range.token in balances)) {
+        balances[range.token] = 0
+      }
+      balances[range.token] += range.end - range.start
+    }
+    return balances
   }
 
   /**
-   * Queries a block by number.
+   * Queries a block header by number.
    * @param {number} block Number of the block to query.
-   * @return {*} Information about the block.
+   * @return {string} Header of the specified block.
    */
-  async getBlock (block) {
-    throw new Error('Not implemented')
+  async getBlockHeader (block) {
+    return this.db.get(`header:${block}`)
   }
 
   /**
    * Adds a block header to the database.
    * @param {*} block Number of the block to add.
-   * @param {*} header Header of the given block.
+   * @param {string} header Header of the given block.
    */
   async addBlockHeader (block, header) {
-    throw new Error('Not implemented')
+    return this.db.set(`header:${block}`, header)
   }
 
   /**

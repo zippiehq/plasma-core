@@ -177,8 +177,8 @@ class ChainSubdispatcher extends Subdispatcher {
     return 'pg_'
   }
 
-  async getBalance (address) {
-    await this.app.chainService.getBalance(address)
+  async getBalances (address) {
+    await this.app.chainService.getBalances(address)
   }
 
   async getBlock (block) {
