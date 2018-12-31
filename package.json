@@ -33,6 +33,7 @@
     "express": "^4.16.4",
     "leveldown": "^4.0.1",
     "levelup": "^4.0.0",
-    "plasma-utils": "file:../plasma-utils"
+    "plasma-utils": "file:../plasma-utils",
+    "web3": "^1.0.0-beta.37"
   }
 }

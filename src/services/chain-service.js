@@ -14,7 +14,7 @@ class ChainService extends BaseService {
   }
 
   get name () {
-    return 'chain-service'
+    return 'chain'
   }
 
   /**

@@ -51,7 +51,7 @@ class JSONRPCService extends BaseService {
   }
 
   get name () {
-    return 'jsonrpc-service'
+    return 'jsonrpc'
   }
 
   /**

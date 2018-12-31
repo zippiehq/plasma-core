@@ -11,7 +11,7 @@ class GuardService extends BaseService {
   }
 
   get name () {
-    return 'guard-service'
+    return 'guard'
   }
 
   async start () {

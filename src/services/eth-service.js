@@ -14,7 +14,7 @@ class ETHService extends BaseService {
   }
 
   get name () {
-    return 'eth-service'
+    return 'eth'
   }
 
   async start () {

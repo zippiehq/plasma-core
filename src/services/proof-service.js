@@ -2,7 +2,7 @@ const BaseService = require('./base-service')
 
 class ProofSerivce extends BaseService {
   get name () {
-    return 'proof-service'
+    return 'prover'
   }
 
   /**

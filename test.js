@@ -55,7 +55,9 @@ const plasma = new PlasmaApp({
   contract: {
     abi: '',
     address: '0x0'
-  }
+  },
+  operatorProvider: 'mock',
+  walletProvider: 'mock'
 })
 
 const sender = '0x000000000000'

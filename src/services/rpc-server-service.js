@@ -17,7 +17,7 @@ class RPCServerService extends BaseService {
   }
 
   get name () {
-    return 'rpc-server-service'
+    return 'rpcserver'
   }
 
   async start () {

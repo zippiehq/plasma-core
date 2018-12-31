@@ -10,7 +10,7 @@ class SyncService extends BaseService {
   }
 
   get name () {
-    return 'sync-service'
+    return 'sync'
   }
 
   async start () {

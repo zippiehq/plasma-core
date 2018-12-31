@@ -17,7 +17,7 @@ class DBService extends BaseService {
   }
 
   get name () {
-    return 'db-service'
+    return 'db'
   }
 
   async get (key) {

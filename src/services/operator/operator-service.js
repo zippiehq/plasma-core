@@ -19,7 +19,7 @@ class OperatorService extends BaseService {
   }
 
   get name () {
-    return 'operator-service'
+    return 'operator'
   }
 
   async start () {

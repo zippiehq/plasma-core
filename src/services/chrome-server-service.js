@@ -11,7 +11,7 @@ class ChromeServerService extends BaseService {
   }
 
   get name () {
-    return 'chrome-service'
+    return 'chrome'
   }
 
   /**
