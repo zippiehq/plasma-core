@@ -1,4 +1,11 @@
 const BaseService = require('../base-service')
+const MockOperatorProvider = require('./providers/mock-provider')
+const HttpOperatorProvider = require('./providers/http-provider')
+
+const providers = {
+  'mock': MockOperatorProvider,
+  'http': HttpOperatorProvider
+}
 
 /**
  * Wraps functionality to pull data from the operator.
@@ -6,40 +13,39 @@ const BaseService = require('../base-service')
 class OperatorService extends BaseService {
   constructor (options) {
     super()
-    this.provider = options.provider
+    this.provider = new providers[options.provider]()
   }
 
   get name () {
     return 'plasma-service'
   }
 
-  /**
-   * Returns the pending transactions to be received by address.
-   * @param {*} address Address to query.
-   * @return {*} List of pending transaction hashes.
-   */
+  async start () {
+    this._pollPendingTransactions()
+  }
+
   getPendingTransactions (address) {
-    throw new Error('Not implemented')
+    return this.provider.getPendingTransactions(address)
   }
 
-  /**
-   * Queries the operator for a specific transaction.
-   * @param {*} range A coin range identifier.
-   * @param {*} block Block in which this transaction should be included.
-   * @return {*} A transaction, or null, along with an inclusion proof.
-   */
-  getTransaction (range, block) {
-    // TODO: Should return null+proof or a transaction+proof
-    throw new Error('Not implemented')
+  getTransaction (hash) {
+    return this.provider.getTransaction(hash)
   }
 
-  /**
-   * Sends a transaction to the operator.
-   * @param {*} transaction A transaction object.
-   * @return {*} A transaction receipt from the operator.
-   */
   sendTransaction (transaction) {
-    return true
+    return this.provider.sendTransaction(transaction)
+  }
+
+  async _pollPendingTransactions () {
+    // TODO: Support multiple accounts.
+    const accounts = await this.app.services.wallet.getAccounts()
+    setInterval(async () => {
+      let pending = this.getPendingTransactions(accounts[0])
+      for (let hash of pending) {
+        let transaction = await this.getTransaction(hash)
+        await this.app.services.chain.checkProofAndAddHistory(transaction)
+      }
+    }, 15000)
   }
 }
 

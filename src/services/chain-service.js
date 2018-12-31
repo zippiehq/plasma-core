@@ -101,15 +101,14 @@ class ChainService extends BaseService {
 
   /**
    * Checks a transaction proof and adds history if the transaction is valid.
-   * @param {*} range A range identifier.
-   * @param {*} history A chunk of history for that range.
+   * @param {*} transaction A transaction object
    */
-  checkProofAndAddHistory (range, history) {
+  checkProofAndAddHistory (transaction) {
     // TODO: Make sure this correctly checks the transaction proof.
-    if (this.checkTransactionProof(range, history)) {
+    if (this.checkTransactionProof(transaction.range, transaction.history)) {
       throw new Error('Transaction proof is not valid')
     }
-    this._addHistory(history)
+    this._addHistory(transaction.history)
   }
 
   /**

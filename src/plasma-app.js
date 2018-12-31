@@ -38,7 +38,8 @@ class PlasmaApp {
       app: this
     })
     this.services.operator = new OperatorService({
-      app: this
+      app: this,
+      provider: 'mock'
     })
   }
 

@@ -71,7 +71,7 @@ const transaction1 = {
   }
 }
 
-const transaction2 ={
+const transaction2 = {
   block: 2,
   from: recipient,
   to: sender,
