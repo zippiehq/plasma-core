@@ -2,7 +2,6 @@ const utils = require('plasma-utils')
 
 const DBService = require('./services/db-service')
 const JSONRPCService = require('./services/jsonrpc-service')
-const RPCServerService = require('./services/rpc-server-service')
 const ChainService = require('./services/chain-service')
 const OperatorService = require('./services/operator/operator-service')
 const WalletService = require('./services/wallet/wallet-service')
@@ -10,7 +9,7 @@ const WalletService = require('./services/wallet/wallet-service')
 /**
  * Main class that runs and manages all services.
  */
-class PlasmaApp {
+class Plasma {
   constructor (options) {
     this.options = options
     this.services = {}
@@ -18,6 +17,17 @@ class PlasmaApp {
 
     this._registerServices()
     this._startServices()
+  }
+
+  /**
+   * Registers a single service to the app.
+   * @param {*} Service Class of the service to register.
+   * @param {*} options Any additional options.
+   */
+  registerService (Service, options = {}) {
+    const appInject = { app: this }
+    const service = new Service({ ...options, ...appInject })
+    this.services[service.name] = service
   }
 
   /**
@@ -29,12 +39,6 @@ class PlasmaApp {
         type: DBService,
         options: {
           db: this.options.dbBackend
-        }
-      },
-      {
-        type: RPCServerService,
-        options: {
-          port: this.options.port
         }
       },
       { type: JSONRPCService },
@@ -54,34 +58,31 @@ class PlasmaApp {
     ]
 
     for (let service of services) {
-      this._registerService(service.type, service.options)
+      this.registerService(service.type, service.options)
     }
   }
 
   /**
-   * Registers a single service to the app.
-   * @param {*} Service Class of the service to register.
-   * @param {*} options Any additional options.
+   * Starts a single service.
+   * @param {*} name Name of the service to start
    */
-  _registerService (Service, options = {}) {
-    const appInject = { app: this }
-    const service = new Service({ ...options, ...appInject })
-    this.services[service.name] = service
+  startService (name) {
+    let service = this.services[name]
+    service.start().then(() => {
+      this.logger.log(`${service.name}: OK`)
+    }).catch(() => {
+      // TODO: Figure out how to handle errors here.
+    })
   }
 
   /**
    * Starts all available services.
    */
   _startServices () {
-    for (let serviceId in this.services) {
-      let service = this.services[serviceId]
-      service.start().then(() => {
-        this.logger.log(`${service.name}: OK`)
-      }).catch(() => {
-        // TODO: Figure out how to handle errors here.
-      })
+    for (let service in this.services) {
+      this.startService(service)
     }
   }
 }
 
-module.exports = PlasmaApp
+module.exports = Plasma

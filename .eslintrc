@@ -1,6 +1,3 @@
 {
-  "extends": "standard",
-  "globals": {
-    "chrome": true
-  }
+  "extends": "standard"
 }

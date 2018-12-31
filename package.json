@@ -29,8 +29,6 @@
     "eslint-plugin-standard": "^4.0.0"
   },
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "express": "^4.16.4",
     "leveldown": "^4.0.1",
     "levelup": "^4.0.0",
     "plasma-utils": "file:../plasma-utils",

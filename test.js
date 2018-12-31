@@ -47,11 +47,10 @@ const transaction = {
 }
 */
 
-const PlasmaApp = require('./src/plasma-app')
+const Plasma = require('./src/plasma')
 
-const plasma = new PlasmaApp({
+const plasma = new Plasma({
   dbBackend: 'ephem',
-  rpcPort: '9898',
   contract: {
     abi: '',
     address: '0x0'
@@ -60,32 +59,34 @@ const plasma = new PlasmaApp({
   walletProvider: 'mock'
 })
 
-const sender = '0x000000000000'
-const recipient = '0x999999999999'
-const transaction1 = {
-  block: 1,
-  from: sender,
-  to: recipient,
-  range: {
-    token: 'OMG',
-    start: 0,
-    end: 50
-  }
-}
-
-const transaction2 = {
-  block: 2,
-  from: recipient,
-  to: sender,
-  range: {
-    token: 'OMG',
-    start: 0,
-    end: 0
-  }
-}
-
 const test = async () => {
   try {
+    const accounts = await plasma.services.wallet.getAccounts()
+
+    const sender = accounts[0]
+    const recipient = accounts[1]
+    const transaction1 = {
+      block: 1,
+      from: sender,
+      to: recipient,
+      range: {
+        token: 'OMG',
+        start: 0,
+        end: 50
+      }
+    }
+
+    const transaction2 = {
+      block: 2,
+      from: recipient,
+      to: sender,
+      range: {
+        token: 'OMG',
+        start: 0,
+        end: 0
+      }
+    }
+
     await plasma.services.chain.addTransaction(transaction1)
     const balances = await plasma.services.chain.getBalances(recipient)
     console.log(balances)
