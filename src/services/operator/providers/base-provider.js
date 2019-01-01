@@ -1,3 +1,6 @@
+/**
+ * Base class that operator providers must extend.
+ */
 class BaseOperatorProvider {
   get name () {
     throw new Error('Classes that extend BaseOperatorProvider must implement this method')

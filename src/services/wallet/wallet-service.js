@@ -7,6 +7,9 @@ const providers = {
   'metamask': MetaMaskWalletProvider
 }
 
+/**
+ * Service that provides wallet-related functionality.
+ */
 class WalletService extends BaseService {
   constructor (options) {
     super()

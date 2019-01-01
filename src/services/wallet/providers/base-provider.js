@@ -1,3 +1,6 @@
+/**
+ * Base class for all wallet providers.
+ */
 class BaseWalletProvider {
   get name () {
     throw new Error('Classes that extend BaseWalletProvider must implement this method')

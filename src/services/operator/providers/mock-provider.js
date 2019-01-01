@@ -1,5 +1,8 @@
 const BaseOperatorProvider = require('./base-provider')
 
+/**
+ * Mocks an operator instead of sending real external requests.
+ */
 class MockOperatorProvider extends BaseOperatorProvider {
   constructor () {
     super()

@@ -1,5 +1,8 @@
 const BaseService = require('./base-service')
 
+/**
+ * Service that handles checking history proofs.
+ */
 class ProofSerivce extends BaseService {
   get name () {
     return 'prover'

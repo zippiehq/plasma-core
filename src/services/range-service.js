@@ -1,5 +1,8 @@
 const BaseService = require('./base-service')
 
+/**
+ * Service that manages the user's ranges automatically.
+ */
 class RangeManagerService extends BaseService {
   get name () {
     return 'range'

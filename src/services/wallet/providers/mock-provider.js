@@ -1,6 +1,9 @@
 const Web3 = require('web3')
 const BaseWalletProvider = require('./base-provider')
 
+/**
+ * Provider that mocks a wallet and shouldn't be used in production.
+ */
 class MockWalletProvider extends BaseWalletProvider {
   constructor (options) {
     super()

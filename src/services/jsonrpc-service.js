@@ -206,6 +206,9 @@ class ChainSubdispatcher extends Subdispatcher {
   }
 }
 
+/**
+ * Subdispatcher that handles wallet-related requests.
+ */
 class WalletSubdispatcher extends Subdispatcher {
   constructor (options) {
     super()
@@ -218,6 +221,10 @@ class WalletSubdispatcher extends Subdispatcher {
 
   async getAccounts () {
     return this.app.services.wallet.getAccounts()
+  }
+
+  async sign (address, data) {
+    return this.app.services.wallet.sign(address, data)
   }
 }
 
