@@ -1,11 +1,14 @@
 const levelup = require('levelup')
 const leveldown = require('leveldown')
 
+const BaseDB = require('./base-db')
+
 /**
  * LevelDB wrapper.
  */
-class LevelDB {
+class LevelDB extends BaseDB {
   constructor (path) {
+    super()
     this.db = levelup(leveldown(path))
   }
 
