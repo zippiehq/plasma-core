@@ -1,12 +1,12 @@
 const levelup = require('levelup')
 const leveldown = require('leveldown')
 
-const BaseDB = require('./base-db')
+const BaseDBProvider = require('./base-provider')
 
 /**
  * LevelDB wrapper.
  */
-class LevelDB extends BaseDB {
+class LevelDBProvider extends BaseDBProvider {
   constructor (path) {
     super()
     this.db = levelup(leveldown(path))
@@ -38,4 +38,4 @@ class LevelDB extends BaseDB {
   }
 }
 
-module.exports = LevelDB
+module.exports = LevelDBProvider

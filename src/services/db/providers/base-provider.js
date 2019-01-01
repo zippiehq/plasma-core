@@ -1,7 +1,7 @@
 /**
  * Class that DB interfaces must implement.
  */
-class BaseDB {
+class BaseDBProvider {
   get name () {
     return new Error('Classes that extend BaseDB must implement this method')
   }
@@ -23,4 +23,4 @@ class BaseDB {
   }
 }
 
-module.exports = BaseDB
+module.exports = BaseDBProvider

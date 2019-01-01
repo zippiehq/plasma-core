@@ -1,9 +1,9 @@
-const BaseDB = require('./base-db')
+const BaseDBProvider = require('./base-provider')
 
 /**
  * Simple ephemeral database for testing.
  */
-class EphemDB extends BaseDB {
+class EphemDBProvider extends BaseDBProvider {
   constructor () {
     super()
     this.db = new Map()
@@ -26,4 +26,4 @@ class EphemDB extends BaseDB {
   }
 }
 
-module.exports = EphemDB
+module.exports = EphemDBProvider

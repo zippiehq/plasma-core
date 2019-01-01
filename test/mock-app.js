@@ -1,4 +1,4 @@
-const EphemDB = require('../src/db/ephem-db')
+const EphemDBProvider = require('../src/services/db/providers/ephem-provider')
 
 const app = {
   services: {
@@ -7,7 +7,7 @@ const app = {
         return true
       }
     },
-    db: new EphemDB()
+    db: new EphemDBProvider()
   }
 }
 
