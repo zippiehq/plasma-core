@@ -10,7 +10,17 @@ class RangeManagerService extends BaseService {
    * @param {string} address An address.
    * @return {*} List of owned ranges.
    */
-  getOwnedRanges (address) {
+  async getOwnedRanges (address) {
+    throw new Error('Not implemented')
+  }
+
+  /**
+   * Determines if an address owns a specific range.
+   * @param {string} address An address.
+   * @param {*} range A range object.
+   * @return {boolean} `true` if the user owns the range, `false` otherwise.
+   */
+  async ownsRange (address, range) {
     throw new Error('Not implemented')
   }
 
@@ -21,8 +31,24 @@ class RangeManagerService extends BaseService {
    * @param {number} amount Number of tokens being sent.
    * @return {*} List of ranges to use for the transaction.
    */
-  pickRanges (address, token, amount) {
+  async pickRanges (address, token, amount) {
     throw new Error('Not implemented')
+  }
+
+  /**
+   * Determines of an account can spend an amount of a token.
+   * @param {*} address An address
+   * @param {*} token Identifier of the token being sent.
+   * @param {*} amount Number of tokens being sent.
+   * @return {boolean} `true` if the user can spend the tokens, `false` otherwise.
+   */
+  async canSpend (address, token, amount) {
+    try {
+      await this.pickRanges(address, token, amount)
+      return true
+    } catch (err) {
+      return false
+    }
   }
 
   /**
@@ -30,7 +56,7 @@ class RangeManagerService extends BaseService {
    * @param {*} address An address.
    * @param {*} range A range to add.
    */
-  addRange (address, range) {
+  async addRange (address, range) {
     throw new Error('Not implemented')
   }
 
@@ -39,7 +65,7 @@ class RangeManagerService extends BaseService {
    * @param {*} address An address.
    * @param {*} range A range to remove.
    */
-  removeRange (address, range) {
+  async removeRange (address, range) {
     throw new Error('Not implemented')
   }
 }

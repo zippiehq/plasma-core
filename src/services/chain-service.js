@@ -29,6 +29,7 @@ class ChainService extends BaseService {
    * @return {*} A list of owned ranges.
    */
   async getOwnedRanges (address) {
+    // TODO: Move this logic into RangeManagerService.
     const ranges = await this.db.get(`ranges:${address}`) || []
     return ranges
   }
@@ -142,6 +143,7 @@ class ChainService extends BaseService {
     // TODO: Check if the transaction is valid.
     let ranges = await this.getOwnedRanges(transaction.to) || []
     ranges.push(transaction.range)
+    // TODO: Move this logic into RangeManagerService.
     await this.db.set(`ranges:${transaction.to}`, ranges)
     await this.db.set(`transaction:${transaction.hash}`, transaction)
   }
@@ -154,6 +156,7 @@ class ChainService extends BaseService {
     let ranges = await this.getOwnedRanges(transaction.from)
     // TODO: Check that the range being sent is valid.
 
+    // TODO: Move this logic into RangeManagerService.
     let senderOwnsRange = false
     for (let range of ranges) {
       if (range.token === transaction.range.token &&
@@ -169,6 +172,7 @@ class ChainService extends BaseService {
     const receipt = await this.app.services.operator.sendTransaction(transaction)
 
     // TODO: This incorrectly replaces the spent ranges, fix.
+    // TODO: Move this logic into RangeManagerService.
     ranges = ranges.filter((item) => {
       return item === transaction.range
     })
