@@ -8,21 +8,20 @@ class ProofSerivce extends BaseService {
   /**
    * Checks whether a transaction is valid or not.
    * @param {*} transaction Transaction to be validated.
-   * @param {*} range Range being transacted.
    * @param {*} deposits A list of original deposits for that range.
    * @param {*} history A history of transactions and proofs for that range.
    * @return {boolean} `true` if the transaction is valid, `false` otherwise.
    */
-  checkProof (transaction, range, deposits, history) {
+  checkProof (transaction, deposits, history) {
     // TODO: Also check that start and end are within bounds.
-    if (range.end <= range.start) {
+    if (transaction.range.end <= transaction.range.start) {
       throw new Error('Invalid range')
     }
     // TODO: Check that the history chunks are correctly formed.
 
     // Check that the deposits are valid for the given range.
     // TODO: Throw if false.
-    this._checkDepositsValid(deposits, range)
+    this._checkDepositsValid(deposits, transaction.range)
 
     // Determine where to start checking the history.
     const earliestDeposit = deposits.reduce((prev, curr) => {
@@ -47,6 +46,8 @@ class ProofSerivce extends BaseService {
         this._checkChunkValid(block, chunk)
       }
     }
+
+    return true
   }
 
   /**
@@ -56,8 +57,7 @@ class ProofSerivce extends BaseService {
    * @return {boolean} `true` if the deposits are valid, `false` otherwise.
    */
   _checkDepositsValid (deposits, range) {
-    // TODO: Implement this.
-    return true
+    throw new Error('Not implemented')
   }
 
   /**
