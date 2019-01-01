@@ -13,10 +13,11 @@ class BaseWalletProvider {
 
   /**
    * Signs a piece of arbitrary data.
+   * @param {string} address Address of the account to sign with.
    * @param {*} data Data to sign
    * @return {*} Signature over the data.
    */
-  async sign (data) {
+  async sign (address, data) {
     throw new Error('Classes that extend BaseWalletProvider must implement this method')
   }
 }
