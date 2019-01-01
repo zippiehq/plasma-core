@@ -10,7 +10,10 @@ const providers = {
 class WalletService extends BaseService {
   constructor (options) {
     super()
-    this.provider = new providers[options.provider]()
+    this.app = options.app
+    this.provider = new providers[options.provider]({
+      app: this.app
+    })
   }
 
   get name () {

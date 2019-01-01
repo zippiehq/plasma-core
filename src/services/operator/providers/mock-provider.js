@@ -27,6 +27,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
       this.pending[transaction.to] = []
     }
     this.pending[transaction.to].push(hash)
+    return hash
   }
 }
 

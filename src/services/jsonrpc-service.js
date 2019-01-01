@@ -196,6 +196,14 @@ class ChainSubdispatcher extends Subdispatcher {
   async getBlock (block) {
     return this.app.services.chain.getBlock(block)
   }
+
+  async getTransaction (hash) {
+    return this.app.services.chain.getTransaction(hash)
+  }
+
+  async sendTransaction (transaction) {
+    return this.app.services.chain.sendTransaction(transaction)
+  }
 }
 
 class WalletSubdispatcher extends Subdispatcher {

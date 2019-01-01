@@ -29,7 +29,8 @@ class ChainService extends BaseService {
    * @return {*} A list of owned ranges.
    */
   async getOwnedRanges (address) {
-    return this.db.get(`ranges:${address}`)
+    const ranges = await this.db.get(`ranges:${address}`) || []
+    return ranges
   }
 
   /**
@@ -47,6 +48,15 @@ class ChainService extends BaseService {
       balances[range.token] += range.end - range.start
     }
     return balances
+  }
+
+  /**
+   * Queries a transaction.
+   * @param {string} hash Hash of the transaction.
+   * @return {*} The transaction object.
+   */
+  async getTransaction (hash) {
+    return this.db.get(`transaction:${hash}`)
   }
 
   /**
@@ -102,11 +112,26 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object
    */
   checkProofAndAddHistory (transaction) {
+    // TODO: This is not actually how new transactions should be handled.
+    this.addTransaction(transaction)
+
+    /*
     // TODO: Make sure this correctly checks the transaction proof.
     if (this.checkTransactionProof(transaction.range, transaction.history)) {
       throw new Error('Transaction proof is not valid')
     }
     this._addHistory(transaction.history)
+    */
+  }
+
+  /**
+   * Checks if the chain has stored a specific transaction already.
+   * @param {string} hash The transaction hash.
+   * @return {boolean} `true` if the chain has stored the transaction, `false` otherwise.
+   */
+  async hasTransaction (hash) {
+    let tx = await this.db.get(`transaction:${hash}`)
+    return (tx !== undefined)
   }
 
   /**
@@ -118,6 +143,7 @@ class ChainService extends BaseService {
     let ranges = await this.getOwnedRanges(transaction.to) || []
     ranges.push(transaction.range)
     await this.db.set(`ranges:${transaction.to}`, ranges)
+    await this.db.set(`transaction:${transaction.hash}`, transaction)
   }
 
   /**
@@ -141,10 +167,13 @@ class ChainService extends BaseService {
     }
 
     const receipt = await this.app.services.operator.sendTransaction(transaction)
+
+    // TODO: This incorrectly replaces the spent ranges, fix.
     ranges = ranges.filter((item) => {
       return item === transaction.range
     })
-    await this.db.set(`ranges:${transaction.to}`, ranges)
+    await this.db.set(`ranges:${transaction.from}`, ranges)
+
     return receipt
   }
 

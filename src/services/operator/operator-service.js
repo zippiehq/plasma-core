@@ -26,8 +26,9 @@ class OperatorService extends BaseService {
     this._pollPendingTransactions()
   }
 
-  getPendingTransactions (address) {
-    return this.provider.getPendingTransactions(address)
+  async getPendingTransactions (address) {
+    const pending = await this.provider.getPendingTransactions(address) || []
+    return pending
   }
 
   getTransaction (hash) {
@@ -40,12 +41,22 @@ class OperatorService extends BaseService {
 
   async _pollPendingTransactions () {
     // TODO: Support multiple accounts.
+    // TODO: Figure out how operator should remove pending transactions.
+    // TODO: Figure out what to do if the operator tries to cheat.
     const accounts = await this.app.services.wallet.getAccounts()
     setInterval(async () => {
-      let pending = this.getPendingTransactions(accounts[0])
+      this.logger.log('Checking for pending transactions')
+      let pending = await this.getPendingTransactions(accounts[0])
       for (let hash of pending) {
+        // Avoid importing the same transaction twice.
+        if (await this.app.services.chain.hasTransaction(hash)) {
+          continue
+        }
+
+        // Import the transaction if it's valid.
         this.logger.log(`Importing new transaction: ${hash}`)
         let transaction = await this.getTransaction(hash)
+        transaction.hash = hash
         await this.app.services.chain.checkProofAndAddHistory(transaction)
       }
     }, 15000)
