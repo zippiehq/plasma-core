@@ -13,6 +13,8 @@ const history = {
   0: [
     {
       tx: {
+        from: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
+        to: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
         start: 0,
         end: 1
       },
@@ -20,6 +22,8 @@ const history = {
     },
     {
       tx: {
+        from: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
+        to: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
         start: 2,
         end: 50
       },
@@ -121,6 +125,8 @@ describe('ProofService', () => {
       0: [
         {
           tx: {
+            from: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
+            to: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
             start: 0,
             end: 1
           },
@@ -137,6 +143,8 @@ describe('ProofService', () => {
       0: [
         {
           tx: {
+            from: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
+            to: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
             start: 0,
             end: 25
           },
@@ -148,11 +156,13 @@ describe('ProofService', () => {
       verifier.checkProof(transaction, deposits, invalidHistory)
     }, 'Invalid history')
   })
-  it('should not verify an inclusion proof', () => {
+  it('should not verify an invalid inclusion proof', () => {
     const invalidHistory = {
       0: [
         {
           tx: {
+            from: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
+            to: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
             start: 0,
             end: 1
           },
@@ -160,6 +170,8 @@ describe('ProofService', () => {
         },
         {
           tx: {
+            from: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
+            to: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
             start: 2,
             end: 50
           },
@@ -170,5 +182,32 @@ describe('ProofService', () => {
     assert.throws(() => {
       verifier.checkProof(transaction, deposits, invalidHistory)
     }, 'Invalid history proof')
+  })
+  it('should not verify an invalid set of senders and receviers', () => {
+    const invalidHistory = {
+      0: [
+        {
+          tx: {
+            from: '0x0000000000000000000000000000000000000000',
+            to: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
+            start: 0,
+            end: 1
+          },
+          proof: ''
+        },
+        {
+          tx: {
+            from: '0x0000000000000000000000000000000000000000',
+            to: '0xf5b42E958915BB00BfeDEc856A5f98FC22dE5d40',
+            start: 2,
+            end: 50
+          },
+          proof: ''
+        }
+      ]
+    }
+    assert.throws(() => {
+      verifier.checkProof(transaction, deposits, invalidHistory)
+    }, 'Invalid history')
   })
 })
