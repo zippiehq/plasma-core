@@ -25,7 +25,6 @@ Our most user-friendly node is ``plasma-extension``, a full plasma node inside a
    :maxdepth: 2
    :caption: Developer Documentation
 
-   what-is-plasma-core
    contributing
    architecture
    extending-plasma-core
