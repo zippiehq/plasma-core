@@ -10,7 +10,7 @@ class BaseWalletProvider extends BaseService {
   }
 
   get name () {
-    throw new Error('Classes that extend BaseWalletProvider must implement this method')
+    return 'wallet'
   }
 
   /**

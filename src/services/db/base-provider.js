@@ -10,7 +10,7 @@ class BaseDBProvider extends BaseService {
   }
 
   get name () {
-    return new Error('Classes that extend BaseDB must implement this method')
+    return 'db'
   }
 
   async get (key) {

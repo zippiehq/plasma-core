@@ -10,7 +10,7 @@ class BaseOperatorProvider extends BaseService {
   }
 
   get name () {
-    throw new Error('Classes that extend BaseOperatorProvider must implement this method')
+    return 'operator'
   }
 
   /**

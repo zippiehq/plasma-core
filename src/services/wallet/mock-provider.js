@@ -12,10 +12,6 @@ class MockWalletProvider extends BaseWalletProvider {
     this._initAccounts()
   }
 
-  get name () {
-    return 'mock-wallet'
-  }
-
   async getAccounts () {
     return this.addresses
   }

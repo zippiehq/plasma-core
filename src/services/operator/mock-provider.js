@@ -11,10 +11,6 @@ class MockOperatorProvider extends BaseOperatorProvider {
     this.pending = {}
   }
 
-  get name () {
-    return 'mock-operator'
-  }
-
   async getTransaction (hash) {
     return this.transactions[hash]
   }
