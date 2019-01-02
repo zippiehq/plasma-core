@@ -25,7 +25,7 @@ These resources will help you get started and will help you better understand wh
 Contributing Guide and Code of Conduct
 ======================================
 Plasma Group follows a `Contributing Guide and Code of Conduct`_ adapted slightly from the `Contributor Covenant`_.
-All contributors are expected to read through this guide.
+**All contributors are expected to read through this guide.**
 We're here to cultivate a welcoming and inclusive contributing environment.
 Every new contributor needs to do their part to uphold our community standards.
 
