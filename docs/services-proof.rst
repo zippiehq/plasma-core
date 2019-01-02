@@ -12,20 +12,24 @@ If you're interested in learning more about transaction proofs, check out our mo
 
 API
 ===
-``checkProof(transaction, proof)``
+.. code-block:: javascript
 
-**Description**
+    checkProof(transaction, proof)
 
 Checks the validity of a transaction using the given proof.
 
-**Params**
+----------
+Parameters
+----------
 
-1. ``transaction`` - A Transaction_ object.
-2. ``proof`` - A Proof_ object.
+1. ``transaction`` - ``Object``: A Transaction_ object.
+2. ``proof`` - ``Object``: A Proof_ object.
 
-**Return**
+-------
+Returns
+-------
 
-1. ``boolean`` - ``true`` if the transaction is valid, ``false`` otherwise.
+``boolean``: ``true`` if the transaction is valid, ``false`` otherwise.
 
 .. _transaction proof specification: spec-proofs
 .. _Transaction: spec-transactions#transaction-object
