@@ -4,8 +4,9 @@ const BaseDBProvider = require('./base-provider')
  * Simple ephemeral database for testing.
  */
 class EphemDBProvider extends BaseDBProvider {
-  constructor () {
-    super()
+  constructor (options) {
+    super(options)
+
     this.db = new Map()
   }
 

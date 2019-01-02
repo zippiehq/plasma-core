@@ -1,6 +1,6 @@
 const assert = require('chai').assert
 const Web3 = require('web3')
-const MockWalletProvider = require('../../../src/services/wallet/providers/mock-provider')
+const MockWalletProvider = require('../../../src/services/wallet').MockWalletProvider
 const app = require('../../mock-app')
 
 const web3 = new Web3()

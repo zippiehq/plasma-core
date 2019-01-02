@@ -7,9 +7,11 @@ const BaseDBProvider = require('./base-provider')
  * LevelDB wrapper.
  */
 class LevelDBProvider extends BaseDBProvider {
-  constructor (path) {
-    super()
-    this.db = levelup(leveldown(path))
+  constructor (options) {
+    super(options)
+
+    this.path = options.path
+    this.db = levelup(leveldown(this.path))
   }
 
   async get (key) {

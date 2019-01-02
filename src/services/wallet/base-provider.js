@@ -1,7 +1,14 @@
+const BaseService = require('../base-service')
+
 /**
  * Base class for all wallet providers.
  */
-class BaseWalletProvider {
+class BaseWalletProvider extends BaseService {
+  constructor (options) {
+    super()
+    this.app = options.app
+  }
+
   get name () {
     throw new Error('Classes that extend BaseWalletProvider must implement this method')
   }

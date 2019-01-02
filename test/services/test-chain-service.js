@@ -1,7 +1,7 @@
 const assert = require('chai').assert
 
 const ChainService = require('../../src/services/chain-service')
-const MockWalletProvider = require('../../src/services/wallet/providers/mock-provider')
+const MockWalletProvider = require('../../src/services/wallet').MockWalletProvider
 const app = require('../mock-app')
 
 describe('ChainService', async () => {

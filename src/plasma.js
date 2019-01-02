@@ -1,10 +1,10 @@
 const utils = require('plasma-utils')
 
-const DBService = require('./services/db-service')
+const DefaultDBProvider = require('./services/db').DefaultDBProvider
+const DefaultOperatorProvider = require('./services/operator').DefaultOperatorProvider
+const DefaultWalletProvider = require('./services/wallet').DefaultWalletProvider
 const JSONRPCService = require('./services/jsonrpc-service')
 const ChainService = require('./services/chain-service')
-const OperatorService = require('./services/operator/operator-service')
-const WalletService = require('./services/wallet/wallet-service')
 
 /**
  * Main class that runs and manages all services.
@@ -36,25 +36,16 @@ class Plasma {
   _registerServices () {
     const services = [
       {
-        type: DBService,
-        options: {
-          db: this.options.dbBackend
-        }
+        type: this.options.dbProvider || DefaultDBProvider
+      },
+      {
+        type: this.options.operatorProvider || DefaultOperatorProvider
+      },
+      {
+        type: this.options.walletProvider || DefaultWalletProvider
       },
       { type: JSONRPCService },
-      { type: ChainService },
-      {
-        type: OperatorService,
-        options: {
-          provider: this.options.operatorProvider
-        }
-      },
-      {
-        type: WalletService,
-        options: {
-          provider: this.options.walletProvider
-        }
-      }
+      { type: ChainService }
     ]
 
     for (let service of services) {

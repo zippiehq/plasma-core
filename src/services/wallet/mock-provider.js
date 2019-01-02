@@ -6,10 +6,9 @@ const BaseWalletProvider = require('./base-provider')
  */
 class MockWalletProvider extends BaseWalletProvider {
   constructor (options) {
-    super()
-    this.app = options.app
-    this.web3 = new Web3()
+    super(options)
 
+    this.web3 = new Web3()
     this._initAccounts()
   }
 

@@ -1,7 +1,14 @@
+const BaseService = require('../base-service')
+
 /**
  * Class that DB interfaces must implement.
  */
-class BaseDBProvider {
+class BaseDBProvider extends BaseService {
+  constructor (options) {
+    super()
+    this.app = options.app
+  }
+
   get name () {
     return new Error('Classes that extend BaseDB must implement this method')
   }
