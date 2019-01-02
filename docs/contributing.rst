@@ -73,7 +73,7 @@ Code with passing tests makes life easier for everyone and means your contributi
 .. _plasma: https://plasma.io
 .. _Contributing Guide and Code of Conduct: https://github.com/plasma-group/plasma-core/blob/master/.github/CONTRIBUTING.md
 .. _Contributor Covenant: https://www.contributor-covenant.org/version/1/4/code-of-conduct.html
-.. _Architecture: architecture
+.. _Architecture: architecture.html
 .. _members of Plasma Group: https://github.com/orgs/plasma-group/people
 .. _Node.js: https://nodejs.org/en/
 .. _Mocha: https://mochajs.org/

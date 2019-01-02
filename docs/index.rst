@@ -43,4 +43,4 @@ Our most user-friendly node is ``plasma-extension``, a full plasma node inside a
    services-proof
 
 .. _plasma-extension docs: https://plasma-extension.readthedocs.io/en/latest/
-.. _extend plasma-core: extending-plasma-core
+.. _extend plasma-core: extending-plasma-core.html
