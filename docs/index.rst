@@ -31,6 +31,13 @@ Our most user-friendly node is ``plasma-extension``, a full plasma node inside a
 
 .. toctree::
    :maxdepth: 2
+   :caption: Specifications
+
+   spec-transactions
+   spec-proofs
+
+.. toctree::
+   :maxdepth: 2
    :caption: Service API Reference
 
    services-chain
