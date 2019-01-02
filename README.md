@@ -1,5 +1,5 @@
 # plasma-core
-[![Coverage Status](https://coveralls.io/repos/github/plasma-group/plasma-core/badge.svg?branch=master)](https://coveralls.io/github/plasma-group/plasma-core?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/plasma-group/plasma-core/badge.svg?branch=master)](https://coveralls.io/github/plasma-group/plasma-core?branch=master) [![Build Status](https://travis-ci.org/plasma-group/plasma-core.svg?branch=master)](https://travis-ci.org/plasma-group/plasma-core)
 
 `plasma-core` is Plasma Group's core node software. With `plasma-core`, you can either launch a node from your command line or include the library into another project to add additional functionality. 
 
