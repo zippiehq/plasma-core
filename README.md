@@ -43,4 +43,4 @@ $ npm test
 
 ## Architecture
 
-![Architecture Diagram](docs/architecture/architecture.png)
+![Architecture Diagram](docs/_static/images/architecture/architecture.png)
