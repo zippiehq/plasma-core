@@ -17,7 +17,6 @@ This diagram shows the basic architecture of ``plasma-core``:
 
 .. figure:: ./_static/images/architecture/architecture.png
     :align: center
-    :figwidth: 300px
     :target: ./_static/images/architecture/architecture.png
 
     PG Plasma Architecture Diagram
@@ -45,7 +44,26 @@ The JSONRPCService_ acts as a handler for commands sent by user **applications**
 By default, applications must interact *directly* with ``JSONRPCService``.
 ``plasma-core`` can be extended to expose additional interfaces to ``JSONRPCService``, such as an HTTP API.
 
+Internal services
+=================
+The remaining services of ``plasma-core`` manage things internally.
+
+SyncService
+-----------
+Possibly the most important internal service, SyncService_ ensures that your node always has the latest transactions.
+``SyncService`` watches Ethereum for any new plasma chain blocks and automatically pulls any necessary information from the Operator.
+``SyncService`` makes sure your balances are always up-to-date and that you can always send transactions when you need to!
+
+ChainService
+------------
+ChainService_ is another extremely important internal service.
+``ChainService`` manages ``plasma-core``'s internal blockchain.
+This includes storing any necessary transaction and block information.
+``ChainService`` also handles returning information about the stored local state with convenient wrapper functions.
+
 .. _ETHService: services-eth.html
 .. _OperatorService: services-operator.html
 .. _operator: TODO
 .. _JSONRPCSErvice: services-jsonrpc.html
+.. _SyncService: services-sync.html
+.. _ChainService: services-chain.html

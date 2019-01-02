@@ -40,6 +40,9 @@ Our most user-friendly node is ``plasma-extension``, a full plasma node inside a
    :maxdepth: 2
    :caption: Service API Reference
 
+   services-eth
+   services-operator
+   services-jsonrpc
    services-proof
 
 .. _plasma-extension docs: https://plasma-extension.readthedocs.io/en/latest/
