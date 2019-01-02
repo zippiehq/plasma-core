@@ -7,13 +7,13 @@ Plasma Group is an open source initiative developing a simple and well designed 
 If you're looking to contribute to ``plasma-core``, you're in the right place!
 It's contributors like you that make open source projects work, we really couldn't do it without you.
 
-We don't just need people who can contribute code!
+We don't just need people who can contribute code.
 We need people who can run this code for themselves and break it.
 We need people who can report bugs, request new features, and leave helpful comments.
-We need you!
+**We need you!**
 
 We're always available to answer your questions and to help you become a contributor!
-You can reach out to any of the `members of Plasma Group` on GitHub, or send us an email at contributing@plasma.group.
+You can reach out to any of the `members of Plasma Group`_ on GitHub, or send us an email at contributing@plasma.group.
 
 Here at Plasma Group we're trying to foster an inclusive, welcoming, and accessible open source ecosystem.
 The best open source projects are those that make contributing an easy and rewarding experience.
@@ -55,7 +55,7 @@ Packages
 
 Install all required packages with:
 
-::
+.. code::
    $ npm install
 
 Running Tests
@@ -64,7 +64,7 @@ Running Tests
 
 Run all tests with:
 
-::
+.. code::
     $ npm test
 
 **Contributors: remember to run tests before submitting a pull request!**
