@@ -2,6 +2,8 @@
 JSON-RPC Calls
 ==============
 
+pg_getBalance
+=============
 .. code-block:: javascript
 
     pg_getBalance
@@ -21,6 +23,8 @@ A list of token balances in the form `(token, balance)`.
 
 ------------------------------------------------------------------------------
 
+pg_getBlock
+===========
 .. code-block:: javascript
 
     pg_getBlock
@@ -41,6 +45,8 @@ Information about the specified block.
 
 ------------------------------------------------------------------------------
 
+pg_getTransaction
+=================
 .. code-block:: javascript
 
     pg_getTransaction
@@ -61,6 +67,8 @@ Information about the specified transaction.
 
 ------------------------------------------------------------------------------
 
+pg_sendTransaction
+==================
 .. code-block:: javascript
 
     pg_sendTransaction
@@ -85,6 +93,8 @@ The hash of the transaction.
 
 ------------------------------------------------------------------------------
 
+pg_sendRawTransaction
+=====================
 .. code-block:: javascript
 
     pg_sendRawTransaction
