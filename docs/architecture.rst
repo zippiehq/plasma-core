@@ -61,9 +61,24 @@ ChainService_ is another extremely important internal service.
 This includes storing any necessary transaction and block information.
 ``ChainService`` also handles returning information about the stored local state with convenient wrapper functions.
 
+GuardService
+------------
+GuardService_ takes on the important role of keeping your funds safe at all times.
+The ``GuardService`` keeps a constant eye on Ethereum and blocks others from trying to move funds without your permission.
+``GuardService`` queries Ethereum through the ``ETHService`` and pulls other relevant user data from ``ChainService``.
+
+DBService
+---------
+DBService_ simply provides a database that ``ChainService`` uses to store user data.
+Currently, we support two database backends, LevelDB_ and an in-memory ephemeral database (``EphemDB``).
+Most services talk to ``ChainService`` to retrieve data from ``DBService`` instead of talking to ``DBService`` directly.
+
 .. _ETHService: services-eth.html
 .. _OperatorService: services-operator.html
 .. _operator: TODO
 .. _JSONRPCSErvice: services-jsonrpc.html
 .. _SyncService: services-sync.html
 .. _ChainService: services-chain.html
+.. _GuardService: services-guard.html
+.. _DBService: services-db.html
+.. _LevelDB: http://leveldb.org/
