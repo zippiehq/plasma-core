@@ -1,7 +1,6 @@
 ========================
 What is ``plasma-core``?
 ========================
-
 ``plasma-core`` makes up the core of the Plasma Group node ecosystem.
 It contains almost all of the functionality that a full plasma node needs.
 ``plasma-core`` handles things like watching Ethereum, keeping the local state up to date, and talking to the operator.

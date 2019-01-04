@@ -1,8 +1,9 @@
-=====================
-Extending plasma-core
-=====================
-
+=========================
+Extending ``plasma-core``
+=========================
 **Note:** This article is for developers who want to build their own full plasma nodes using ``plasma-core``.
+
+------------------------------------------------------------------------------
 
 As explained in `What is plasma-core?`_ ``plasma-core`` is just the *core* of our plasma node ecosystem.
 It's not really a *full* plasma client.

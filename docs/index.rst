@@ -1,7 +1,6 @@
-=======================================
-Welcome to plasma-core's documentation!
-=======================================
-
+================================================
+Welcome to the documentation of ``plasma-core``!
+================================================
 Hello and welcome to the documentation of Plasma Group's ``plasma-core``!
 A quick note: ``plasma-core`` is **not** our Chrome extension, ``plasma-extension``.
 Documentation for ``plasma-extension`` is available at the `plasma-extension docs`_.

@@ -5,8 +5,8 @@ This document describes, in detail, the architecture of ``plasma-core``.
 If you're a new contributor to ``plasma-core``, welcome!
 Hopefully this document will help you better understand how ``plasma-core`` works under the hood.
 
-plasma-core 101
-===============
+``plasma-core`` 101
+===================
 ``plasma-core`` is composed of a set of *services* that, when woven together, form (almost) a complete node!
 Each of these services performs a very specific role.
 A more in-depth explanation of each individual service is available in the *Service API Reference* section of our documentation.
