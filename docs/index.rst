@@ -11,7 +11,7 @@ What is plasma-core?
 ``plasma-core`` makes up the core of the Plasma Group node ecosystem.
 It contains almost all of the functionality that a full plasma node needs.
 ``plasma-core`` handles things like watching Ethereum, keeping the local state up to date, and talking to the operator.
-A full list of services that ``plasma-core`` provides is documented [here].
+A full list of services that ``plasma-core`` provides is documented in our architecture_ page.
 
 ``plasma-core`` is **not** a full plasma node!
 This means that you'll need to `extend plasma-core`_ to expose the full set of necessary functionality.
@@ -35,6 +35,7 @@ Our most user-friendly node is ``plasma-extension``, a full plasma node inside a
 
    spec-transactions
    spec-proofs
+   spec-jsonrpc
 
 .. toctree::
    :maxdepth: 2
@@ -44,6 +45,11 @@ Our most user-friendly node is ``plasma-extension``, a full plasma node inside a
    services-operator
    services-jsonrpc
    services-proof
+   services-sync
+   services-chain
+   services-guard
+   services-db
 
 .. _plasma-extension docs: https://plasma-extension.readthedocs.io/en/latest/
 .. _extend plasma-core: extending-plasma-core.html
+.. _architecture: architecture.html
