@@ -73,12 +73,12 @@ DBService_ simply provides a database that ``ChainService`` uses to store user d
 Currently, we support two database backends, LevelDB_ and an in-memory ephemeral database (``EphemDB``).
 Most services talk to ``ChainService`` to retrieve data from ``DBService`` instead of talking to ``DBService`` directly.
 
-.. _ETHService: services-eth.html
-.. _OperatorService: services-operator.html
+.. _ETHService: services/eth.html
+.. _OperatorService: services/operator.html
 .. _operator: TODO
-.. _JSONRPCSErvice: services-jsonrpc.html
-.. _SyncService: services-sync.html
-.. _ChainService: services-chain.html
-.. _GuardService: services-guard.html
-.. _DBService: services-db.html
+.. _JSONRPCSErvice: services/jsonrpc.html
+.. _SyncService: services/sync.html
+.. _ChainService: services/chain.html
+.. _GuardService: services/guard.html
+.. _DBService: services/db.html
 .. _LevelDB: http://leveldb.org/

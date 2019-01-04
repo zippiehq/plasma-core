@@ -33,22 +33,22 @@ Our most user-friendly node is ``plasma-extension``, a full plasma node inside a
    :maxdepth: 2
    :caption: Specifications
 
-   spec-transactions
-   spec-proofs
-   spec-jsonrpc
+   specs/transactions
+   specs/proofs
+   specs/jsonrpc
 
 .. toctree::
    :maxdepth: 2
    :caption: Service API Reference
 
-   services-eth
-   services-operator
-   services-jsonrpc
-   services-proof
-   services-sync
-   services-chain
-   services-guard
-   services-db
+   services/eth
+   services/operator
+   services/jsonrpc
+   services/proof
+   services/sync
+   services/chain
+   services/guard
+   services/db
 
 .. _plasma-extension docs: https://plasma-extension.readthedocs.io/en/latest/
 .. _extend plasma-core: extending-plasma-core.html

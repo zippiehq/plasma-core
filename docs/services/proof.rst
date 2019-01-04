@@ -31,6 +31,6 @@ Returns
 
 ``boolean``: ``true`` if the transaction is valid, ``false`` otherwise.
 
-.. _transaction proof specification: spec-proofs.html
-.. _Transaction: spec-transactions.html#transaction-object
-.. _Proof: spec-proofs.html#proof-object
+.. _transaction proof specification: specs/proofs.html
+.. _Transaction: specs/transactions.html#transaction-object
+.. _Proof: specs/proofs.html#proof-object
