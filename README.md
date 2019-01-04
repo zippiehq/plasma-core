@@ -11,6 +11,9 @@ Welcome! If you're looking to contribute to `plasma-core`, you're in the right p
 ### Contributing Guide and CoC
 Plasma Group follows a [Contributing Guide and Code of Conduct](https://github.com/plasma-group/plasma-core/blob/master/.github/CONTRIBUTING.md) adapted slightly from the [Contributor Covenant](https://www.contributor-covenant.org/version/1/4/code-of-conduct.html). All contributors are expected to read through this guide. We're here to cultivate a welcoming and inclusive contributing environment, and every new contributor needs to do their part to uphold our community standards.
 
+### Documentation
+Detailed documentation for `plasma-core` is [available here](https://plasma-core.readthedocs.io/en/latest/). If you'd like to contribute to the documentation, please edit the contents of the [/docs](/docs) folder and submit a pull request here!
+
 ### Requirements and Setup
 #### Node.js
 `plasma-core` is a [`Node.js`](https://nodejs.org/en/) application. You'll need to install `Node.js` (and it's corresponding package manager, `npm`) for your system before continuing.
@@ -42,5 +45,7 @@ $ npm test
 **Contributors: remember to run tests before submitting a pull request!** Code with passing tests makes life easier for everyone and means your contribution can get pulled into this project faster.
 
 ## Architecture
+
+A more detailed explanation of the `plasma-core` architecture is [available here](https://plasma-core.readthedocs.io/en/latest/architecture.html).
 
 ![Architecture Diagram](docs/_static/images/architecture/architecture.png)
