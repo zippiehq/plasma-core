@@ -12,7 +12,7 @@ Returns the balance of a specific account.
 Parameters
 ----------
 
-1. `address` Address of the account to query.
+1. ``address`` - ``string``: Address of the account to query.
 
 -------
 Returns
@@ -31,7 +31,7 @@ Pulls information about the block at a specific height.
 Parameters
 ----------
 
-1. `block` Number of the block to query.
+1. ``block`` - ``number``: Number of the block to query.
 
 -------
 Returns
@@ -51,7 +51,7 @@ Pulls information about a specific transaction.
 Parameters
 ----------
 
-1. `hash` The hash of the transaction.
+1. ``hash`` - ``string``: The hash of the transaction.
 
 -------
 Returns
@@ -71,11 +71,11 @@ Sends a transaction to the node to be processed.
 Parameters
 ----------
 
-1. `transaction` A transaction object.
-    * `from` Address from which the transaction was sent.
-    * `to` Address to which the transaction was sent.
-    * `token` ID of the token to be sent.
-    * `value` Value of tokens to be sent.
+1. ``transaction`` - ``Object``:
+    * ``from`` - ``string``: Address from which the transaction was sent.
+    * ``to`` - ``string``: Address to which the transaction was sent.
+    * ``token`` - ``string``: ID of the token to be sent.
+    * ``value`` - ``number``: Value of tokens to be sent.
 
 -------
 Returns
@@ -95,7 +95,7 @@ Sends a signed transaction to the node to be processed.
 Parameters
 ----------
 
-1. `transaction` Raw signed transaction data.
+1. ``transaction`` - ``string``: Raw signed transaction data.
 
 -------
 Returns
