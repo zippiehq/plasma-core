@@ -41,7 +41,7 @@ In the case that the prover is malicious, this mechanism ensures that a client d
 The simplest way to implement this step is to check that the range referenced in each proof element overlaps with the range in question.
 Here's what that looks like in python:
 
-.. _code-block:: python
+.. code-block:: python
 
     def filter_relevant_proof_elements(range, proof_elements):
         relevant_proof_elements = []
