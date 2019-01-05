@@ -25,6 +25,8 @@ For example, `(0, 100)` and `(100, 200`) can be merged into `(0, 200)`, but `(0,
 
 Transaction Object
 ==================
+All transactions must take the following format:
+
 .. code-block:: javascript
 
     {
@@ -38,5 +40,10 @@ Transaction Object
         signature: string
     }
 
+``from`` and ``to`` must both be valid 20 byte Ethereum addresses_.
+The ``signature`` must be created over the hash of the encoded transaction.
+``plasma-core`` uses a `custom encoding scheme`_ to simplify the decoding process on Etheruem.
+
 .. _number line: https://en.wikipedia.org/wiki/Number_line
 .. _proof specificaton: specs/proofs.html
+.. _addresses: https://en.wikipedia.org/wiki/Ethereum#Addresses
