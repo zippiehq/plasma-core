@@ -29,7 +29,10 @@ class SyncService extends BaseService {
     // TODO: Figure out what to do if the operator tries to cheat.
     const ranges = await this.app.chainService.getOwnedRanges()
     for (let range of ranges) {
-      let transaction = await this.app.operatorService.getTransaction(range, event.number)
+      let transaction = await this.app.operatorService.getTransaction(
+        range,
+        event.number
+      )
       await this.app.chainService.addTransaction(transaction)
     }
   }

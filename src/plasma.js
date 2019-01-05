@@ -1,7 +1,8 @@
 const utils = require('plasma-utils')
 
 const DefaultDBProvider = require('./services/db').DefaultDBProvider
-const DefaultOperatorProvider = require('./services/operator').DefaultOperatorProvider
+const DefaultOperatorProvider = require('./services/operator')
+  .DefaultOperatorProvider
 const DefaultWalletProvider = require('./services/wallet').DefaultWalletProvider
 const JSONRPCService = require('./services/jsonrpc-service')
 const ChainService = require('./services/chain-service')
@@ -59,11 +60,14 @@ class Plasma {
    */
   startService (name) {
     let service = this.services[name]
-    service.start().then(() => {
-      this.logger.log(`${service.name}: OK`)
-    }).catch(() => {
-      // TODO: Figure out how to handle errors here.
-    })
+    service
+      .start()
+      .then(() => {
+        this.logger.log(`${service.name}: OK`)
+      })
+      .catch(() => {
+        // TODO: Figure out how to handle errors here.
+      })
   }
 
   /**

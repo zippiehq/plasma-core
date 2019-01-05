@@ -18,7 +18,9 @@ class BaseWalletProvider extends BaseService {
    * @return {*} List of addresses in this wallet
    */
   async getAccounts () {
-    throw new Error('Classes that extend BaseWalletProvider must implement this method')
+    throw new Error(
+      'Classes that extend BaseWalletProvider must implement this method'
+    )
   }
 
   /**
@@ -28,7 +30,9 @@ class BaseWalletProvider extends BaseService {
    * @return {*} Signature over the data.
    */
   async sign (address, data) {
-    throw new Error('Classes that extend BaseWalletProvider must implement this method')
+    throw new Error(
+      'Classes that extend BaseWalletProvider must implement this method'
+    )
   }
 }
 
