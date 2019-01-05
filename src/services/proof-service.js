@@ -5,45 +5,101 @@ class ProofSerivce extends BaseService {
     return 'proof-service'
   }
 
-  combineVerifiedSnapshots (snapshots1, snapshots2) {
-    //all the potential bounds are the starts and ends of the snapshots.  We need to split all of these pieces out, find the dupes, and choose the ones with higher blockNumber
-    const firstBounds = getAllStartsAndEnds(snapshots1)
-    const otherBounds = getAllStartsAndEnds(snapshots2)
-    const bounds = firstBounds.concat(otherBounds)
-    let split1 = splitSnapshotsAtBounds(snapshots1, bounds)
-    let split2 = splitSnapshotsAtBounds(snapshot2, bounds)
-    let mergedSnaps = []
-    for (let snapshot of split1) {
-      let i = 0
-      while (i < snap2.length) {
-        snapshotToCompare = split2[i]
-        if (snapshot.start === snapshotToCompare.start) {
-          if (snapshotToCompare.blockNumber > snapshot.blockNumber ) {
-            mergedSnaps.push(snapshotToCompare)
-            split2.splice(i+1) // remove the pushed compared snapshot from the array so we don't include it twice when concatenating later
-            continue
-          }
-        }
-        mergedSnaps.push(snapshot) // if we got here there's no matches and snapshot needs to be included
-        i++
+  //TODO: replace all the math here with BN
+
+  getSnapshotsIntersectingRange (snapshots, start, end) {
+    let intersecting = []
+    for (let snapshot in snapshots) {
+      if (snapshot.start >= start && snapshot.end <= end) {
+        intersecting.push({
+          start: start,
+          end: end,
+          owner: snapshot.owner,
+          blockNumber: snapshot.blockNumber
+        })
       }
     }
-    mergedSnaps = mergedSnaps.concat(split2) // what's left of snap2split has no overlap and we add back
-    return cleanSnapshots(mergedSnaps) 
+    return intersecting
   }
 
-  cleanSnapshots (snapshots) {
-    
+  cleanSnapshots (snapshots) { // removes snapshots with start == end and merges when adjacent and same owner/blockNum.  assumes no overlapping starts
+  debugger
+  snapshots = snapshots.sort((a,b) => {return a.start - b.start})
+    let i = 0
+    debugger
+    while (i < snapshots.length - 1) {
+      let thisSnapshot = snapshots[i]
+      if (thisSnapshot.start === thisSnapshot.end) {
+        snapshots.splice(i,1)
+        continue
+      }
+      const nextSnapshot = snapshots[i + 1]
+      if (thisSnapshot.owner !== nextSnapshot.owner || thisSnapshot.blockNumber !== nextSnapshot.blockNumber) {
+        i++
+        continue
+      } else {
+        const snapshotToInsert = {
+          start: thisSnapshot.start,
+          end: nextSnapshot.end,
+          owner: thisSnapshot.owner,
+          blockNumber: thisSnapshot.blockNumber
+        }
+        snapshots.splice(i, 2, snapshotToInsert)
+      }
+    }
+    debugger
+    return snapshots
+  }
+
+  combineVerifiedSnapshots (snapshots1, snapshots2) {
+    //all the potential bounds are the starts and ends of the snapshots.  We need to split all of these pieces out, find the dupes, and choose the ones with higher blockNumber
+    const firstBounds = this.getAllStartsAndEnds(snapshots1)
+    const otherBounds = this.getAllStartsAndEnds(snapshots2)
+    const bounds = firstBounds.concat(otherBounds)
+    let split1 = this.splitSnapshotsAtBounds(snapshots1, bounds)
+    let split2 = this.splitSnapshotsAtBounds(snapshots2, bounds)
+    let mergedSnaps = []
+    let untouchedInSplit2 = split2
+    // once split maximally, this loop chooses the overlaps with higher blockNumber along with those non-overlapping.
+    loop1: // TODO: replace this weird double matching n^2 algorithm with an O(n) -- realized after we can just concat arrays, sort by start, and compare sequentially.  much cleaner! (?)
+    for (let snapshot of split1) {
+      for (let competingSnapshot of split2) {
+        if (snapshot.start === competingSnapshot.start) {
+          const laterSnapshot = (snapshot.blockNumber > competingSnapshot.number) ? snapshot : competingSnapshot
+          mergedSnaps.push(laterSnapshot)
+          untouchedInSplit2.splice(untouchedInSplit2.indexOf(competingSnapshot), 1) // remove it from untouched because it was just compared
+          continue loop1
+        }
+      }
+      mergedSnaps.push(snapshot) // if we didn't continue loop1 above, it's untouched and we have to add it to return vals
+    }
+    // for (let snapshot of split1) {
+    //   let i = 0
+    //   while (i < split2.length) {
+    //     debugger
+    //     let snapshotToCompare = split2[i]
+    //     if (snapshot.start === snapshotToCompare.start && snapshotToCompare.blockNumber > snapshot.blockNumber) {
+    //       mergedSnaps.push(snapshotToCompare)
+    //       split2.splice(i+1) // remove the pushed compared snapshot from the array so we don't include it twice when concatenating later
+    //       continue
+    //     }
+    //     mergedSnaps.push(snapshot) // if we got here there's no matches and snapshot needs to be included
+    //     i++
+    //   }
+    // }
+    // mergedSnaps = mergedSnaps.concat(split2) // what's left of snap2split has no overlap and we add back
+    const allSnapshotToClean = mergedSnaps.concat(untouchedInSplit2)
+    return this.cleanSnapshots(allSnapshotToClean) 
   }
 
   getAllStartsAndEnds (snapshots) {
     const starts = snapshots.map((snapshot) => {return snapshot.start})
-    const ends = snapshots1.map((snapshot) => {return snapshot.end})
+    const ends = snapshots.map((snapshot) => {return snapshot.end})
     return starts.concat(ends)
   }
   
   splitSnapshotAtBounds (snapshot, bounds) {
-    bounds = bounds.sort()
+    bounds = bounds.sort((a, b) => {return a - b})
     let relevantBounds = []
     bounds.forEach( (bound) => {if (snapshot.start < bound && snapshot.end > bound) relevantBounds.push(bound)})
     if (relevantBounds.length === 0) return [snapshot] // no split occurred
@@ -51,17 +107,26 @@ class ProofSerivce extends BaseService {
     let nextBound = relevantBounds[0]
     let nextStart = snapshot.start
     for (let bound of relevantBounds) {
-      splitSnaps.push({start: nextStart, end: bound, owner: snapshot.owner, block: snapshot.block})
+      splitSnaps.push({
+        start: nextStart,
+        end: bound, 
+        owner: snapshot.owner, 
+        blockNumber: snapshot.blockNumber
+      })
       nextStart = bound
     }
-    splitSnaps.push({start: nextStart, end: snapshot.end, owner: snapshot.owner, block: snapshot.block})
+    splitSnaps.push({
+      start: nextStart, 
+      end: snapshot.end, 
+      owner: snapshot.owner, 
+      blockNumber: snapshot.blockNumber
+    })
     return splitSnaps
   }
 
   splitSnapshotsAtBounds (snapshots, bounds) {
     let newSnapshots = []
     for (let snapshot of snapshots) {
-      debugger
       const splitSnapshot = this.splitSnapshotAtBounds(snapshot, bounds)
       newSnapshots = newSnapshots.concat(splitSnapshot)
     }
