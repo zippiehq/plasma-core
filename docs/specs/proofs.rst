@@ -88,6 +88,46 @@ The verifier can then save the proof into their local database for future use.
 
 Proof Object
 ============
+All proofs must take the following format:
+
+.. code-block:: javascript
+
+    {
+        deposit_records: [
+            {
+                range: {
+                    start: number,
+                    end: number
+                },
+                block: number
+            },
+            ...
+        ],
+        transaction_records: [
+            // non-null transaction
+            {
+                range: {
+                    start: number,
+                    end: number
+                },
+                block: number,
+                from: string,
+                to: string,
+                signature: string,
+                inclusion_proof: string
+            },
+            // null transaction
+            {
+                range: {
+                    start: number,
+                    end: number
+                },
+                block: number,
+                non_inclusion_proof: string
+            }
+            ...
+        ]
+    }
 
 .. _range: specs/transactions.html#ranges
 .. _transaction: specs/transactions.html
