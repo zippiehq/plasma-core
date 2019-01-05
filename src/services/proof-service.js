@@ -5,7 +5,42 @@ class ProofSerivce extends BaseService {
     return 'proof-service'
   }
 
+  combineVerifiedSnapshots (snapshots1, snapshots2) {
+    //all the potential bounds are the starts and ends of the snapshots.  We need to split all of these pieces out, find the dupes, and choose the ones with higher blockNumber
+    const firstBounds = getAllStartsAndEnds(snapshots1)
+    const otherBounds = getAllStartsAndEnds(snapshots2)
+    const bounds = firstBounds.concat(otherBounds)
+    let split1 = splitSnapshotsAtBounds(snapshots1, bounds)
+    let split2 = splitSnapshotsAtBounds(snapshot2, bounds)
+    let mergedSnaps = []
+    for (let snapshot of split1) {
+      let i = 0
+      while (i < snap2.length) {
+        snapshotToCompare = split2[i]
+        if (snapshot.start === snapshotToCompare.start) {
+          if (snapshotToCompare.blockNumber > snapshot.blockNumber ) {
+            mergedSnaps.push(snapshotToCompare)
+            split2.splice(i+1) // remove the pushed compared snapshot from the array so we don't include it twice when concatenating later
+            continue
+          }
+        }
+        mergedSnaps.push(snapshot) // if we got here there's no matches and snapshot needs to be included
+        i++
+      }
+    }
+    mergedSnaps = mergedSnaps.concat(split2) // what's left of snap2split has no overlap and we add back
+    return cleanSnapshots(mergedSnaps) 
+  }
 
+  cleanSnapshots (snapshots) {
+    
+  }
+
+  getAllStartsAndEnds (snapshots) {
+    const starts = snapshots.map((snapshot) => {return snapshot.start})
+    const ends = snapshots1.map((snapshot) => {return snapshot.end})
+    return starts.concat(ends)
+  }
   
   splitSnapshotAtBounds (snapshot, bounds) {
     bounds = bounds.sort()
@@ -32,6 +67,7 @@ class ProofSerivce extends BaseService {
     }
     return newSnapshots
   }
+
   /*for each snapshot: 
     splitNapshots = splitSnapshotAtBounds(snapshot)
     newSnapshots = newSna.concat(splitSnapshots)
@@ -78,7 +114,7 @@ class ProofSerivce extends BaseService {
     return cleanSnapshots (combinedsnaps.cocat(snap2split)) // what's left of snap2split has no competition
     
 
-  splitSnapshotsAtBounds = function ([snapshots], [bounds])
+  splitSnapshotsAtBounds = function ([snapshots], [bounds])  DONE TESTED
     newSnapshots = []
     for each snapshot: 
       splitNapshots = splitSnapshotAtBounds(snapshot)
@@ -87,7 +123,7 @@ class ProofSerivce extends BaseService {
       
 
 
-  splitSnapshotAtBounds = function(snapshot, bounds) DONE PENDING TESTING
+  splitSnapshotAtBounds = function(snapshot, bounds) DONE TESTED
     sort bounds
     splitSnaps = []
     nextBoundIndex = 0
