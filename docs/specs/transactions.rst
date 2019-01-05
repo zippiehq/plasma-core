@@ -47,3 +47,4 @@ The ``signature`` must be created over the hash of the encoded transaction.
 .. _number line: https://en.wikipedia.org/wiki/Number_line
 .. _proof specificaton: specs/proofs.html
 .. _addresses: https://en.wikipedia.org/wiki/Ethereum#Addresses
+.. _custom encoding scheme: specs/encoding.html
