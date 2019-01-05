@@ -20,6 +20,9 @@ Documentation for ``plasma-extension`` is available at the `plasma-extension doc
 
    specs/transactions
    specs/proofs
+   specs/contract
+   specs/encoding
+   specs/sum-tree
    specs/jsonrpc
 
 .. toctree::
