@@ -47,9 +47,11 @@ class ETHService extends BaseService {
    * @param {*} amount Amount to deposit.
    */
   deposit (amount) {
-    return util.promisify(this.contract.deposit({
-      value: amount
-    }))
+    return util.promisify(
+      this.contract.deposit({
+        value: amount
+      })
+    )
   }
 
   /**

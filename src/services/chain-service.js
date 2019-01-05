@@ -30,7 +30,7 @@ class ChainService extends BaseService {
    */
   async getOwnedRanges (address) {
     // TODO: Move this logic into RangeManagerService.
-    const ranges = await this.db.get(`ranges:${address}`) || []
+    const ranges = (await this.db.get(`ranges:${address}`)) || []
     return ranges
   }
 
@@ -132,7 +132,7 @@ class ChainService extends BaseService {
    */
   async hasTransaction (hash) {
     let tx = await this.db.get(`transaction:${hash}`)
-    return (tx !== undefined)
+    return tx !== undefined
   }
 
   /**
@@ -141,7 +141,7 @@ class ChainService extends BaseService {
    */
   async addTransaction (transaction) {
     // TODO: Check if the transaction is valid.
-    let ranges = await this.getOwnedRanges(transaction.to) || []
+    let ranges = (await this.getOwnedRanges(transaction.to)) || []
     ranges.push(transaction.range)
     // TODO: Move this logic into RangeManagerService.
     await this.db.set(`ranges:${transaction.to}`, ranges)
@@ -159,9 +159,11 @@ class ChainService extends BaseService {
     // TODO: Move this logic into RangeManagerService.
     let senderOwnsRange = false
     for (let range of ranges) {
-      if (range.token === transaction.range.token &&
-          range.start <= transaction.range.start &&
-          range.end >= transaction.range.end) {
+      if (
+        range.token === transaction.range.token &&
+        range.start <= transaction.range.start &&
+        range.end >= transaction.range.end
+      ) {
         senderOwnsRange = true
       }
     }
@@ -169,7 +171,9 @@ class ChainService extends BaseService {
       throw new Error('Sender does not own the specified range')
     }
 
-    const receipt = await this.app.services.operator.sendTransaction(transaction)
+    const receipt = await this.app.services.operator.sendTransaction(
+      transaction
+    )
 
     // TODO: This incorrectly replaces the spent ranges, fix.
     // TODO: Move this logic into RangeManagerService.

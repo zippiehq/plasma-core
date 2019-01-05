@@ -18,23 +18,23 @@ const getAllFunctions = (instance, ignore = [], prefix = '') => {
 }
 
 const JSONRPC_ERRORS = {
-  'PARSE_ERROR': {
+  PARSE_ERROR: {
     code: -32700,
     message: 'Parse error'
   },
-  'INVALID_REQUEST': {
+  INVALID_REQUEST: {
     code: -32600,
     message: 'Invalid request'
   },
-  'METHOD_NOT_FOUND': {
+  METHOD_NOT_FOUND: {
     code: -32601,
     message: 'Method not found'
   },
-  'INVALID_PARAMS': {
+  INVALID_PARAMS: {
     code: -32602,
     message: 'Invalid params'
   },
-  'INTERNAL_ERROR': {
+  INTERNAL_ERROR: {
     code: -32603,
     message: 'Internal error'
   }
@@ -49,10 +49,7 @@ class JSONRPCService extends BaseService {
     this.app = options.app
 
     this.subdispatchers = []
-    const subdispatchers = [
-      ChainSubdispatcher,
-      WalletSubdispatcher
-    ]
+    const subdispatchers = [ChainSubdispatcher, WalletSubdispatcher]
     for (let subdispatcher of subdispatchers) {
       this._registerSubdispatcher(subdispatcher)
     }
@@ -67,11 +64,13 @@ class JSONRPCService extends BaseService {
    * @return {Object} All subdispatcher methods as a single object.
    */
   getAllMethods () {
-    return this.subdispatchers.map((subdispatcher) => {
-      return subdispatcher.getMethods()
-    }).reduce((pre, cur) => {
-      return { ...pre, ...cur }
-    })
+    return this.subdispatchers
+      .map((subdispatcher) => {
+        return subdispatcher.getMethods()
+      })
+      .reduce((pre, cur) => {
+        return { ...pre, ...cur }
+      })
   }
 
   /**
@@ -146,9 +145,11 @@ class JSONRPCService extends BaseService {
    * @param {*} Dispatcher Subdispatcher to register.
    */
   _registerSubdispatcher (Dispatcher) {
-    this.subdispatchers.push(new Dispatcher({
-      app: this.app
-    }))
+    this.subdispatchers.push(
+      new Dispatcher({
+        app: this.app
+      })
+    )
   }
 }
 
@@ -164,7 +165,9 @@ class Subdispatcher {
    * Returns the JSON-RPC prefix of this subdispatcher.
    */
   get prefix () {
-    throw new Error('Classes that extend Subdispatcher must implement this method')
+    throw new Error(
+      'Classes that extend Subdispatcher must implement this method'
+    )
   }
 
   /**

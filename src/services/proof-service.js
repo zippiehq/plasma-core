@@ -89,7 +89,11 @@ class ProofSerivce extends BaseService {
 
     const firstChunk = sortedChunks[0]
     const lastChunk = sortedChunks[sortedChunks.length - 1]
-    return range.start >= firstChunk.tx.start && range.end <= lastChunk.tx.end && this._checkChunksTouch(sortedChunks)
+    return (
+      range.start >= firstChunk.tx.start &&
+      range.end <= lastChunk.tx.end &&
+      this._checkChunksTouch(sortedChunks)
+    )
   }
 
   /**

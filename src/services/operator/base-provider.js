@@ -19,7 +19,9 @@ class BaseOperatorProvider extends BaseService {
    * @return {*} List of pending transaction hashes.
    */
   async getPendingTransactions (address) {
-    throw new Error('Classes that extend BaseOperatorProvider must implement this method')
+    throw new Error(
+      'Classes that extend BaseOperatorProvider must implement this method'
+    )
   }
 
   /**
@@ -28,7 +30,9 @@ class BaseOperatorProvider extends BaseService {
    * @return {*} A transaction, or null, along with an inclusion proof.
    */
   async getTransaction (hash) {
-    throw new Error('Classes that extend BaseOperatorProvider must implement this method')
+    throw new Error(
+      'Classes that extend BaseOperatorProvider must implement this method'
+    )
   }
 
   /**
@@ -37,7 +41,9 @@ class BaseOperatorProvider extends BaseService {
    * @return {*} A transaction receipt from the operator.
    */
   async sendTransaction (transaction) {
-    throw new Error('Classes that extend BaseOperatorProvider must implement this method')
+    throw new Error(
+      'Classes that extend BaseOperatorProvider must implement this method'
+    )
   }
 }
 
