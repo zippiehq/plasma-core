@@ -24,6 +24,49 @@ describe('RangeService', async () => {
     bob = (await wallet.getAccounts())[0]
   })
 
+  describe('getOwnedRanges(address)', () => {
+    it('should return owned ranges for address', async () => {
+      const ownedRanges = [[10, 100]]
+      // Mock db methods
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+      range.getOwnedRanges(bob).should.eventually.equal(ownedRanges)
+      app.services.db.get.should.be.calledWith(`ranges:${bob}`)
+    })
+  })
+
+  describe('ownsRange(address, range)', () => {
+    beforeEach(async () => {
+      const ownedRanges = [[10, 100]]
+      // Mock db methods
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+    })
+
+    it('should return true for a range the address owns', async () => {
+      const toCheck = [30, 50]
+      range.ownsRange(bob, toCheck).should.eventually.be.ok
+    })
+
+    it('should return false for a range the address does not own', async () => {
+      const toCheck = [150, 200]
+      range.ownsRange(bob, toCheck).should.eventually.not.be.ok
+    })
+
+    it('should return false for a range that partial intersects an owned range start', async () => {
+      const toCheck = [0, 11]
+      range.ownsRange(bob, toCheck).should.eventually.not.be.ok
+    })
+
+    it('should return false for a range that partial intersects an owned range end', async () => {
+      const toCheck = [50, 110]
+      range.ownsRange(bob, toCheck).should.eventually.not.be.ok
+    })
+
+    it('should return false for a range that contains an owned range end', async () => {
+      const toCheck = [0, 110]
+      range.ownsRange(bob, toCheck).should.eventually.not.be.ok
+    })
+  })
+
   describe('addRanges(address, ranges)', () => {
     it('should add a range for address who owns no existing ranges', async () => {
       const toAdd = [0, 100]

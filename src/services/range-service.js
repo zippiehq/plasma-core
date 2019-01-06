@@ -99,7 +99,7 @@ class RangeManagerService extends BaseService {
       throw new Error(`Invalid range provided: ${ranges}`)
     }
 
-    // Sort provided ranges by start
+    // Sort new ranges by start
     ranges.sort((a, b) => a.start - b.start)
 
     let existing = (await this.getOwnedRanges(address)) || []
