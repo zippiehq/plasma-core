@@ -69,8 +69,43 @@ describe.only('Snapshot splitting', function () {
             {start: 10, end: 20, owner: 'b', blockNumber: 1},
             {start: 20, end: 25, owner: 'c', blockNumber: 2},
         ]
-        const intersection = ProofTool.getSnapshotsIntersectingRange(snapshots, start, end)
+        const intersection = ProofTool.getSnapshotsIntersectingRange(start, end, snapshots)
         assert.deepEqual(intersection, expectedIntersection)
-
+    })
+    it.only('should correctly apply given valid history with merges and splits', function (){
+        const deposits = [{start: 0, end: 30, owner: 'a', blockNumber: 0}]
+        const history = [
+            [
+                {
+                    transaction: {implicitStart: 0, implicitEnd: 40, trIndex: 0, blockNumber: 1, transfers: [
+                        {start: 5, end: 10, sender: 'a', recipient: 'b'}
+                    ]},
+ 
+                }
+            ],
+            [
+                {
+                    transaction: {implicitStart: 5, implicitEnd: 35, trIndex: 0, blockNumber: 2, transfers: [
+                        {start: 10, end: 20, sender: 'a', recipient: 'b'}
+                    ]},
+ 
+                }
+            ],
+            [
+                {
+                    transaction: {implicitStart: 0, implicitEnd: 35, trIndex: 0, blockNumber: 3, transfers: [
+                        {start: 5, end: 20, sender: 'b', recipient: 'c'}
+                    ]},
+ 
+                }
+            ]
+        ]
+        const expectedexpectedApplication = [
+            {start:0, end:5, owner:'a', blockNumber:1},
+            {start:5, end:20, owner:'c', blockNumber:3},
+            {start:20, end:30, owner:'a', blockNumber:3}
+        ]
+        const application = ProofTool.applyHistoryToSnapshots(history, deposits)
+        assert.deepEqual(application, expectedexpectedApplication)
     })
 })
