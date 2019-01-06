@@ -9,6 +9,7 @@ class ChainService extends BaseService {
 
     this.app = options.app
     this.db = this.app.services.db
+    this.range = this.app.services.range
   }
 
   get name () {
@@ -24,23 +25,12 @@ class ChainService extends BaseService {
   }
 
   /**
-   * Returns the list of ranges owned by the user.
-   * @param {string} address Address of the account to query.
-   * @return {*} A list of owned ranges.
-   */
-  async getOwnedRanges (address) {
-    // TODO: Move this logic into RangeManagerService.
-    const ranges = (await this.db.get(`ranges:${address}`)) || []
-    return ranges
-  }
-
-  /**
    * Returns the balances of an account.
    * @param {string} address Address of the account to query.
    * @return {*} A list of tokens and balances.
    */
   async getBalances (address) {
-    const ranges = await this.getOwnedRanges(address)
+    const ranges = await this.range.getOwnedRanges(address)
     let balances = {}
     for (let range of ranges) {
       if (!(range.token in balances)) {
@@ -141,10 +131,7 @@ class ChainService extends BaseService {
    */
   async addTransaction (transaction) {
     // TODO: Check if the transaction is valid.
-    let ranges = (await this.getOwnedRanges(transaction.to)) || []
-    ranges.push(transaction.range)
-    // TODO: Move this logic into RangeManagerService.
-    await this.db.set(`ranges:${transaction.to}`, ranges)
+    this.range.addRange(transaction.to, transaction.range)
     await this.db.set(`transaction:${transaction.hash}`, transaction)
   }
 
@@ -153,7 +140,7 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object.
    */
   async sendTransaction (transaction) {
-    let ranges = await this.getOwnedRanges(transaction.from)
+    let ranges = await this.range.getOwnedRanges(transaction.from)
     // TODO: Check that the range being sent is valid.
 
     // TODO: Move this logic into RangeManagerService.

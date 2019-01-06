@@ -5,6 +5,7 @@ const DefaultOperatorProvider = require('./services/operator').DefaultOperatorPr
 const DefaultWalletProvider = require('./services/wallet').DefaultWalletProvider
 const JSONRPCService = require('./services/jsonrpc-service')
 const ChainService = require('./services/chain-service')
+const RangeService = require('./services/range-service')
 
 /**
  * Main class that runs and manages all services.
@@ -38,7 +39,8 @@ class Plasma {
       { type: ChainService },
       { type: JSONRPCService },
       { type: this.options.operatorProvider || DefaultOperatorProvider },
-      { type: this.options.walletProvider || DefaultWalletProvider }
+      { type: this.options.walletProvider || DefaultWalletProvider },
+      { type: RangeService }
     ]
 
     for (let service of services) {
