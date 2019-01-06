@@ -5,28 +5,153 @@ class ProofSerivce extends BaseService {
     return 'proof-service'
   }
 
+  //history[blockNum][i] = {ith transaction, its trIndex, [leafindex], [branch]}
+  checkProof (incomingTx, history, deposits) {
+    if (this.wereDepositsExitedBeforeTransaction(incomingTx, deposits)) throw new Error('invalid history proof--didn\'t give the most recent deposits')
+    const [relevantHistory, verifiedStart] = this.getRelevantHistory(transaction, history, deposits)
+    try {
+      const appliedSnapshot = applyHistoryToSnapshots(relevantHistory, verifiedStart)
+    } catch(err) {
+      throw err
+    }
+  }
+
+  //TODO: implement
+  wereDepositsExitedBeforeTransaction(relevantTransaction, deposits) {
+    return false
+  }
+
+  getRelevantHistory(transaction, history, deposits) { // todo implement (for now it's premature optimization)
+    //intersect with most recent verified histories here (along with trimming "excess proofs" ?)
+    return [history, deposits]
+  }
+
+  applyHistoryToSnapshots(history, snapshots) {
+    for (let blockNumber in history) {
+      for (let proof of history[blockNumber]) {
+        this.checkProofValidity(proof, blockNumber)
+        snapshots = this.applyTransactionProof(proof, snapshots)
+      }
+    }
+    return snapshots
+  }
+
+  applyTransactionProof (proof, snapshots) {
+    const transaction = new serializer.Transaction(proof.transaction)
+    const trIndex = proof.trIndex
+    const transfer = transaction.transfers[proof.trIndex]
+    const [implicitStart, implicitEnd] = this.getImplicitBounds(proof)
+  }
+
+  //todo make this work lol
+  // this does the check the smart contract will do to confirm transaction validity.
+  // takes in proof = {transaction, TRIndex, [leafIndices], [branches]} and blockNumber
+  checkProofValidity(proof, blockNumber) {    // proof = {ith relevant tx, ITS transferIndex, [its tree indexes], [its [branches]]}
+  const firstBranchLength = proof.branches[0].length
+  for (let branch in proof.branches) if (branch.length !== firstBranchLength) return false //proofs must be equal length
+  const root = getBlockRoot(blockNumber) // TODO hardcode or integrate into ETHservice
+  for (let i = 0; i < proof.leafIndices.length; i++) { // todo make sure we don't iterate over proof.branches.length elsewhere, this could result in a vuln?
+      const branch = proof.branches[i]
+      //todo checks on indexbitstring.length <= proof length, proof not empty, proof divides 2
+      const index = new BN(proof.leafIndices[i]).toString(2, firstBranchLength / 2) // path bitstring
+      const path = index.split("").reverse().join("") // reverse ordering so we start with the bottom
+      let encoding = proof.transaction.encode()
+      encoding = '0x' + new BN(encoding).toString(16, 2 * encoding.length)
+      const leafParent = (path[0] == '0') ? branch[0] : branch[1]
+      if ('0x' + leafParent.data.slice(0, 2 * 32) !== ST.hash(encoding)) return false // wasn't the right TX!
+      for (let j = 1; k < path.length; j++) {
+          const bit = path[j]
+          const potentialParent = (bit === '0') ? branch[2 * j] : branch[2 * j + 1]
+          const actualParent = ST.parent(branch[2 * (j - 1)], branch[2 * (j - 1) + 1])
+          if (!areNodesEquivalent(actualParent, potentialParent)) return false
+      }
+      const potentialRoot = (branch.length > 1) ? ST.parent(branch[branch.length-2], branch[branch.length-1]) : branch[branch.length]
+    //TODO check if sum is ffffffff
+      if (!areNodesEquivalent(potentialRoot, root)) return false
+    }
+    return true
+  }
+
+  getBlockNumber(blockNumber) {
+    //TODO hardcode for testing then implement
+  }
+
+  checkBranchValidity
+
+
+  getImplicitBounds(proof) {
+    const leafIndex = new BN(proof.leafIndices[proof.trIndex])
+    const branch = proof.branches[proof.trIndex]
+    const path =  leafIndex.toString(2, branch.length / 2).split('').reverse().join('') // reverse the ordering so we start with the bottom bit
+    for (let i in path) {
+      const bit = path[i]
+      if (bit === '0') rightSum = rightSum.add(firstBranch[i+1].sum)
+      if (bit === '1') leftSum = leftSum.add(lastBranch[i].sum)
+    }
+    const implicitStart = leftSum
+    const implicitEnd = new BN('ffffffffffffffffffffffffffffffff',16).sub(rightSum)
+    return [implicitStart, implicitEnd]
+  }
+
   //TODO: replace all the math here with BN
+
+   /*for each snapshot: 
+    splitNapshots = splitSnapshotAtBounds(snapshot)
+    newSnapshots = newSna.concat(splitSnapshots)
+  return newSnapshots
+
+  // history  =[[proof]]
+  // history[block][i] = proof = {proof = {incomingTransaction, TRIndex, [treeIndex, branch]}
+  /* class RangeManager():
+    ...
+    
+  applyTransaction = function(snapshots, transaction):
+    Check if transaction was included and wekll-formed: for each transaction in multisend:
+      - valid merkle sum branch
+      - transferBounds within getImplicitBounds
+      - right blocknum
+      - valid signature
+    Check if last transfer.sendr == owner at prev block in state
+    apply the transfer
+
+      -split out the transfer at implicitbounds
+      -increment block
+      -split out the send at transferbounds
+      -change the owner at the center
+    clean()
+    return updatesSnapshots
+
+  try:
+      incoming_tx = { ... }
+      relevant_history = history.map(lambda tx: is_relevant(tx, incoming_tx), history)
+      
+      for transaction of relevant_history:
+          state = apply_transaction(state, transaction)
+      
+      return state
+  except err:
+      throw err
+    */
 
   getSnapshotsIntersectingRange (snapshots, start, end) {
     let intersecting = []
-    for (let snapshot in snapshots) {
-      if (snapshot.start >= start && snapshot.end <= end) {
-        intersecting.push({
-          start: start,
-          end: end,
-          owner: snapshot.owner,
-          blockNumber: snapshot.blockNumber
-        })
-      }
+    debugger
+    for (let snapshot of snapshots) {
+      const largerStart = Math.max(snapshot.start, start)
+      const smallerEnd = Math.min(snapshot.end, end)
+      intersecting.push({
+        start: largerStart,
+        end: smallerEnd,
+        owner: snapshot.owner,
+        blockNumber: snapshot.blockNumber
+      })
     }
-    return intersecting
+    return this.cleanSnapshots(intersecting)
   }
 
-  cleanSnapshots (snapshots) { // removes snapshots with start == end and merges when adjacent and same owner/blockNum.  assumes no overlapping starts
-  debugger
+  cleanSnapshots (snapshots) { // removes snapshots with start == end, merge any adjacent with same owner/blockNum.  assumes none overlapping
   snapshots = snapshots.sort((a,b) => {return a.start - b.start})
     let i = 0
-    debugger
     while (i < snapshots.length - 1) {
       let thisSnapshot = snapshots[i]
       if (thisSnapshot.start === thisSnapshot.end) {
@@ -47,7 +172,6 @@ class ProofSerivce extends BaseService {
         snapshots.splice(i, 2, snapshotToInsert)
       }
     }
-    debugger
     return snapshots
   }
 
@@ -73,21 +197,6 @@ class ProofSerivce extends BaseService {
       }
       mergedSnaps.push(snapshot) // if we didn't continue loop1 above, it's untouched and we have to add it to return vals
     }
-    // for (let snapshot of split1) {
-    //   let i = 0
-    //   while (i < split2.length) {
-    //     debugger
-    //     let snapshotToCompare = split2[i]
-    //     if (snapshot.start === snapshotToCompare.start && snapshotToCompare.blockNumber > snapshot.blockNumber) {
-    //       mergedSnaps.push(snapshotToCompare)
-    //       split2.splice(i+1) // remove the pushed compared snapshot from the array so we don't include it twice when concatenating later
-    //       continue
-    //     }
-    //     mergedSnaps.push(snapshot) // if we got here there's no matches and snapshot needs to be included
-    //     i++
-    //   }
-    // }
-    // mergedSnaps = mergedSnaps.concat(split2) // what's left of snap2split has no overlap and we add back
     const allSnapshotToClean = mergedSnaps.concat(untouchedInSplit2)
     return this.cleanSnapshots(allSnapshotToClean) 
   }
@@ -133,106 +242,11 @@ class ProofSerivce extends BaseService {
     return newSnapshots
   }
 
-  /*for each snapshot: 
-    splitNapshots = splitSnapshotAtBounds(snapshot)
-    newSnapshots = newSna.concat(splitSnapshots)
-  return newSnapshots
-
-  // history  =[[proof]]
-  // history[block][i] = proof = {proof = {incomingTransaction, TRIndex, [treeIndex, branch]}
-  /* class RangeManager():
-    ...
-    
-  applyTransaction = function(snapshots, transaction):
-    Check if transaction was included and wekll-formed: for each transaction in multisend:
-      - valid merkle sum branch
-      - transferBounds within implicitbounds
-      - right blocknum
-      - valid signature
-    Check if last transfer.sendr == owner at prev block in state
-    apply the transfer
-
-      -split out the transfer at implicitbounds
-      -increment block
-      -split out the send at transferbounds
-      -change the owner at the center
-    removeAdjacenciesAndEmpties()
-    return updatesSnapshots
-
-  combineVerifiedSnapshots = function ([snapshot1],[snapshot2])
-    bounds = [all starts and ends of snapshot1 and shapshot2, do with bools for no repeats and cleaner cord?]
-    snapshot1Split = splitSnapshotsAtBounds(snapshot1)
-    snapshot2Split = splitSnapshotsAtBounds(snapshot2)
-    cominedSnaps = []
-    for snapshot in snap1split:
-      let i = 0
-      while i < snap2split.length
-        if snapshot.start == snap2split[i]
-          if snapshot.block > snap2split[i]block)
-            combinedSnaps.push(snapshot)
-          else
-            combinedSnaps.push(snap2split[i])
-            snap2split.splice(i) // remove the pushed snap2 from the array so we don't include it twice when concatenating later
-          break
-        combinedSnaps.push(snapshot) // if we got here there's no matches and snapshot needs to be included
-      end
-    return cleanSnapshots (combinedsnaps.cocat(snap2split)) // what's left of snap2split has no competition
-    
-
-  splitSnapshotsAtBounds = function ([snapshots], [bounds])  DONE TESTED
-    newSnapshots = []
-    for each snapshot: 
-      splitNapshots = splitSnapshotAtBounds(snapshot)
-      newSnapshots = newSna.concat(splitSnapshots)
-    return newSnapshots
-      
-
-
-  splitSnapshotAtBounds = function(snapshot, bounds) DONE TESTED
-    sort bounds
-    splitSnaps = []
-    nextBoundIndex = 0
-    nextStart = snapshot.start
-    while (bounds[nextBoundIndex] < snapshot.end) do: 
-      bound = bounds[nextBoundIndex]
-      if bound > snapshot.start
-        splitSnaps.push({start: nextStart, end = bound, owner = owner, block=block})
-        nextStart = bound
-        nextBoundIndex ++ 
-    if splitsnaps.length > 0 // if we really did get a split in this snapshot
-      splitSnaps.push({start: nextBound, end: snapshot.end, owner=o, b=b}) // final last bit
-      return splitSnaps
-    else // existing snapshot was untouched
-      return [snapshot]
-    
-
-  cleanSnapshots = function(snapshots)
-    sort by start order, in a while loop so it doesn't need multiple passes
-    if one.end == next.start and owner block etc all equal, merge end delete pre-merged
-    if snap.start == snap.end delete
-    etc
-
-
-
-      
-
-  try:
-      incoming_tx = { ... }
-      relevant_history = history.map(lambda tx: is_relevant(tx, incoming_tx), history)
-      
-      for transaction of relevant_history:
-          state = apply_transaction(state, transaction)
-      
-      return state
-  except err:
-      throw err
-    */
 
 
 
 
-
-
+// old code below here
 
 
   checkNewTransactionProof (transaction, history) {
@@ -296,7 +310,7 @@ class ProofSerivce extends BaseService {
 
 
   // this does the check the smart contract will do to confirm transaction validity.
-  // takes in proof = {transaction, TRIndex, [leafIndices], [branches]}
+  // takes in proof = {transaction, TRIndex, [leafIndices], [branches]} and blockNumber
   checkTransactionIncludedAndWellFormed(proof, block) {    // proof = {ith relevant tx, ITS transferIndex, [its tree indexes], [its [branches]]}
   const firstBranchLength = proof.branches[0].length
   for (let branch in proof.branches) if (branch.length !== firstBranchLength) return false //proofs must be equal length
