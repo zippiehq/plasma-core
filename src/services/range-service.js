@@ -24,7 +24,7 @@ class RangeManagerService extends BaseService {
   }
 
   get name () {
-    return 'range'
+    return 'rangeManager'
   }
 
   /**

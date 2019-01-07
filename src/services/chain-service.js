@@ -9,7 +9,7 @@ class ChainService extends BaseService {
 
     this.app = options.app
     this.db = this.app.services.db
-    this.range = this.app.services.range
+    this.rangeManager = this.app.services.rangeManager
   }
 
   get name () {
@@ -30,7 +30,7 @@ class ChainService extends BaseService {
    * @return {*} A list of tokens and balances.
    */
   async getBalances (address) {
-    const ranges = await this.range.getOwnedRanges(address)
+    const ranges = await this.rangeManager.getOwnedRanges(address)
     let balances = {}
     for (let range of ranges) {
       if (!(range.token in balances)) {
@@ -131,7 +131,7 @@ class ChainService extends BaseService {
    */
   async addTransaction (transaction) {
     // TODO: Check if the transaction is valid.
-    this.range.addRange(transaction.to, transaction.range)
+    this.rangeManager.addRange(transaction.to, transaction.range)
     await this.db.set(`transaction:${transaction.hash}`, transaction)
   }
 
@@ -140,7 +140,7 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object.
    */
   async sendTransaction (transaction) {
-    let ranges = await this.range.getOwnedRanges(transaction.from)
+    let ranges = await this.rangeManager.getOwnedRanges(transaction.from)
     // TODO: Check that the range being sent is valid.
 
     // TODO: Move this logic into RangeManagerService.
