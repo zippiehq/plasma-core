@@ -27,13 +27,13 @@ TransferRecord Object
 ==================
 A transaction contains a list of `TransferRecord`s which represent the ranges being transacted.  The TransferRecord object takes the following format:
 
-.. code-block:: JSON
+.. code-block:: javascript
 
     {
-        start: number (16 bytes),
-        end: number (16 bytes),
-        from: sender's address,
-        to: recipient's address
+        "start": number (16 bytes),
+        "end": number (16 bytes),
+        "from": sender address,
+        "to": recipient address
     }
 
 ``from`` and ``to`` must both be valid 20 byte Ethereum addresses_.
@@ -44,18 +44,17 @@ Transaction Object
 ==================
 All transactions must take the following format:
 
-.. code-block:: JSON
+.. code-block:: javascript
 
     {
-        blockNumber: number
-        transfers: [
-            tr1: TransferRecord,
-            tr2: TransferRecord,
-            ...
+        "blockNumber": number
+        "transfers": [
+            TransferRecord,
+            TransferRecord,
         ],
         signatures: [
-            sig1: {v: number, r: number, s: number},
-            sig2: {v: number, r:number, s: number}
+            {"v": number, "r": number, "s": number},
+            {"v": number, "r": number, "s": number}
         ]
     }
 The block number must be specified and a transaction's validity is dependent on being included in the same plasma block as described.  This is in accordance to the simplified Plasma Cash exit game as described in `this post`_.
