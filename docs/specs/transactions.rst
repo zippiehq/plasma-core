@@ -24,7 +24,7 @@ For example, `(0, 100)` and `(100, 200`) can be merged into `(0, 200)`, but `(0,
 
 TransferRecord Object
 ==================
-A transaction contains a list of ``TransferRecord``s which represent the ranges being transacted.
+A transaction contains a list of ``TransferRecord``\s which represent the ranges being transacted.
 The ``TransferRecord`` object takes the following format:
 
 .. code-block:: javascript
@@ -40,7 +40,7 @@ The ``TransferRecord`` object takes the following format:
 
 The ``start`` and ``end`` values are 16 bytes each.
 To allow the chain to support multiple ERC20s, this total "number line" of coins is split into 4 bytes' worth of "sections" for different tokens.
-Thus remaining 12 bytes' (=68,719,476,736) will be the chain's maximum capacity for each token.
+Thus remaining 12 bytes' (=8*10^28) will be the chain's maximum capacity for each token.
 For example, if the chain has no deposits, users might recieve coins with a `start` of ``0x00000000000000000000000000000000`` when depositing ERC20 token A into the chain and ``0x00000001000000000000000000000000`` when depositing token B.
 The maximum deposits for token A and B would go up to ``0x00000000ffffffffffffffffffffffff`` and ``0x00000001ffffffffffffffffffffffff``, respectively.
 
