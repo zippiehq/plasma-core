@@ -14,7 +14,7 @@ API
 ===
 .. code-block:: javascript
 
-    checkProof(transaction, proof)
+    checkProof (transaction, proof)
 
 Checks the validity of a transaction using the given proof.
 

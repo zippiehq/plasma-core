@@ -34,17 +34,11 @@ class Plasma {
    */
   _registerServices () {
     const services = [
-      {
-        type: this.options.dbProvider || DefaultDBProvider
-      },
+      { type: this.options.dbProvider || DefaultDBProvider },
       { type: ChainService },
       { type: JSONRPCService },
-      {
-        type: this.options.operatorProvider || DefaultOperatorProvider
-      },
-      {
-        type: this.options.walletProvider || DefaultWalletProvider
-      }
+      { type: this.options.operatorProvider || DefaultOperatorProvider },
+      { type: this.options.walletProvider || DefaultWalletProvider }
     ]
 
     for (let service of services) {
