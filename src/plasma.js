@@ -37,14 +37,14 @@ class Plasma {
       {
         type: this.options.dbProvider || DefaultDBProvider
       },
+      { type: ChainService },
+      { type: JSONRPCService },
       {
         type: this.options.operatorProvider || DefaultOperatorProvider
       },
       {
         type: this.options.walletProvider || DefaultWalletProvider
-      },
-      { type: JSONRPCService },
-      { type: ChainService }
+      }
     ]
 
     for (let service of services) {
