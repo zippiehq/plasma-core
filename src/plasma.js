@@ -1,11 +1,12 @@
 const utils = require('plasma-utils')
 
 const DefaultDBProvider = require('./services/db').DefaultDBProvider
-const DefaultOperatorProvider = require('./services/operator').DefaultOperatorProvider
+const DefaultOperatorProvider = require('./services/operator')
+  .DefaultOperatorProvider
 const DefaultWalletProvider = require('./services/wallet').DefaultWalletProvider
 const JSONRPCService = require('./services/jsonrpc-service')
 const ChainService = require('./services/chain-service')
-const RangeService = require('./services/range-service')
+const RangeManagerService = require('./services/range-manager-service')
 
 /**
  * Main class that runs and manages all services.
@@ -40,7 +41,7 @@ class Plasma {
       { type: JSONRPCService },
       { type: this.options.operatorProvider || DefaultOperatorProvider },
       { type: this.options.walletProvider || DefaultWalletProvider },
-      { type: RangeService }
+      { type: RangeManagerService }
     ]
 
     for (let service of services) {

@@ -7,15 +7,15 @@ chai.should()
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
 
-const RangeService = require('../../src/services/range-service')
+const RangeManagerService = require('../../src/services/range-manager-service')
 const MockWalletProvider = require('../../src/services/wallet')
   .MockWalletProvider
 const app = require('../mock-app')
 
-describe('RangeService', async () => {
+describe('RangeManagerService', async () => {
   let range, wallet, bob
   beforeEach(async () => {
-    range = new RangeService({
+    range = new RangeManagerService({
       app: app,
     })
     wallet = new MockWalletProvider({
