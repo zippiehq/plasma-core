@@ -115,7 +115,8 @@ The transaction validity check in step 1. above is equivalent to checking the sm
 
 
 .. _range: specs/transactions.html#ranges
-.. _transaction: specs/transactions.html
+.. _transaction: specs/sum-tree.html
+.. _sum-tree: specs/encoding.html
 .. _Merkle sum tree inclusion proof: specs/sum-tree.html#inclusion-proof
 .. _proof of inclusion: specs/sum-tree.html#inclusion-proof
 .. _proof of non-inclusion: specs/sum-tree#non-inclusion-proof
