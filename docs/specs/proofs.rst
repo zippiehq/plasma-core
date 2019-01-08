@@ -39,7 +39,7 @@ All proof elements must take the following format:
         ]
     }
     
-For more details on the decoded form of `transaction` objects, see `encoding`_.  Note that the `branches` element is an array--this is because a transaction can consist of more than 1 transfer (e.g. if it's a trade between DAI tokens and ETH).  For each of its transfers, a transaction must be included on a separate branch over the relevant part of the merkle sum tree.  The ``leafIndex`` tells us which slot in the tree that was, allowing us to reconstruct the binary path and therefore tell whether each of the ``sibling`` s were on the left or right side.  The ``parsedSum`` tells us what ``sum`` value the operator gave to the transaction's direct parent node (see `sum-tree`_ for more details).
+For more details on the decoded form of `transaction` objects, see `encoding`_.  Note that the `branches` element is an array--this is because a transaction can consist of more than 1 transfer (e.g. if it's a trade between DAI tokens and ETH).  For each of its transfers, a transaction must be included on a separate branch over the relevant part of the merkle sum tree.  The ``leafIndex`` tells us which slot in the tree that was, allowing us to reconstruct the binary path and therefore tell whether each of the ``sibling`` s were on the left or right side.  The ``parsedSum`` tells us what ``sum`` value the operator gave to the transaction's direct parent node (see `sum tree`_ for more details).
 
 Proof Steps
 -----------
@@ -105,7 +105,7 @@ Once this operation has been recursively applied to all ``proof`` elements, the 
 
 Checking Transaction Validity
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The transaction validity check in step 1. above is equivalent to checking the smart contract's validity condition.  For more details, see the `sum-tree`_ section of this documentation.  However, the basic checks are as follows:
+The transaction validity check in step 1. above is equivalent to checking the smart contract's validity condition.  For more details, see the `sum tree`_ section of this documentation.  However, the basic checks are as follows:
 
 1. Check that the transaction encoding is well-formed
 2. Check that each `signature` in the transaction corresponds to its ``transfer.from`` address
@@ -115,8 +115,8 @@ The transaction validity check in step 1. above is equivalent to checking the sm
 
 
 .. _range: specs/transactions.html#ranges
-.. _transaction: specs/sum-tree.html
-.. _sum-tree: specs/encoding.html
+.. _encoding: /encoding.html
+.. _sum tree: sum-tree.html
 .. _Merkle sum tree inclusion proof: specs/sum-tree.html#inclusion-proof
 .. _proof of inclusion: specs/sum-tree.html#inclusion-proof
 .. _proof of non-inclusion: specs/sum-tree#non-inclusion-proof
