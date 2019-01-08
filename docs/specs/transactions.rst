@@ -30,11 +30,11 @@ All transactions must take the following format:
 .. code-block:: javascript
 
     {
-        block: number,
         range: {
             start: number,
             end: number
         },
+        block: number,
         from: string,
         to: string,
         signature: string
