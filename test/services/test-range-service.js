@@ -162,5 +162,18 @@ describe('RangeService', async () => {
       const ranges = await range.addRange(bob, toAdd)
       app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
     })
+
+    it('should correctly insert ranges provided out of order', async () => {
+      const toAdd = [[250, 300], [81, 82], [100, 150], [85, 90]]
+      const existing = [[0, 80], [200, 210]]
+      const expectation = [[0, 80], [81, 82], [85, 90], [100, 150], [200, 210], [250, 300]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(existing)
+
+      const ranges = await range.addRanges(bob, toAdd)
+      app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
+    })
   })
 })

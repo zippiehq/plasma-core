@@ -13,6 +13,31 @@ function isValidRange (range) {
 }
 
 /**
+ * Orders the provided ranges, collapsing them if possible
+ * @param {*} rangeA A range object.
+ * @param {*} rangeB A range object.
+ * @return {array} array of ordered ranges
+ */
+function orderRanges (rangeA, rangeB) {
+  // No curRange and new range comes before current range
+  if (rangeA[1] < rangeB[0]) {
+    return [rangeA, rangeB]
+  } else if (rangeA[0] === rangeB[1]) {
+    // No curRange and new range start == current range end
+    // merge to end of current range
+    rangeB[1] = rangeA[1]
+    return [rangeB]
+  } else if (rangeA[1] === rangeB[0]) {
+    // If new range end == current range start
+    // merge to front of current range
+    rangeB[0] = rangeA[0]
+    return [rangeB]
+  } else {
+    return [rangeB, rangeA]
+  }
+}
+
+/**
  * Service that manages the user's ranges automatically.
  */
 class RangeManagerService extends BaseService {
@@ -99,75 +124,27 @@ class RangeManagerService extends BaseService {
       throw new Error(`Invalid range provided: ${ranges}`)
     }
 
-    // Sort new ranges by start
-    ranges.sort((a, b) => a.start - b.start)
-
     let existing = (await this.getOwnedRanges(address)) || []
 
-    let curRange
-
-    let newRange
-
-    let nextRanges = []
-
-    // Insert + collapse ranges
-    let j = 0
-    for (let i = 0; i < existing.length; i++) {
-      // All new ranges have been inserted
-      // append existing and break
-      if (j === ranges.length) {
-        nextRanges = nextRanges.concat(existing.slice(i))
-        break
-      }
-
-      curRange = existing[i]
-      newRange = ranges[j]
-
-      // New range comes before current range
-      if (newRange[1] < curRange[0]) {
-        nextRanges.push(newRange)
-        nextRanges.push(curRange)
-        j++
-        continue
-      } else if (newRange[0] === curRange[1]) {
-        // If new range start == current range end
-        // merge to end of current range
-        curRange[1] = newRange[1]
-
-        // Peek at next range to see if
-        // new range end == next range start
-        // i.e. the new range spans two existing
-        // ranges so we can collapse all three into one
-        if (!!existing[i + 1] && newRange[1] === existing[i + 1][0]) {
-          curRange[1] = existing[i + 1][1]
-          i++
-        }
-
-        nextRanges.push(curRange)
-        j++
-        continue
-      } else if (newRange[1] === curRange[0]) {
-        // If new range end == current range start
-        // merge to front of current range
-        curRange[0] = newRange[0]
-        nextRanges.push(curRange)
-        j++
-        continue
-      } else {
-        // New range start is greater than
-        // next range start, keep looking...
-        nextRanges.push(curRange)
-        continue
-      }
+    // If there are no existing owned ranges,
+    // just sort and add the new ranges
+    if (existing.length === 0) {
+      ranges.sort((a, b) => a[0] - b[0])
+      return this.db.set(`ranges:${address}`, ranges)
     }
 
-    // If there are no more existing ranges to
-    // check, append all remaining new ranges
-    if (j < ranges.length) {
-      nextRanges = nextRanges.concat(ranges.slice(j))
-    }
+    ranges = ranges.concat(existing)
+    ranges.sort((a, b) => a[0] - b[0])
 
-    await this.db.set(`ranges:${address}`, nextRanges)
+    const nextRanges = ranges.reduce((nextRanges, newRange) => {
+      if (nextRanges.length === 0) {
+        return [newRange]
+      }
+      let lastRange = nextRanges.pop()
+      return nextRanges.concat(orderRanges(lastRange, newRange))
+    }, [])
+
+    return this.db.set(`ranges:${address}`, nextRanges)
   }
 
   /**
