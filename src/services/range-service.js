@@ -124,7 +124,7 @@ class RangeManagerService extends BaseService {
       throw new Error(`Invalid range provided: ${ranges}`)
     }
 
-    let existing = (await this.getOwnedRanges(address)) || []
+    const existing = (await this.getOwnedRanges(address)) || []
 
     // If there are no existing owned ranges,
     // just sort and add the new ranges
@@ -140,7 +140,7 @@ class RangeManagerService extends BaseService {
       if (nextRanges.length === 0) {
         return [newRange]
       }
-      let lastRange = nextRanges.pop()
+      const lastRange = nextRanges.pop()
       return nextRanges.concat(orderRanges(lastRange, newRange))
     }, [])
 
