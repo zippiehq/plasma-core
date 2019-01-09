@@ -115,9 +115,20 @@ describe('RangeManagerService', async () => {
 
       range.pickRanges(bob, amount).should.eventually.eql(expectation)
     })
+
+    it('should should throw when not enough ranges owned to cover amount', async () => {
+      const amount = 50
+      const existing = [[0, 10], [30, 50]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(existing)
+
+      range.pickRanges(bob, amount).should.be.rejected
+    })
   })
 
-  describe('addRanges(address, ranges)', () => {
+  describe('addRange(address, range)', () => {
     it('should add a range for address who owns no existing ranges', async () => {
       const toAdd = [0, 100]
       const expectation = [toAdd]
@@ -212,17 +223,95 @@ describe('RangeManagerService', async () => {
       const ranges = await range.addRange(bob, toAdd)
       app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
     })
+  })
 
+  describe('addRanges(address, range)', () => {
     it('should correctly insert ranges provided out of order', async () => {
       const toAdd = [[250, 300], [81, 82], [100, 150], [85, 90]]
       const existing = [[0, 80], [200, 210]]
-      const expectation = [[0, 80], [81, 82], [85, 90], [100, 150], [200, 210], [250, 300]]
+      const expectation = [
+        [0, 80],
+        [81, 82],
+        [85, 90],
+        [100, 150],
+        [200, 210],
+        [250, 300],
+      ]
 
       // Mock db methods
       app.services.db.set = sinon.fake()
       app.services.db.get = sinon.fake.returns(existing)
 
       const ranges = await range.addRanges(bob, toAdd)
+      app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
+    })
+  })
+
+  describe('removeRange(address, ranges)', () => {
+    it('should remove a range for address where full range is removed', async () => {
+      const ownedRanges = [[0, 200]]
+      const toRemove = [0, 200]
+      const expectation = []
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+
+      const ranges = await range.removeRange(bob, toRemove)
+      app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
+    })
+
+    it('should remove a range for address where partial range is removed', async () => {
+      const ownedRanges = [[0, 200]]
+      const toRemove = [100, 150]
+      const expectation = [[0, 100], [150, 200]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+
+      const ranges = await range.removeRange(bob, toRemove)
+      app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
+    })
+
+    it('should remove a range for address where start of a range is removed', async () => {
+      const ownedRanges = [[0, 200]]
+      const toRemove = [0, 100]
+      const expectation = [[100, 200]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+
+      const ranges = await range.removeRange(bob, toRemove)
+      app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
+    })
+
+    it('should remove a range for address where end of a range is removed', async () => {
+      const ownedRanges = [[0, 200]]
+      const toRemove = [100, 200]
+      const expectation = [[0, 100]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+
+      const ranges = await range.removeRange(bob, toRemove)
+      app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
+    })
+  })
+
+  describe('removeRanges(address, ranges)', () => {
+    it('should remove ranges for address', async () => {
+      const ownedRanges = [[0, 200], [250, 350], [500, 600]]
+      const toRemove = [[25, 100], [250, 349]]
+      const expectation = [[0, 25], [100, 200], [349, 350], [500, 600]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+
+      const ranges = await range.removeRanges(bob, toRemove)
       app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
     })
   })

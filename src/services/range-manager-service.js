@@ -38,6 +38,17 @@ function orderRanges (rangeA, rangeB) {
 }
 
 /**
+ * Checks is an array of ranges contains another range
+ * @param {array} ranges An array of ranges to check.
+ * @param {*} range A range object.
+ * @return {boolean} `true` if the user owns the range, `false` otherwise.
+ */
+function containsRange (ranges, range) {
+  const [start, end] = range
+  return ranges.some(([_start, _end]) => _start <= start && _end >= end)
+}
+
+/**
  * Service that manages the user's ranges automatically.
  */
 class RangeManagerService extends BaseService {
@@ -71,10 +82,7 @@ class RangeManagerService extends BaseService {
    */
   async ownsRange (address, range) {
     const ownedRanges = await this.getOwnedRanges(address)
-    const [start, end] = range
-    return ownedRanges.some(
-      ([ownedStart, ownedEnd]) => ownedStart <= start && ownedEnd >= end
-    )
+    return containsRange(ownedRanges, range)
   }
 
   /**
@@ -178,15 +186,57 @@ class RangeManagerService extends BaseService {
    * @param {*} range A range to remove.
    */
   async removeRange (address, range) {
-    throw new Error('Not implemented')
+    this.removeRanges(address, [range])
   }
 
   /**
    * Removes a sequence of ranges for a given user.
    * @param {*} address An address.
-   * @param {*} range A range to remove.
+   * @param {*} range An array of ranges to remove.
    */
-  async removeRanges (address, ranges) {}
+  async removeRanges (address, ranges) {
+    const ownedRanges = await this.getOwnedRanges(address)
+
+    if (ranges.some((range) => !containsRange(ownedRanges, range))) {
+      throw new Error(`Attempted to remove a range not owned by address.`)
+    }
+
+    ranges.sort((a, b) => b[0] - a[0])
+
+    let toRemove = ranges.pop()
+    const nextRanges = ownedRanges.reduce((nextRanges, ownedRange) => {
+      if (!toRemove) {
+        // All ranges removed already
+        nextRanges.push(ownedRange)
+      } else if (
+        ownedRange[0] === toRemove[0] &&
+        ownedRange[1] === toRemove[1]
+      ) {
+        // Remove this range
+        toRemove = ranges.pop()
+      } else if (ownedRange[0] < toRemove[0] && ownedRange[1] > toRemove[1]) {
+        // This range contains the range to remove
+        nextRanges = nextRanges.concat([
+          [ownedRange[0], toRemove[0]],
+          [toRemove[1], ownedRange[1]]
+        ])
+        toRemove = ranges.pop()
+      } else if (ownedRange[0] === toRemove[0] && ownedRange[1] > toRemove[1]) {
+        // Remove front of a range
+        nextRanges.push([toRemove[1], ownedRange[1]])
+        toRemove = ranges.pop()
+      } else if (ownedRange[0] < toRemove[0] && ownedRange[1] === toRemove[1]) {
+        // Remove end of a range
+        nextRanges.push([ownedRange[0], toRemove[0]])
+        toRemove = ranges.pop()
+      } else {
+        nextRanges.push(ownedRange)
+      }
+      return nextRanges
+    }, [])
+
+    return this.db.set(`ranges:${address}`, nextRanges)
+  }
 }
 
 module.exports = RangeManagerService
