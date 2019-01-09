@@ -80,24 +80,49 @@ class RangeManagerService extends BaseService {
   /**
    * Picks the best ranges for a given transaction.
    * @param {string} address An address.
-   * @param {string} token Identifier of the token being sent.
    * @param {number} amount Number of tokens being sent.
    * @return {*} List of ranges to use for the transaction.
    */
-  async pickRanges (address, token, amount) {
-    throw new Error('Not implemented')
+  async pickRanges (address, amount) {
+    const ownedRanges = await this.getOwnedRanges(address)
+    const sortedRanges = ownedRanges.sort((a, b) => b[1] - b[0] - (a[1] - a[0]))
+    const pickedRanges = []
+
+    while (amount > 0) {
+      // throw if no ranges left
+      if (sortedRanges.length === 0) {
+        throw new Error(
+          'Address does not own enough ranges to cover the amount.'
+        )
+      }
+
+      const smallestRange = sortedRanges.pop()
+      const smallestRangeLength = smallestRange[1] - smallestRange[0]
+
+      if (smallestRangeLength <= amount) {
+        pickedRanges.push(smallestRange)
+        amount -= smallestRangeLength
+      } else {
+        // Pick a partial range
+        const partialRange = [smallestRange[0], smallestRange[0] + amount]
+        pickedRanges.push(partialRange)
+        break
+      }
+    }
+
+    pickedRanges.sort((a, b) => a[0] - b[0])
+    return pickedRanges
   }
 
   /**
    * Determines if an account can spend an amount of a token.
    * @param {*} address An address
-   * @param {*} token Identifier of the token being sent.
    * @param {*} amount Number of tokens being sent.
    * @return {boolean} `true` if the user can spend the tokens, `false` otherwise.
    */
-  async canSpend (address, token, amount) {
+  async canSpend (address, amount) {
     try {
-      await this.pickRanges(address, token, amount)
+      await this.pickRanges(address, amount)
       return true
     } catch (err) {
       return false
@@ -124,16 +149,16 @@ class RangeManagerService extends BaseService {
       throw new Error(`Invalid range provided: ${ranges}`)
     }
 
-    const existing = (await this.getOwnedRanges(address)) || []
+    const ownedRanges = (await this.getOwnedRanges(address)) || []
 
-    // If there are no existing owned ranges,
+    // If there are no owned ranges,
     // just sort and add the new ranges
-    if (existing.length === 0) {
+    if (ownedRanges.length === 0) {
       ranges.sort((a, b) => a[0] - b[0])
       return this.db.set(`ranges:${address}`, ranges)
     }
 
-    ranges = ranges.concat(existing)
+    ranges = ranges.concat(ownedRanges)
     ranges.sort((a, b) => a[0] - b[0])
 
     const nextRanges = ranges.reduce((nextRanges, newRange) => {
@@ -155,6 +180,13 @@ class RangeManagerService extends BaseService {
   async removeRange (address, range) {
     throw new Error('Not implemented')
   }
+
+  /**
+   * Removes a sequence of ranges for a given user.
+   * @param {*} address An address.
+   * @param {*} range A range to remove.
+   */
+  async removeRanges (address, ranges) {}
 }
 
 module.exports = RangeManagerService

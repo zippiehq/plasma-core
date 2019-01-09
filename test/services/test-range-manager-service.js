@@ -67,6 +67,56 @@ describe('RangeManagerService', async () => {
     })
   })
 
+  describe('pickRanges(address, amount)', () => {
+    it('should pick single range', async () => {
+      const amount = 5
+      const existing = [[0, 25], [30, 50], [80, 85], [200, 250]]
+      const expectation = [[80, 85]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(existing)
+
+      range.pickRanges(bob, amount).should.eventually.eql(expectation)
+    })
+
+    it('should pick partial range', async () => {
+      const amount = 50
+      const existing = [[200, 300]]
+      const expectation = [[200, 250]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(existing)
+
+      range.pickRanges(bob, amount).should.eventually.eql(expectation)
+    })
+
+    it('should pick multiple ranges', async () => {
+      const amount = 50
+      const existing = [[0, 10], [30, 50], [80, 100], [200, 250]]
+      const expectation = [[0, 10], [30, 50], [80, 100]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(existing)
+
+      range.pickRanges(bob, amount).should.eventually.eql(expectation)
+    })
+
+    it('should pick multiple ranges with partial', async () => {
+      const amount = 55
+      const existing = [[0, 10], [30, 50], [80, 100], [200, 250]]
+      const expectation = [[0, 10], [30, 50], [80, 100], [200, 205]]
+
+      // Mock db methods
+      app.services.db.set = sinon.fake()
+      app.services.db.get = sinon.fake.returns(existing)
+
+      range.pickRanges(bob, amount).should.eventually.eql(expectation)
+    })
+  })
+
   describe('addRanges(address, ranges)', () => {
     it('should add a range for address who owns no existing ranges', async () => {
       const toAdd = [0, 100]
