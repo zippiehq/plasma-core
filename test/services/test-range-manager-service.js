@@ -24,6 +24,45 @@ describe('RangeManagerService', async () => {
     bob = (await wallet.getAccounts())[0]
   })
 
+  describe('name', () => {
+    it('should return correct service name', async () => {
+      const expecation = 'rangeManager'
+      // Mock db methods
+      range.name.should.equal(expecation)
+    })
+  })
+
+  describe('canSpend(address, amount)', () => {
+    it('should return true when user has large enough balance to spend amount', async () => {
+      const ownedRanges = [[10, 100]]
+      const amount = 50
+
+      // Mock db methods
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+      range.canSpend(bob, amount).should.eventually.be.ok
+    })
+
+    it('should return true when user has large enough balance to spend amount', async () => {
+      const ownedRanges = [[10, 20], [30, 40], [50, 80]]
+      const amount = 50
+
+      // Mock db methods
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+      range.canSpend(bob, amount).should.eventually.be.ok
+    })
+
+
+    it('should return false when user does not have large enough balance to spend amount', async () => {
+      const ownedRanges = [[10, 100]]
+      const amount = 100
+
+      // Mock db methods
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+      range.canSpend(bob, amount).should.eventually.not.be.ok
+    })
+  })
+
+
   describe('getOwnedRanges(address)', () => {
     it('should return owned ranges for address', async () => {
       const ownedRanges = [[10, 100]]
@@ -303,9 +342,9 @@ describe('RangeManagerService', async () => {
 
   describe('removeRanges(address, ranges)', () => {
     it('should remove ranges for address', async () => {
-      const ownedRanges = [[0, 200], [250, 350], [500, 600]]
+      const ownedRanges = [[0, 10], [25, 200], [250, 350], [500, 600]]
       const toRemove = [[25, 100], [250, 349]]
-      const expectation = [[0, 25], [100, 200], [349, 350], [500, 600]]
+      const expectation = [[0, 10], [100, 200], [349, 350], [500, 600]]
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -313,6 +352,16 @@ describe('RangeManagerService', async () => {
 
       const ranges = await range.removeRanges(bob, toRemove)
       app.services.db.set.should.be.calledWith(`ranges:${bob}`, expectation)
+    })
+
+    it('should throw when trying to remove a range the user does not own', async () => {
+      const ownedRanges = [[0, 200], [250, 350], [500, 600]]
+      const toRemove = [[220, 225]]
+
+      // Mock db methods
+      app.services.db.get = sinon.fake.returns(ownedRanges)
+
+      range.removeRanges(bob, toRemove).should.eventually.be.rejected
     })
   })
 })
