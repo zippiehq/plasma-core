@@ -8,6 +8,7 @@ const BaseService = require('./base-service')
  * @return {boolean} `true` if the range is valid, `false` otherwise.
  */
 function isValidRange ({ start, end }) {
+  // TODO(tarrencev): Validate token
   return start >= 0 && start < end
 }
 
@@ -50,6 +51,21 @@ function containsRange (ranges, { start, end }) {
 }
 
 /**
+ * Creates a range object
+ * @param {String} token Tokens address.
+ * @param {Number} start Range start.
+ * @param {Number} end Range end.
+ * @return {Range} Range object
+ */
+function createRange (token, start, end) {
+  return {
+    token,
+    start,
+    end
+  }
+}
+
+/**
  * Service that manages the user's ranges automatically.
  */
 class RangeManagerService extends BaseService {
@@ -89,10 +105,11 @@ class RangeManagerService extends BaseService {
   /**
    * Picks the best ranges for a given transaction.
    * @param {string} address An address.
+   * @param {string} token A tokens address.
    * @param {number} amount Number of tokens being sent.
    * @return {*} List of ranges to use for the transaction.
    */
-  async pickRanges (address, amount) {
+  async pickRanges (address, token, amount) {
     const ownedRanges = await this.getOwnedRanges(address)
     const sortedRanges = ownedRanges.sort(
       (a, b) => b.end - b.start - (a.end - a.start)
@@ -108,19 +125,23 @@ class RangeManagerService extends BaseService {
       }
 
       const smallestRange = sortedRanges.pop()
-      const smallestRangeLength = smallestRange.end - smallestRange.start
 
-      if (smallestRangeLength <= amount) {
-        pickedRanges.push(smallestRange)
-        amount -= smallestRangeLength
-      } else {
-        // Pick a partial range
-        const partialRange = {
-          start: smallestRange.start,
-          end: smallestRange.start + amount
+      if (smallestRange.token === token) {
+        const smallestRangeLength = smallestRange.end - smallestRange.start
+
+        if (smallestRangeLength <= amount) {
+          pickedRanges.push(smallestRange)
+          amount -= smallestRangeLength
+        } else {
+          // Pick a partial range
+          const partialRange = createRange(
+            smallestRange.token,
+            smallestRange.start,
+            smallestRange.start + amount
+          )
+          pickedRanges.push(partialRange)
+          break
         }
-        pickedRanges.push(partialRange)
-        break
       }
     }
 
@@ -131,12 +152,13 @@ class RangeManagerService extends BaseService {
   /**
    * Determines if an account can spend an amount of a token.
    * @param {*} address An address
+   * @param {string} token A tokens address.
    * @param {*} amount Number of tokens being sent.
    * @return {boolean} `true` if the user can spend the tokens, `false` otherwise.
    */
-  async canSpend (address, amount) {
+  async canSpend (address, token, amount) {
     try {
-      await this.pickRanges(address, amount)
+      await this.pickRanges(address, token, amount)
       return true
     } catch (err) {
       return false
@@ -155,6 +177,7 @@ class RangeManagerService extends BaseService {
   /**
    * Adds ranges for a given user.
    * @param {*} address An address.
+   * @param {string} token A tokens address.
    * @param {*} ranges Ranges to add.
    */
   async addRanges (address, ranges) {
@@ -198,7 +221,7 @@ class RangeManagerService extends BaseService {
   /**
    * Removes a sequence of ranges for a given user.
    * @param {*} address An address.
-   * @param {*} range An array of ranges to remove.
+   * @param {*} ranges An array of ranges to remove.
    */
   async removeRanges (address, ranges) {
     const ownedRanges = await this.getOwnedRanges(address)
@@ -216,33 +239,41 @@ class RangeManagerService extends BaseService {
         nextRanges.push(ownedRange)
       } else if (
         ownedRange.start === toRemove.start &&
-        ownedRange.end === toRemove.end
+        ownedRange.end === toRemove.end &&
+        ownedRange.token === toRemove.token
       ) {
         // Remove this range
         toRemove = ranges.pop()
       } else if (
         ownedRange.start < toRemove.start &&
-        ownedRange.end > toRemove.end
+        ownedRange.end > toRemove.end &&
+        ownedRange.token === toRemove.token
       ) {
         // This range contains the range to remove
         nextRanges = nextRanges.concat([
-          { start: ownedRange.start, end: toRemove.start },
-          { start: toRemove.end, end: ownedRange.end }
+          createRange(ownedRange.token, ownedRange.start, toRemove.start),
+          createRange(ownedRange.token, toRemove.end, ownedRange.end)
         ])
         toRemove = ranges.pop()
       } else if (
         ownedRange.start === toRemove.start &&
-        ownedRange.end > toRemove.end
+        ownedRange.end > toRemove.end &&
+        ownedRange.token === toRemove.token
       ) {
         // Remove front of a range
-        nextRanges.push({ start: toRemove.end, end: ownedRange.end })
+        nextRanges.push(
+          createRange(ownedRange.token, toRemove.end, ownedRange.end)
+        )
         toRemove = ranges.pop()
       } else if (
         ownedRange.start < toRemove.start &&
-        ownedRange.end === toRemove.end
+        ownedRange.end === toRemove.end &&
+        ownedRange.token === toRemove.token
       ) {
         // Remove end of a range
-        nextRanges.push({ start: ownedRange.start, end: toRemove.start })
+        nextRanges.push(
+          createRange(ownedRange.token, ownedRange.start, toRemove.start)
+        )
         toRemove = ranges.pop()
       } else {
         nextRanges.push(ownedRange)
