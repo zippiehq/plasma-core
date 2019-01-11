@@ -7,8 +7,7 @@ const BaseService = require('./base-service')
  * @param {*} range A range object.
  * @return {boolean} `true` if the range is valid, `false` otherwise.
  */
-function isValidRange (range) {
-  const [start, end] = range
+function isValidRange ({ start, end }) {
   return start >= 0 && start < end
 }
 
@@ -20,17 +19,17 @@ function isValidRange (range) {
  */
 function orderRanges (rangeA, rangeB) {
   // No curRange and new range comes before current range
-  if (rangeA[1] < rangeB[0]) {
+  if (rangeA.end < rangeB.start) {
     return [rangeA, rangeB]
-  } else if (rangeA[0] === rangeB[1]) {
+  } else if (rangeA.start === rangeB.end) {
     // No curRange and new range start == current range end
     // merge to end of current range
-    rangeB[1] = rangeA[1]
+    rangeB.end = rangeA.end
     return [rangeB]
-  } else if (rangeA[1] === rangeB[0]) {
+  } else if (rangeA.end === rangeB.start) {
     // If new range end == current range start
     // merge to front of current range
-    rangeB[0] = rangeA[0]
+    rangeB.start = rangeA.start
     return [rangeB]
   } else {
     return [rangeB, rangeA]
@@ -43,9 +42,11 @@ function orderRanges (rangeA, rangeB) {
  * @param {*} range A range object.
  * @return {boolean} `true` if the user owns the range, `false` otherwise.
  */
-function containsRange (ranges, range) {
-  const [start, end] = range
-  return ranges.some(([_start, _end]) => _start <= start && _end >= end)
+function containsRange (ranges, { start, end }) {
+  return ranges.some(
+    ({ start: ownedRangeStart, end: ownedRangeEnd }) =>
+      ownedRangeStart <= start && ownedRangeEnd >= end
+  )
 }
 
 /**
@@ -93,7 +94,9 @@ class RangeManagerService extends BaseService {
    */
   async pickRanges (address, amount) {
     const ownedRanges = await this.getOwnedRanges(address)
-    const sortedRanges = ownedRanges.sort((a, b) => b[1] - b[0] - (a[1] - a[0]))
+    const sortedRanges = ownedRanges.sort(
+      (a, b) => b.end - b.start - (a.end - a.start)
+    )
     const pickedRanges = []
 
     while (amount > 0) {
@@ -105,20 +108,23 @@ class RangeManagerService extends BaseService {
       }
 
       const smallestRange = sortedRanges.pop()
-      const smallestRangeLength = smallestRange[1] - smallestRange[0]
+      const smallestRangeLength = smallestRange.end - smallestRange.start
 
       if (smallestRangeLength <= amount) {
         pickedRanges.push(smallestRange)
         amount -= smallestRangeLength
       } else {
         // Pick a partial range
-        const partialRange = [smallestRange[0], smallestRange[0] + amount]
+        const partialRange = {
+          start: smallestRange.start,
+          end: smallestRange.start + amount
+        }
         pickedRanges.push(partialRange)
         break
       }
     }
 
-    pickedRanges.sort((a, b) => a[0] - b[0])
+    pickedRanges.sort((a, b) => a.start - b.start)
     return pickedRanges
   }
 
@@ -162,12 +168,12 @@ class RangeManagerService extends BaseService {
     // If there are no owned ranges,
     // just sort and add the new ranges
     if (ownedRanges.length === 0) {
-      ranges.sort((a, b) => a[0] - b[0])
+      ranges.sort((a, b) => a.start - b.start)
       return this.db.set(`ranges:${address}`, ranges)
     }
 
     ranges = ranges.concat(ownedRanges)
-    ranges.sort((a, b) => a[0] - b[0])
+    ranges.sort((a, b) => a.start - b.start)
 
     const nextRanges = ranges.reduce((nextRanges, newRange) => {
       if (nextRanges.length === 0) {
@@ -201,7 +207,7 @@ class RangeManagerService extends BaseService {
       throw new Error(`Attempted to remove a range not owned by address.`)
     }
 
-    ranges.sort((a, b) => b[0] - a[0])
+    ranges.sort((a, b) => b.start - a.start)
 
     let toRemove = ranges.pop()
     const nextRanges = ownedRanges.reduce((nextRanges, ownedRange) => {
@@ -209,25 +215,34 @@ class RangeManagerService extends BaseService {
         // All ranges removed already
         nextRanges.push(ownedRange)
       } else if (
-        ownedRange[0] === toRemove[0] &&
-        ownedRange[1] === toRemove[1]
+        ownedRange.start === toRemove.start &&
+        ownedRange.end === toRemove.end
       ) {
         // Remove this range
         toRemove = ranges.pop()
-      } else if (ownedRange[0] < toRemove[0] && ownedRange[1] > toRemove[1]) {
+      } else if (
+        ownedRange.start < toRemove.start &&
+        ownedRange.end > toRemove.end
+      ) {
         // This range contains the range to remove
         nextRanges = nextRanges.concat([
-          [ownedRange[0], toRemove[0]],
-          [toRemove[1], ownedRange[1]]
+          { start: ownedRange.start, end: toRemove.start },
+          { start: toRemove.end, end: ownedRange.end }
         ])
         toRemove = ranges.pop()
-      } else if (ownedRange[0] === toRemove[0] && ownedRange[1] > toRemove[1]) {
+      } else if (
+        ownedRange.start === toRemove.start &&
+        ownedRange.end > toRemove.end
+      ) {
         // Remove front of a range
-        nextRanges.push([toRemove[1], ownedRange[1]])
+        nextRanges.push({ start: toRemove.end, end: ownedRange.end })
         toRemove = ranges.pop()
-      } else if (ownedRange[0] < toRemove[0] && ownedRange[1] === toRemove[1]) {
+      } else if (
+        ownedRange.start < toRemove.start &&
+        ownedRange.end === toRemove.end
+      ) {
         // Remove end of a range
-        nextRanges.push([ownedRange[0], toRemove[0]])
+        nextRanges.push({ start: ownedRange.start, end: toRemove.start })
         toRemove = ranges.pop()
       } else {
         nextRanges.push(ownedRange)
