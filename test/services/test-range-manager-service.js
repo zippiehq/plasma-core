@@ -32,7 +32,7 @@ describe('RangeManagerService', async () => {
     })
   })
 
-  describe('canSpend(address, amount)', () => {
+  describe('canSpend(address, token, amount)', () => {
     it('should return true when user has large enough balance to spend amount', async () => {
       const ownedRanges = [{ token: '0xdeadbeef', start: 10, end: 100 }]
       const amount = 50
@@ -333,7 +333,7 @@ describe('RangeManagerService', async () => {
     })
   })
 
-  describe('addRanges(address, range)', () => {
+  describe('addRanges(address, ranges)', () => {
     it('should correctly insert ranges provided out of order', async () => {
       const toAdd = [
         { token: '0xdeadbeef', start: 250, end: 300 },
@@ -363,7 +363,7 @@ describe('RangeManagerService', async () => {
     })
   })
 
-  describe('removeRange(address, ranges)', () => {
+  describe('removeRange(address, range)', () => {
     it('should remove a range for address where full range is removed', async () => {
       const ownedRanges = [{ token: '0xdeadbeef', start: 0, end: 200 }]
       const toRemove = { token: '0xdeadbeef', start: 0, end: 200 }
