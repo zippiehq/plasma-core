@@ -15,7 +15,7 @@ class BaseWalletProvider extends BaseService {
 
   /**
    * Returns the addresses of all accounts in this wallet.
-   * @return {*} List of addresses in this wallet
+   * @return {Array<String>} List of addresses in this wallet
    */
   async getAccounts () {
     throw new Error(
