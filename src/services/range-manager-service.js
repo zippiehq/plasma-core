@@ -215,7 +215,7 @@ class RangeManagerService extends BaseService {
    * @param {*} range A range to remove.
    */
   async removeRange (address, range) {
-    this.removeRanges(address, [range])
+    return this.removeRanges(address, [range])
   }
 
   /**
