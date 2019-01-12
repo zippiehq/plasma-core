@@ -25,28 +25,16 @@ class ETHService extends BaseService {
     this.contract = PlasmaContract.at(config.contract.address)
 
     // Start watching for events
-    this.watchEvents()
-  }
-
-  /**
-   * Watches for and relays Ethereum events.
-   */
-  watchEvents () {
-    // TODO: Figure out how robust this is.
-    this.contract.allEvents().watch((error, event) => {
-      if (error) {
-        console.log(error)
-      } else {
-        this.emit(`event:${event.event}`, event)
-      }
-    })
+    this._watchEvents()
   }
 
   /**
    * Deposits value into the plasma contract.
+   * @param {*} token Token to deposit.
    * @param {*} amount Amount to deposit.
+   * @return {*} A transaction receipt.
    */
-  deposit (amount) {
+  deposit (token, amount) {
     return util.promisify(
       this.contract.deposit({
         value: amount
@@ -74,6 +62,20 @@ class ETHService extends BaseService {
    */
   getBlock (block) {
     return util.promisify(this.contract.getBlock(block))
+  }
+
+  /**
+   * Watches for and relays Ethereum events.
+   */
+  _watchEvents () {
+    // TODO: Figure out how robust this is.
+    this.contract.allEvents().watch((error, event) => {
+      if (error) {
+        console.log(error)
+      } else {
+        this.emit(`event:${event.event}`, event)
+      }
+    })
   }
 }
 
