@@ -111,4 +111,101 @@ Parameters
 Returns
 -------
 
-The hash of the transaction.
+``String``: The hash of the transaction.
+
+------------------------------------------------------------------------------
+
+pg_getHeight
+============
+.. code-block:: javascript
+
+    pg_getHeight
+
+Returns the current plasma block height.
+
+----------
+Parameters
+----------
+
+N/A
+
+-------
+Returns
+-------
+
+``Number``: The current block height.
+
+------------------------------------------------------------------------------
+
+pg_getRecentTransactions
+========================
+.. code-block:: javascript
+
+    pg_getRecentTransactions
+
+Returns the most recent transactions.
+Because there are a *lot* of transactions in each block, this method is paginated.
+
+----------
+Parameters
+----------
+
+1. ``start`` - ``Number``: Start of the range of recent transactions to return.
+2. ``end`` - ``Number``: End of range of recent transactions to return.
+
+-------
+Returns
+-------
+
+``Array``: A list of Transaction_ objects.
+
+------------------------------------------------------------------------------
+
+pg_getAccount
+=============
+.. code-block:: javascript
+
+    pg_getAccount
+
+Returns information about an account.
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``String``: The account address.
+
+-------
+Returns
+-------
+
+``Account``: An Account_ object.
+
+------------------------------------------------------------------------------
+
+pg_getTransactionsByAddress
+===========================
+.. code-block:: javascript
+
+    pg_getTransactionsByAddress
+
+Returns the latest transactions by an address.
+This method is paginated and requires a ``start`` and ``end``.
+Limited to a total of **25** transactions at a time.
+
+----------
+Parameters
+----------
+
+1. ``address - ``String``: The address to query.
+2. ``start`` - ``Number``: Start of the range of recent transactions to return.
+3. ``end`` - ``Number``: End of range of recent transactions to return.
+
+-------
+Returns
+-------
+
+``Array``: A list of Transaction_ objects.
+
+.. _Transaction: specs/transactions.html#transaction-objects
+.. _Account: TODO
