@@ -9,7 +9,7 @@ class BaseService extends EventEmitter {
   constructor (options) {
     super()
 
-    this.options = { ...defaultOptions, options }
+    this.options = Object.assign({}, defaultOptions, options)
     this.started = false
   }
 
