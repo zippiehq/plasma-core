@@ -1,16 +1,21 @@
 const EphemDBProvider = require('../src/services/db').EphemDBProvider
+const RangeManager = require('../src/services/range-manager-service')
 
-const app = {
-  services: {
-    chain: {
+class App {
+  constructor () {
+    this.services = {}
+    this.services.chain = {
       addTransaction: (transaction) => {
         return true
       }
-    },
-    db: new EphemDBProvider({
+    }
+    this.services.db = new EphemDBProvider({
+      app: this
+    })
+    this.services.rangeManager = new RangeManager({
       app: this
     })
   }
 }
 
-module.exports = app
+module.exports = new App()
