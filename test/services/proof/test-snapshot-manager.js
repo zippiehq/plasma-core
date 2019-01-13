@@ -1,123 +1,84 @@
-const assert = require('chai').assert
+const chai = require('chai')
+const should = chai.should()
 
 const SnapshotManager = require('../../../src/services/proof/snapshot-manager')
+const constants = require('../../constants')
+const accounts = constants.ACCOUNTS
 
 describe('SnapshotManager', () => {
-  const account1 = '0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B'
-  const account2 = '0x838e93821250388d0fa7ea74c4f89872e705e31a'
-  const deposit = {
-    start: 0,
-    end: 100,
-    block: 0,
-    owner: account1
-  }
+  const deposit = { start: 0, end: 100, block: 0, owner: accounts[0] }
 
   it('should be able to apply a deposit', () => {
     const snapshotManager = new SnapshotManager()
     snapshotManager.applyDeposit(deposit)
-    assert.deepEqual(deposit, snapshotManager.snapshots[0], 'deposit was applied')
+
+    snapshotManager.snapshots[0].should.deep.equal(deposit)
   })
+
   it('should be able to apply a valid transaction', () => {
     const transaction = {
       block: 1,
       transfers: [
-        {
-          start: 0,
-          end: 100,
-          from: account1,
-          to: account2
-        }
+        { start: 0, end: 100, from: accounts[0], to: accounts[1] }
       ]
     }
+    const expected = { start: 0, end: 100, block: 1, owner: accounts[1] }
 
     const snapshotManager = new SnapshotManager()
     snapshotManager.applyDeposit(deposit)
     snapshotManager.applyTransaction(transaction)
 
-    const expectedSnapshot = {
-      start: 0,
-      end: 100,
-      block: 1,
-      owner: account2
-    }
-    assert.deepEqual(expectedSnapshot, snapshotManager.snapshots[0], 'transaction was applied successfully')
+    snapshotManager.snapshots[0].should.deep.equal(expected)
   })
+
   it('should apply a transaction that goes over an existing range', () => {
     const transaction = {
       block: 1,
       transfers: [
-        {
-          start: 0,
-          end: 200, // Goes over the end point of 100 but still valid.
-          from: account1,
-          to: account2
-        }
+        { start: 0, end: 200, from: accounts[0], to: accounts[1] }
       ]
     }
+    const expected = { start: 0, end: 100, block: 1, owner: accounts[1] }
 
     const snapshotManager = new SnapshotManager()
     snapshotManager.applyDeposit(deposit)
     snapshotManager.applyTransaction(transaction)
 
-    const expectedSnapshot = {
-      start: 0,
-      end: 100,
-      block: 1,
-      owner: account2
-    }
-    assert.deepEqual(expectedSnapshot, snapshotManager.snapshots[0], 'transaction was applied successfully')
+    snapshotManager.snapshots[0].should.deep.equal(expected)
   })
+
   it('should apply a transaction that goes under an existing range', () => {
     const transaction = {
       block: 1,
       transfers: [
-        {
-          start: 0,
-          end: 50, // Goes over the end point of 100 but still valid.
-          from: account1,
-          to: account2
-        }
+        { start: 0, end: 50, from: accounts[0], to: accounts[1] }
       ]
     }
+    const expected = [
+      { start: 0, end: 50, block: 1, owner: accounts[1] },
+      { start: 50, end: 100, block: 0, owner: accounts[0] }
+    ]
 
     const snapshotManager = new SnapshotManager()
     snapshotManager.applyDeposit(deposit)
     snapshotManager.applyTransaction(transaction)
 
-    const expectedSnapshots = [
-      {
-        start: 0,
-        end: 50,
-        block: 1,
-        owner: account2
-      },
-      {
-        start: 50,
-        end: 100,
-        block: 0,
-        owner: account1
-      }
-    ]
-    assert.deepEqual(expectedSnapshots, snapshotManager.snapshots, 'transaction was applied successfully')
+    snapshotManager.snapshots.should.deep.equal(expected)
   })
+
   it('should not apply a transaction with an invalid sender', () => {
     const transaction = {
       block: 1,
       transfers: [
-        {
-          start: 0,
-          end: 100,
-          from: account2, // Invalid sender.
-          to: account2
-        }
+        { start: 0, end: 100, from: accounts[1], to: accounts[0] }
       ]
     }
 
     const snapshotManager = new SnapshotManager()
     snapshotManager.applyDeposit(deposit)
 
-    assert.throws(() => {
+    should.Throw(() => {
       snapshotManager.applyTransaction(transaction)
-    }, 'Invalid state transition', 'snapshot manager threw correctly')
+    }, 'Invalid state transition')
   })
 })

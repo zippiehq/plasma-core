@@ -10,8 +10,11 @@ class ProofSerivce extends BaseService {
   }
 
   /**
-   * @param {*} transaction
-   * @param {Array} proof
+   * Checks a transaction proof.
+   * @param {*} transaction A Transaction object.
+   * @param {Array} deposits A list of deposits.
+   * @param {Array} proof A Proof object.
+   * @return {boolean} `true` if the transaction is valid.
    */
   checkProof (transaction, deposits, proof) {
     const snapshotManager = new SnapshotManager()
@@ -32,19 +35,9 @@ class ProofSerivce extends BaseService {
       snapshotManager.applyTransaction(element.transaction)
     })
 
-    // Apply the transaction itself.
+    // Apply the transaction itself and check that the transfers are valid.
     snapshotManager.applyTransaction(transaction)
-
-    const transfersValid = transaction.transfers.every((transfer) => {
-      return snapshotManager.hasSnapshot({
-        start: transfer.start,
-        end: transfer.end,
-        block: transaction.block,
-        owner: transfer.to
-      })
-    })
-
-    if (!transfersValid) {
+    if (!snapshotManager.verifyTransaction(transaction)) {
       throw new Error('Invalid state transition')
     }
 
@@ -61,8 +54,14 @@ class ProofSerivce extends BaseService {
     // throw new Error('Not implemented')
   }
 
+  /**
+   * Checks whether a transaction is valid.
+   * @param {*} transaction A Transaction object.
+   * @return {boolean} `true` if the transaction is valid, `false` otherwise.
+   */
   _transactionValid (transaction) {
-    return true
+    return true // TODO: Implement this.
+    // throw new Error('Not implemented')
   }
 }
 
