@@ -25,6 +25,6 @@ describe('MockWalletProvider', async () => {
   })
 
   it('should throw if signing with an invalid account', async () => {
-    wallet.sign('0x0', 'Hello!').should.eventually.throw('Account not found')
+    await wallet.sign('0x0', 'Hello!').should.be.rejectedWith('Account not found')
   })
 })

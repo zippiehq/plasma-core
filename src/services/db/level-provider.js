@@ -14,8 +14,21 @@ class LevelDBProvider extends BaseDBProvider {
     this.db = levelup(leveldown(this.path))
   }
 
-  async get (key) {
-    return this.db.get(key)
+  async stop () {
+    return this.db.close()
+  }
+
+  async get (key, fallback) {
+    const exists = await this.exists(key)
+    if (!exists) {
+      if (arguments.length === 2) {
+        return fallback
+      } else {
+        throw new Error('Key not found in database')
+      }
+    }
+
+    return this.db.get(key, { asBuffer: false })
   }
 
   async set (key, value) {

@@ -3,7 +3,8 @@
   "globals": {
     "it": true,
     "describe": true,
-    "beforeEach": true
+    "beforeEach": true,
+    "afterEach": true
   },
   "rules": {
     "space-before-function-paren": [

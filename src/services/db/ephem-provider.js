@@ -10,7 +10,16 @@ class EphemDBProvider extends BaseDBProvider {
     this.db = new Map()
   }
 
-  async get (key) {
+  async get (key, fallback) {
+    const exists = await this.exists(key)
+    if (!exists) {
+      if (arguments.length === 2) {
+        return fallback
+      } else {
+        throw new Error('Key not found in database')
+      }
+    }
+
     return this.db.get(key)
   }
 

@@ -1,11 +1,25 @@
 const chai = require('chai')
+const rimraf = require('rimraf')
 
 chai.should()
 
-const EphemDBProvider = require('../../../src/services/db/ephem-provider')
+const LevelDBProvider = require('../../../src/services/db/level-provider')
 
-describe('EphemDBProvider', async () => {
-  const db = new EphemDBProvider()
+const TEST_DB_PATH = './.level_test'
+
+describe('LevelDBProvider', async () => {
+  let db
+
+  beforeEach(async () => {
+    // Kill and reset the database.
+    rimraf.sync(TEST_DB_PATH)
+    db = new LevelDBProvider({ path: TEST_DB_PATH })
+  })
+
+  afterEach(async () => {
+    // Close the database.
+    await db.stop()
+  })
 
   it('should add a new item to the database', async () => {
     const expected = 'value'
@@ -21,6 +35,12 @@ describe('EphemDBProvider', async () => {
     await db.delete('key')
 
     await db.get('key').should.be.rejectedWith('Key not found in database')
+  })
+
+  it('should return a fallback if a key does not exist', async () => {
+    const value = await db.get('key', 'fallback')
+
+    value.should.equal('fallback')
   })
 
   it('should check if an item exists', async () => {

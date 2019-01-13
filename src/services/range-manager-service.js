@@ -86,7 +86,7 @@ class RangeManagerService extends BaseService {
    * @return {*} List of owned ranges.
    */
   async getOwnedRanges (address) {
-    return (await this.db.get(`ranges:${address}`)) || []
+    return this.db.get(`ranges:${address}`, [])
   }
 
   /**

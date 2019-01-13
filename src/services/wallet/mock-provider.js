@@ -34,6 +34,7 @@ class MockWalletProvider extends BaseWalletProvider {
     if (account === undefined) {
       throw new Error('Account not found')
     }
+
     return account
   }
 
