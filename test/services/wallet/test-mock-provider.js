@@ -11,6 +11,8 @@ const web3 = new Web3()
 
 describe('MockWalletProvider', async () => {
   const wallet = new MockWalletProvider({ app: app })
+  wallet.start()
+
   const accounts = await wallet.getAccounts()
 
   it('should generate ten accounts', () => {

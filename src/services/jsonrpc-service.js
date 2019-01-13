@@ -45,8 +45,7 @@ const JSONRPC_ERRORS = {
  */
 class JSONRPCService extends BaseService {
   constructor (options) {
-    super()
-    this.app = options.app
+    super(options)
 
     this.subdispatchers = []
     const subdispatchers = [ChainSubdispatcher, WalletSubdispatcher]

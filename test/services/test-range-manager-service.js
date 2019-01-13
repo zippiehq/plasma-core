@@ -17,6 +17,8 @@ describe('RangeManagerService', async () => {
   beforeEach(async () => {
     range = new RangeManagerService({ app: app })
     wallet = new MockWalletProvider({ app: app })
+    wallet.start()
+
     bob = (await wallet.getAccounts())[0]
   })
 

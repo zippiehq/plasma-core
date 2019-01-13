@@ -6,11 +6,19 @@ const defaultOptions = {}
  * A base class for services to extend.
  */
 class BaseService extends EventEmitter {
-  constructor (options) {
+  constructor (options = {}) {
     super()
 
     this.options = Object.assign({}, defaultOptions, options)
+    this.app = options.app
     this.started = false
+  }
+
+  /**
+   * Convenience method for getting available services.
+   */
+  get services () {
+    return this.app.services
   }
 
   /**

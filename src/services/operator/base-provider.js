@@ -4,11 +4,6 @@ const BaseService = require('../base-service')
  * Base class that operator providers must extend.
  */
 class BaseOperatorProvider extends BaseService {
-  constructor (options) {
-    super()
-    this.app = options.app
-  }
-
   get name () {
     return 'operator'
   }

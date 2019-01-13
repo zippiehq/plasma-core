@@ -4,22 +4,16 @@ const BaseService = require('./base-service')
  * Watches for invalid exits and automatically starts challenges.
  */
 class GuardService extends BaseService {
-  constructor (options) {
-    super()
-
-    this.app = options.app
-  }
-
   get name () {
     return 'guard'
   }
 
   async start () {
-    this.app.services.eth.on('event:ExitStarted', this._onExitStarted)
+    this.services.eth.on('event:ExitStarted', this._onExitStarted)
   }
 
   async stop () {
-    this.app.services.eth.off('event:ExitStarted', this._onExitStarted)
+    this.services.eth.off('event:ExitStarted', this._onExitStarted)
   }
 
   /**

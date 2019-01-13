@@ -7,12 +7,6 @@ const BaseService = require('./base-service')
  * Wraps interaction with Ethereum.
  */
 class ETHService extends BaseService {
-  constructor (options) {
-    super()
-
-    this.app = options.app
-  }
-
   get name () {
     return 'eth'
   }

@@ -69,13 +69,6 @@ function createRange (token, start, end) {
  * Service that manages the user's ranges automatically.
  */
 class RangeManagerService extends BaseService {
-  constructor (options) {
-    super()
-
-    this.app = options.app
-    this.db = this.app.services.db
-  }
-
   get name () {
     return 'rangeManager'
   }
@@ -86,7 +79,7 @@ class RangeManagerService extends BaseService {
    * @return {*} List of owned ranges.
    */
   async getOwnedRanges (address) {
-    return this.db.get(`ranges:${address}`, [])
+    return this.services.db.get(`ranges:${address}`, [])
   }
 
   /**
@@ -192,7 +185,7 @@ class RangeManagerService extends BaseService {
     // just sort and add the new ranges
     if (ownedRanges.length === 0) {
       ranges.sort((a, b) => a.start - b.start)
-      return this.db.set(`ranges:${address}`, ranges)
+      return this.services.db.set(`ranges:${address}`, ranges)
     }
 
     ranges = ranges.concat(ownedRanges)
@@ -206,7 +199,7 @@ class RangeManagerService extends BaseService {
       return nextRanges.concat(orderRanges(lastRange, newRange))
     }, [])
 
-    return this.db.set(`ranges:${address}`, nextRanges)
+    return this.services.db.set(`ranges:${address}`, nextRanges)
   }
 
   /**
@@ -281,7 +274,7 @@ class RangeManagerService extends BaseService {
       return nextRanges
     }, [])
 
-    return this.db.set(`ranges:${address}`, nextRanges)
+    return this.services.db.set(`ranges:${address}`, nextRanges)
   }
 }
 

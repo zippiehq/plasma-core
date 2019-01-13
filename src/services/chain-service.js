@@ -4,14 +4,6 @@ const BaseService = require('./base-service')
  * Manages the local blockchain.
  */
 class ChainService extends BaseService {
-  constructor (options) {
-    super()
-
-    this.app = options.app
-    this.db = this.app.services.db
-    this.rangeManager = this.app.services.rangeManager
-  }
-
   get name () {
     return 'chain'
   }
@@ -30,7 +22,7 @@ class ChainService extends BaseService {
    * @return {*} A list of tokens and balances.
    */
   async getBalances (address) {
-    const ranges = await this.rangeManager.getOwnedRanges(address)
+    const ranges = await this.services.rangeManager.getOwnedRanges(address)
     let balances = {}
     for (let range of ranges) {
       if (!(range.token in balances)) {
@@ -47,7 +39,7 @@ class ChainService extends BaseService {
    * @return {*} The transaction object.
    */
   async getTransaction (hash) {
-    return this.db.get(`transaction:${hash}`)
+    return this.services.db.get(`transaction:${hash}`)
   }
 
   /**
@@ -56,7 +48,7 @@ class ChainService extends BaseService {
    * @return {string} Header of the specified block.
    */
   async getBlockHeader (block) {
-    return this.db.get(`header:${block}`)
+    return this.services.db.get(`header:${block}`)
   }
 
   /**
@@ -65,7 +57,7 @@ class ChainService extends BaseService {
    * @param {string} header Header of the given block.
    */
   async addBlockHeader (block, header) {
-    return this.db.set(`header:${block}`, header)
+    return this.services.db.set(`header:${block}`, header)
   }
 
   /**
@@ -121,7 +113,7 @@ class ChainService extends BaseService {
    * @return {boolean} `true` if the chain has stored the transaction, `false` otherwise.
    */
   async hasTransaction (hash) {
-    let tx = await this.db.get(`transaction:${hash}`)
+    let tx = await this.services.db.get(`transaction:${hash}`)
     return tx !== undefined
   }
 
@@ -131,8 +123,8 @@ class ChainService extends BaseService {
    */
   async addTransaction (transaction) {
     // TODO: Check if the transaction is valid.
-    this.rangeManager.addRange(transaction.to, transaction.range)
-    await this.db.set(`transaction:${transaction.hash}`, transaction)
+    this.services.rangeManager.addRange(transaction.to, transaction.range)
+    await this.services.db.set(`transaction:${transaction.hash}`, transaction)
   }
 
   /**
@@ -142,18 +134,16 @@ class ChainService extends BaseService {
   async sendTransaction (transaction) {
     // TODO: Check that the range being sent is valid.
 
-    const senderOwnsRange = this.rangeManager.ownsRange(transaction.from, [
-      transaction.range.start,
-      transaction.range.end
-    ])
+    const senderOwnsRange = this.services.rangeManager.ownsRange(
+      transaction.from,
+      [transaction.range.start, transaction.range.end]
+    )
 
     if (!senderOwnsRange) {
       throw new Error('Sender does not own the specified range')
     }
 
-    const receipt = await this.app.services.operator.sendTransaction(
-      transaction
-    )
+    const receipt = await this.services.operator.sendTransaction(transaction)
 
     this.rangeManager.removeRange(transaction.from, transaction.range)
 

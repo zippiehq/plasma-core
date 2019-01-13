@@ -9,6 +9,9 @@ class MockWalletProvider extends BaseWalletProvider {
     super(options)
 
     this.web3 = new Web3()
+  }
+
+  async start () {
     this._initAccounts()
   }
 
@@ -47,7 +50,7 @@ class MockWalletProvider extends BaseWalletProvider {
     })
 
     this.addresses.forEach((address, i) => {
-      this.app.services.chain.addTransaction({
+      this.services.chain.addTransaction({
         from: address,
         to: address,
         range: {

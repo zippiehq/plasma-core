@@ -4,11 +4,6 @@ const BaseService = require('./base-service')
  * Handles automatically synchronizing latest history proofs.
  */
 class SyncService extends BaseService {
-  constructor (options) {
-    super()
-    this.app = options.app
-  }
-
   get name () {
     return 'sync'
   }
@@ -16,24 +11,24 @@ class SyncService extends BaseService {
   async start () {
     // TODO: What happens if the client comes online later and needs to catch up?
     // TODO: Hmmm... maybe want a layer of abstraction here instead of watching events directly?
-    this.app.ethService.on('event:BlockCreated', this._onBlockCreated)
+    this.services.eth.on('event:BlockCreated', this._onBlockCreated)
   }
 
   async stop () {
-    this.app.ethService.off('event:BlockCreated', this._onBlockCreated)
+    this.services.eth.off('event:BlockCreated', this._onBlockCreated)
   }
 
   async _onBlockCreated (event) {
-    await this.app.chainService.addBlockHeader(event.number, event.hash)
+    await this.services.chain.addBlockHeader(event.number, event.hash)
 
     // TODO: Figure out what to do if the operator tries to cheat.
-    const ranges = await this.app.chainService.getOwnedRanges()
+    const ranges = await this.services.chain.getOwnedRanges()
     for (let range of ranges) {
-      let transaction = await this.app.operatorService.getTransaction(
+      let transaction = await this.services.operator.getTransaction(
         range,
         event.number
       )
-      await this.app.chainService.addTransaction(transaction)
+      await this.services.chain.addTransaction(transaction)
     }
   }
 }
