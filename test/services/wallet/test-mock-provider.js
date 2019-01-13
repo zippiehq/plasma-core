@@ -1,5 +1,8 @@
 const chai = require('chai')
-chai.should()
+const chaiAsPromised = require('chai-as-promised')
+
+const should = chai.should()
+chai.use(chaiAsPromised)
 
 const Web3 = require('web3')
 const MockWalletProvider = require('../../../src/services/wallet').MockWalletProvider
@@ -20,5 +23,9 @@ describe('MockWalletProvider', async () => {
     const address = web3.eth.accounts.recover('Hello!', signature.signature)
 
     address.should.equal(accounts[0])
+  })
+
+  it('should throw if signing with an invalid account', async () => {
+    wallet.sign('0x0', 'Hello!').should.eventually.throw('Account not found')
   })
 })

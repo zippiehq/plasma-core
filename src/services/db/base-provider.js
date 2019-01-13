@@ -4,7 +4,7 @@ const BaseService = require('../base-service')
  * Class that DB interfaces must implement.
  */
 class BaseDBProvider extends BaseService {
-  constructor (options) {
+  constructor (options = {}) {
     super()
     this.app = options.app
   }

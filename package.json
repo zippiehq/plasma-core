@@ -20,6 +20,12 @@
       "git add"
     ]
   },
+  "nyc": {
+    "exclude": [
+      "**/base-service.js",
+      "**/base-provider.js"
+    ]
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/plasma-group/plasma-core.git"
