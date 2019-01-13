@@ -1,7 +1,6 @@
 const chai = require('chai')
 const chaiAsPromised = require('chai-as-promised')
 
-const should = chai.should()
 chai.use(chaiAsPromised)
 
 const Web3 = require('web3')
