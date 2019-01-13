@@ -15,18 +15,15 @@ const app = require('../mock-app')
 describe('RangeManagerService', async () => {
   let range, wallet, bob
   beforeEach(async () => {
-    range = new RangeManagerService({
-      app: app
-    })
-    wallet = new MockWalletProvider({
-      app: app
-    })
+    range = new RangeManagerService({ app: app })
+    wallet = new MockWalletProvider({ app: app })
     bob = (await wallet.getAccounts())[0]
   })
 
   describe('name', () => {
     it('should return correct service name', async () => {
       const expecation = 'rangeManager'
+
       // Mock db methods
       range.name.should.equal(expecation)
     })
@@ -81,6 +78,7 @@ describe('RangeManagerService', async () => {
   describe('ownsRange(address, range)', () => {
     beforeEach(async () => {
       const ownedRanges = [{ token: '0xdeadbeef', start: 10, end: 100 }]
+
       // Mock db methods
       app.services.db.get = sinon.fake.returns(ownedRanges)
     })

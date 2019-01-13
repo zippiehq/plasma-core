@@ -9,12 +9,8 @@ class App {
         return true
       }
     }
-    this.services.db = new EphemDBProvider({
-      app: this
-    })
-    this.services.rangeManager = new RangeManager({
-      app: this
-    })
+    this.services.db = new EphemDBProvider({ app: this })
+    this.services.rangeManager = new RangeManager({ app: this })
   }
 }
 

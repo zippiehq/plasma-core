@@ -1,4 +1,5 @@
-const assert = require('chai').assert
+const chai = require('chai')
+chai.should()
 
 const ChainService = require('../../src/services/chain-service')
 const MockWalletProvider = require('../../src/services/wallet').MockWalletProvider
@@ -15,6 +16,6 @@ describe('ChainService', async () => {
 
   it('should return the balances of an address', async () => {
     const balances = await chain.getBalances(accounts[0])
-    assert.deepEqual(balances, {}, 'balance was returned correctly')
+    balances.should.deep.equal({})
   })
 })
