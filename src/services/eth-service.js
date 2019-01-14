@@ -3,23 +3,35 @@ const util = require('util')
 const Web3 = require('web3')
 const BaseService = require('./base-service')
 
+const DEFAULT_OPTIONS = {
+  provider: new Web3.providers.HttpProvider(),
+  contract: {
+    abi: [],
+    address: '0x0000000000000000000000000000000000000000'
+  }
+}
+
 /**
  * Wraps interaction with Ethereum.
  */
 class ETHService extends BaseService {
+  constructor (options) {
+    super(Object.assign({}, DEFAULT_OPTIONS, options))
+  }
+
   get name () {
     return 'eth'
   }
 
   async start () {
     // Initialize Web3 and create a contract instance
-    const config = this.app.config
-    this.web3 = new Web3(config.ethProvider)
-    const PlasmaContract = this.web3.eth.contract(config.contract.abi)
-    this.contract = PlasmaContract.at(config.contract.address)
+    this.web3 = new Web3(this.options.provider)
+    this.contract = new this.web3.eth.Contract(
+      this.options.contract.abi,
+      this.options.contract.address
+    )
 
-    // Start watching for events
-    this._watchEvents()
+    // TODO: Figure out how to handle watching for events.
   }
 
   /**
@@ -56,20 +68,6 @@ class ETHService extends BaseService {
    */
   getBlock (block) {
     return util.promisify(this.contract.getBlock(block))
-  }
-
-  /**
-   * Watches for and relays Ethereum events.
-   */
-  _watchEvents () {
-    // TODO: Figure out how robust this is.
-    this.contract.allEvents().watch((error, event) => {
-      if (error) {
-        console.log(error)
-      } else {
-        this.emit(`event:${event.event}`, event)
-      }
-    })
   }
 }
 

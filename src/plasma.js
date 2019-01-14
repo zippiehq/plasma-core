@@ -7,6 +7,8 @@ const DefaultWalletProvider = require('./services/wallet').DefaultWalletProvider
 const JSONRPCService = require('./services/jsonrpc-service')
 const ChainService = require('./services/chain-service')
 const RangeManagerService = require('./services/range-manager-service')
+const ETHService = require('./services/eth-service')
+const SyncService = require('./services/sync-service')
 
 /**
  * Main class that runs and manages all services.
@@ -41,7 +43,9 @@ class Plasma {
       { type: JSONRPCService },
       { type: this.options.operatorProvider || DefaultOperatorProvider },
       { type: this.options.walletProvider || DefaultWalletProvider },
-      { type: RangeManagerService }
+      { type: RangeManagerService },
+      { type: ETHService },
+      { type: SyncService }
     ]
 
     for (let service of services) {
@@ -60,8 +64,8 @@ class Plasma {
       .then(() => {
         this.logger.log(`${service.name}: OK`)
       })
-      .catch(() => {
-        // TODO: Figure out how to handle errors here.
+      .catch((err) => {
+        console.log(err)
       })
   }
 

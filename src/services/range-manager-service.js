@@ -69,6 +69,10 @@ function createRange (token, start, end) {
  * Service that manages the user's ranges automatically.
  */
 class RangeManagerService extends BaseService {
+  async start () {
+    this.started = true
+  }
+
   get name () {
     return 'rangeManager'
   }

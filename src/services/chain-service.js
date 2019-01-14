@@ -8,6 +8,10 @@ class ChainService extends BaseService {
     return 'chain'
   }
 
+  async start () {
+    this.started = true
+  }
+
   /**
    * Determines whether the chain is currently syncing.
    * @return {boolean} `true` if the chain is syncing, `false` otherwise.
@@ -39,7 +43,7 @@ class ChainService extends BaseService {
    * @return {*} The transaction object.
    */
   async getTransaction (hash) {
-    return this.services.db.get(`transaction:${hash}`)
+    return this.services.db.get(`transaction:${hash}`, null)
   }
 
   /**
@@ -48,7 +52,7 @@ class ChainService extends BaseService {
    * @return {string} Header of the specified block.
    */
   async getBlockHeader (block) {
-    return this.services.db.get(`header:${block}`)
+    return this.services.db.get(`header:${block}`, null)
   }
 
   /**
@@ -113,7 +117,7 @@ class ChainService extends BaseService {
    * @return {boolean} `true` if the chain has stored the transaction, `false` otherwise.
    */
   async hasTransaction (hash) {
-    let tx = await this.services.db.get(`transaction:${hash}`)
+    const tx = await this.services.db.get(`transaction:${hash}`, undefined)
     return tx !== undefined
   }
 
@@ -145,7 +149,7 @@ class ChainService extends BaseService {
 
     const receipt = await this.services.operator.sendTransaction(transaction)
 
-    this.rangeManager.removeRange(transaction.from, transaction.range)
+    this.services.rangeManager.removeRange(transaction.from, transaction.range)
 
     return receipt
   }

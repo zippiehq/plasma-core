@@ -14,6 +14,10 @@ class LevelDBProvider extends BaseDBProvider {
     this.db = levelup(leveldown(this.path))
   }
 
+  async start () {
+    this.started = true
+  }
+
   async stop () {
     return this.db.close()
   }
