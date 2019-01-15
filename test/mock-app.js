@@ -5,12 +5,20 @@ class App {
   constructor () {
     this.services = {}
     this.services.chain = {
+      started: true,
       addTransaction: (transaction) => {
         return true
       }
     }
     this.services.db = new EphemDBProvider({ app: this })
     this.services.rangeManager = new RangeManager({ app: this })
+
+    this.startServices()
+  }
+
+  async startServices () {
+    await this.services.db.start()
+    await this.services.rangeManager.start()
   }
 }
 
