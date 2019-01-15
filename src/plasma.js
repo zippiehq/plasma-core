@@ -7,14 +7,14 @@ const DefaultWalletProvider = require('./services/wallet').DefaultWalletProvider
 const JSONRPCService = require('./services/jsonrpc-service')
 const ChainService = require('./services/chain-service')
 const RangeManagerService = require('./services/range-manager-service')
-const ETHService = require('./services/eth-service')
+const ETHService = require('./services/eth/eth-service')
 const SyncService = require('./services/sync-service')
 
 /**
  * Main class that runs and manages all services.
  */
 class Plasma {
-  constructor (options) {
+  constructor (options = {}) {
     this.options = options
     this.services = {}
     this.logger = new utils.logging.DefaultLogger()

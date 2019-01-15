@@ -102,7 +102,7 @@ class JSONRPCService extends BaseService {
    * @return {*} Result of the JSON-RPC call.
    */
   async handle (request) {
-    if (!(request.method && request.id)) {
+    if (!('method' in request && 'id' in request)) {
       return this._buildError('INVALID_REQUEST', null)
     }
 
