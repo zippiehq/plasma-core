@@ -13,14 +13,14 @@ class SyncService extends BaseService {
 
     // TODO: What happens if the client comes online later and needs to catch up?
     // TODO: Hmmm... maybe want a layer of abstraction here instead of watching events directly?
-    this.services.eth.on('event:BlockCreated', this._onBlockCreated)
+    this.services.eth.contract.on('event:BlockCreated', this._onBlockCreated)
     this.on('TransactionReceived', this._onTransactionReceived)
 
     this._pollPendingTransactions()
   }
 
   async stop () {
-    this.services.eth.off('event:BlockCreated', this._onBlockCreated)
+    this.services.eth.contract.off('event:BlockCreated', this._onBlockCreated)
     this.off('TransactionReceived', this._onTransactionReceived)
   }
 

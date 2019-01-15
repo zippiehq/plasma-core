@@ -1,12 +1,14 @@
 const chai = require('chai')
-const should = chai.should()
+chai.should()
 
 const ProofService = require('../../../src/services/proof/proof-service')
+
+const app = require('../../mock-app')
 const constants = require('../../constants')
 const accounts = constants.ACCOUNTS
 
 const deposits = [
-  { block: 0, start: 0, end: 50, owner: accounts[0] }
+  { token: 0, block: 0, start: 0, end: 50, owner: accounts[0] }
 ]
 
 const proof = [
@@ -14,7 +16,7 @@ const proof = [
     transaction: {
       block: 1,
       transfers: [
-        { start: 0, end: 50, from: accounts[0], to: accounts[1] }
+        { token: 0, start: 0, end: 50, from: accounts[0], to: accounts[1] }
       ],
       signatures: []
     }
@@ -24,93 +26,119 @@ const proof = [
 const transaction = {
   block: 2,
   transfers: [
-    { start: 0, end: 50, from: accounts[1], to: accounts[2] }
+    { token: 0, start: 0, end: 50, from: accounts[1], to: accounts[2] }
   ]
 }
 
-describe('ProofService', () => {
-  const verifier = new ProofService()
+const submitDeposits = async (deposits) => {
+  for (let deposit of deposits) {
+    await app.services.eth.contract.deposit(0, deposit.end - deposit.start, deposit.owner)
+  }
+}
 
-  it('should correctly check a valid transaction proof', () => {
-    const validity = verifier.checkProof(transaction, deposits, proof)
+describe('ProofService', async () => {
+  await submitDeposits(deposits)
+  const verifier = new ProofService({ app: app })
+  await verifier.start()
+
+  it('should correctly check a valid transaction proof', async () => {
+    const validity = await verifier.checkProof(transaction, deposits, proof)
 
     validity.should.be.true
   })
 
-  it('should correctly check a valid transaction proof with many deposits', () => {
+  it('should correctly check a valid transaction proof with many deposits', async () => {
     const manyDeposits = [
       {
+        token: 0,
         block: 0,
-        start: 0,
-        end: 10,
+        start: 50,
+        end: 60,
         owner: accounts[0]
       },
       {
+        token: 0,
         block: 0,
-        start: 10,
-        end: 20,
+        start: 60,
+        end: 70,
         owner: accounts[0]
       },
       {
+        token: 0,
         block: 0,
-        start: 20,
-        end: 30,
+        start: 70,
+        end: 80,
         owner: accounts[0]
       },
       {
+        token: 0,
         block: 0,
-        start: 30,
-        end: 40,
+        start: 80,
+        end: 90,
         owner: accounts[0]
       },
       {
+        token: 0,
         block: 0,
-        start: 40,
-        end: 50,
+        start: 90,
+        end: 100,
         owner: accounts[0]
       }
     ]
-    const validity = verifier.checkProof(transaction, manyDeposits, proof)
+    const manyDepositProof = [
+      {
+        transaction: {
+          block: 1,
+          transfers: [
+            { token: 0, start: 50, end: 100, from: accounts[0], to: accounts[1] }
+          ],
+          signatures: []
+        }
+      }
+    ]
+    const manyDepositTx = {
+      block: 2,
+      transfers: [
+        { token: 0, start: 50, end: 100, from: accounts[1], to: accounts[2] }
+      ]
+    }
+
+    await submitDeposits(manyDeposits)
+    const validity = await verifier.checkProof(manyDepositTx, manyDeposits, manyDepositProof)
 
     validity.should.be.true
   })
 
-  it('should not verify an invalid set of deposits', () => {
+  it('should not verify an invalid set of deposits', async () => {
     const invalidDeposits = [
-      { block: 0, start: 0, end: 10, owner: accounts[0] }
+      { token: 0, block: 0, start: 0, end: 10, owner: accounts[0] }
     ]
 
-    should.Throw(() => {
-      verifier.checkProof(transaction, invalidDeposits, proof)
-    }, 'Invalid state transition')
+    await verifier.checkProof(transaction, invalidDeposits, proof).should.be.rejectedWith('Invalid deposit')
   })
 
   it('should not verify an invalid range', () => {
     const invalidTransaction = {
       block: 2,
       transfers: [
-        { start: 50, end: 0, from: accounts[1], to: accounts[2] }
+        { token: 0, start: 50, end: 0, from: accounts[1], to: accounts[2] }
       ],
       signatures: []
     }
 
-    should.Throw(() => {
-      verifier.checkProof(invalidTransaction, deposits, proof)
-    }, 'Invalid transaction')
+    verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid transaction')
   })
 
   it('should not verify a zero-length range', () => {
     const invalidTransaction = {
       block: 2,
       transfers: [
-        { start: 0, end: 0, from: accounts[1], to: accounts[2] }
+        { token: 0, start: 0, end: 0, from: accounts[1], to: accounts[2] }
       ],
       signatures: []
     }
 
-    should.Throw(() => {
-      verifier.checkProof(invalidTransaction, deposits, proof)
-    }, 'Invalid transaction')
+    verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid transaction')
   })
 
   it('should not verify with missing chunks of history', () => {
@@ -119,16 +147,14 @@ describe('ProofService', () => {
         transaction: {
           block: 1,
           transfers: [
-            { start: 0, end: 25, from: accounts[0], to: accounts[1] }
+            { token: 0, start: 0, end: 25, from: accounts[0], to: accounts[1] }
           ],
           signatures: []
         }
       }
     ]
 
-    should.Throw(() => {
-      verifier.checkProof(transaction, deposits, invalidProof)
-    }, 'Invalid state transition')
+    verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
 
   it('should not verify an invalid history', () => {
@@ -137,15 +163,13 @@ describe('ProofService', () => {
         transaction: {
           block: 1,
           transfers: [
-            { start: 0, end: 50, from: accounts[1], to: accounts[0] }
+            { token: 0, start: 0, end: 50, from: accounts[1], to: accounts[0] }
           ],
           signatures: []
         }
       }
     ]
 
-    should.Throw(() => {
-      verifier.checkProof(transaction, deposits, invalidProof)
-    }, 'Invalid state transition')
+    verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
 })
