@@ -12,10 +12,6 @@ class MockOperatorProvider extends BaseOperatorProvider {
     this.pending = {}
   }
 
-  async start () {
-    this.started = true
-  }
-
   async getTransaction (hash) {
     const tx = this.transactions[hash]
     let decoded = tx.decoded

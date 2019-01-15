@@ -18,7 +18,14 @@ class BaseService extends EventEmitter {
    * Convenience method for getting available services.
    */
   get services () {
-    return this.app.services
+    return new Proxy(this.app.services, {
+      get: (obj, prop) => {
+        if (!obj[prop].started) {
+          throw new Error(`Service not started: ${prop}`)
+        }
+        return obj[prop]
+      }
+    })
   }
 
   /**
@@ -35,18 +42,14 @@ class BaseService extends EventEmitter {
    * Starts the service.
    */
   async start () {
-    throw new Error(
-      'Classes that extend BaseService must implement this method'
-    )
+    this.started = true
   }
 
   /**
    * Stops the service.
    */
   async stop () {
-    throw new Error(
-      'Classes that extend BaseService must implement this method'
-    )
+    this.started = false
   }
 }
 

@@ -12,6 +12,7 @@ class MockWalletProvider extends BaseWalletProvider {
   }
 
   async start () {
+    this.started = true
     this._initAccounts()
   }
 
@@ -51,6 +52,7 @@ class MockWalletProvider extends BaseWalletProvider {
 
     this.addresses.forEach((address, i) => {
       this.services.chain.addTransaction({
+        block: 0,
         transfers: [
           {
             sender: address,

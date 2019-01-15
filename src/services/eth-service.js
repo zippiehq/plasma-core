@@ -24,6 +24,8 @@ class ETHService extends BaseService {
   }
 
   async start () {
+    this.started = true
+
     // Initialize Web3 and create a contract instance
     this.web3 = new Web3(this.options.provider)
     this.contract = new this.web3.eth.Contract(

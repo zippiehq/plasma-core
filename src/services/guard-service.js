@@ -9,10 +9,12 @@ class GuardService extends BaseService {
   }
 
   async start () {
+    this.started = true
     this.services.eth.on('event:ExitStarted', this._onExitStarted)
   }
 
   async stop () {
+    this.started = false
     this.services.eth.off('event:ExitStarted', this._onExitStarted)
   }
 

@@ -10,10 +10,6 @@ class EphemDBProvider extends BaseDBProvider {
     this.db = new Map()
   }
 
-  async start () {
-    this.started = true
-  }
-
   async get (key, fallback) {
     const exists = await this.exists(key)
     if (!exists) {

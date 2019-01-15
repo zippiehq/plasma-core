@@ -40,10 +40,10 @@ class Plasma {
     const services = [
       { type: this.options.dbProvider || DefaultDBProvider },
       { type: ChainService },
+      { type: RangeManagerService },
       { type: JSONRPCService },
       { type: this.options.operatorProvider || DefaultOperatorProvider },
       { type: this.options.walletProvider || DefaultWalletProvider },
-      { type: RangeManagerService },
       { type: ETHService },
       { type: SyncService }
     ]

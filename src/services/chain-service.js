@@ -8,10 +8,6 @@ class ChainService extends BaseService {
     return 'chain'
   }
 
-  async start () {
-    this.started = true
-  }
-
   /**
    * Determines whether the chain is currently syncing.
    * @return {boolean} `true` if the chain is syncing, `false` otherwise.
@@ -131,6 +127,7 @@ class ChainService extends BaseService {
     // Add each transfer in the transaction to the local state.
     transaction.transfers.forEach((transfer) => {
       this.services.rangeManager.addRange(transfer.recipient, {
+        token: transfer.token,
         start: transfer.start,
         end: transfer.end
       })
@@ -150,6 +147,7 @@ class ChainService extends BaseService {
       const senderOwnsRange = this.services.rangeManager.ownsRange(
         transfer.sender,
         {
+          token: transfer.token,
           start: transfer.start,
           end: transfer.end
         }
@@ -164,6 +162,7 @@ class ChainService extends BaseService {
 
     transaction.transfers.forEach((transfer) => {
       this.services.rangeManager.removeRange(transfer.sender, {
+        token: transfer.token,
         start: transfer.start,
         end: transfer.end
       })

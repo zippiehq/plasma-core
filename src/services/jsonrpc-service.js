@@ -54,10 +54,6 @@ class JSONRPCService extends BaseService {
     }
   }
 
-  async start () {
-    this.started = true
-  }
-
   get name () {
     return 'jsonrpc'
   }

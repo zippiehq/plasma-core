@@ -9,6 +9,8 @@ class SyncService extends BaseService {
   }
 
   async start () {
+    this.started = true
+
     // TODO: What happens if the client comes online later and needs to catch up?
     // TODO: Hmmm... maybe want a layer of abstraction here instead of watching events directly?
     this.services.eth.on('event:BlockCreated', this._onBlockCreated)
