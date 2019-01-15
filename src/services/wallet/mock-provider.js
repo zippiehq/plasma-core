@@ -51,13 +51,15 @@ class MockWalletProvider extends BaseWalletProvider {
 
     this.addresses.forEach((address, i) => {
       this.services.chain.addTransaction({
-        from: address,
-        to: address,
-        range: {
-          token: 'ETH',
-          start: i * 1000000,
-          end: (i + 1) * 1000000
-        }
+        transfers: [
+          {
+            sender: address,
+            recipient: address,
+            token: 0,
+            start: i * 1000000,
+            end: (i + 1) * 1000000
+          }
+        ]
       })
     })
   }

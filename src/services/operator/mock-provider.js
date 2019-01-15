@@ -1,4 +1,5 @@
 const BaseOperatorProvider = require('./base-provider')
+const utils = require('plasma-utils')
 
 /**
  * Mocks an operator instead of sending real external requests.
@@ -16,7 +17,10 @@ class MockOperatorProvider extends BaseOperatorProvider {
   }
 
   async getTransaction (hash) {
-    return JSON.parse(JSON.stringify(this.transactions[hash]))
+    const tx = this.transactions[hash]
+    let decoded = tx.decoded
+    decoded.hash = tx.hash
+    return decoded
   }
 
   async getPendingTransactions (address) {
@@ -25,14 +29,18 @@ class MockOperatorProvider extends BaseOperatorProvider {
 
   async sendTransaction (transaction) {
     // TODO: Check transaction validity.
-    const hash = Math.random() // TODO: Get the real hash of the tx.
-    transaction.hash = hash
-    this.transactions[hash] = transaction
-    if (!this.pending[transaction.to]) {
-      this.pending[transaction.to] = []
-    }
-    this.pending[transaction.to].push(hash)
-    return hash
+    const tx = new utils.serialization.models.Transaction(transaction)
+
+    this.transactions[tx.hash] = tx
+
+    tx.decoded.transfers.forEach((transfer) => {
+      if (!this.pending[transfer.recipient]) {
+        this.pending[transfer.recipient] = []
+      }
+      this.pending[transfer.recipient].push(tx.hash)
+    })
+
+    return tx.hash
   }
 }
 

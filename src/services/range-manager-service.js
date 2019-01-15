@@ -7,9 +7,9 @@ const BaseService = require('./base-service')
  * @param {*} range A range object.
  * @return {boolean} `true` if the range is valid, `false` otherwise.
  */
-function isValidRange ({ start, end }) {
+function isValidRange (range) {
   // TODO(tarrencev): Validate token
-  return start >= 0 && start < end
+  return range.start >= 0 && range.start < range.end
 }
 
 /**
@@ -43,10 +43,10 @@ function orderRanges (rangeA, rangeB) {
  * @param {*} range A range object.
  * @return {boolean} `true` if the user owns the range, `false` otherwise.
  */
-function containsRange (ranges, { start, end }) {
+function containsRange (ranges, range) {
   return ranges.some(
     ({ start: ownedRangeStart, end: ownedRangeEnd }) =>
-      ownedRangeStart <= start && ownedRangeEnd >= end
+      ownedRangeStart <= range.start && ownedRangeEnd >= range.end
   )
 }
 

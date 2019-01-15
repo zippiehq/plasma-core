@@ -127,7 +127,15 @@ class ChainService extends BaseService {
    */
   async addTransaction (transaction) {
     // TODO: Check if the transaction is valid.
-    this.services.rangeManager.addRange(transaction.to, transaction.range)
+
+    // Add each transfer in the transaction to the local state.
+    transaction.transfers.forEach((transfer) => {
+      this.services.rangeManager.addRange(transfer.recipient, {
+        start: transfer.start,
+        end: transfer.end
+      })
+    })
+
     await this.services.db.set(`transaction:${transaction.hash}`, transaction)
   }
 
@@ -138,18 +146,28 @@ class ChainService extends BaseService {
   async sendTransaction (transaction) {
     // TODO: Check that the range being sent is valid.
 
-    const senderOwnsRange = this.services.rangeManager.ownsRange(
-      transaction.from,
-      [transaction.range.start, transaction.range.end]
-    )
+    transaction.transfers.forEach((transfer) => {
+      const senderOwnsRange = this.services.rangeManager.ownsRange(
+        transfer.sender,
+        {
+          start: transfer.start,
+          end: transfer.end
+        }
+      )
 
-    if (!senderOwnsRange) {
-      throw new Error('Sender does not own the specified range')
-    }
+      if (!senderOwnsRange) {
+        throw new Error('Sender does not own the specified range')
+      }
+    })
 
     const receipt = await this.services.operator.sendTransaction(transaction)
 
-    this.services.rangeManager.removeRange(transaction.from, transaction.range)
+    transaction.transfers.forEach((transfer) => {
+      this.services.rangeManager.removeRange(transfer.sender, {
+        start: transfer.start,
+        end: transfer.end
+      })
+    })
 
     return receipt
   }
