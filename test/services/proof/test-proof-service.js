@@ -1,6 +1,11 @@
 const chai = require('chai')
 const BigNum = require('bn.js')
+const _ = require('lodash')
+const Web3 = require('web3')
+const utils = require('plasma-utils')
 
+const web3 = new Web3()
+const Transaction = utils.serialization.models.Transaction
 chai.should()
 
 const ProofService = require('../../../src/services/proof/proof-service')
@@ -60,6 +65,17 @@ const submitBlocks = async (blocks) => {
   for (let block of blocks) {
     await app.services.eth.contract.submitBlock(block)
   }
+}
+
+const hash = (transaction) => {
+  return (new Transaction(transaction)).hash.slice(2)
+}
+
+const sign = (address, transaction) => {
+  const account = accounts.find((account) => {
+    return account.address === address
+  })
+  return web3.eth.accounts.privateKeyToAccount(account.key).sign('0x' + hash(transaction)).signature
 }
 
 describe('ProofService', async () => {
@@ -167,84 +183,51 @@ describe('ProofService', async () => {
   })
 
   it('should not verify an invalid range', () => {
-    const invalidTransaction = {
-      block: 2,
-      transfers: [
-        { token: 0, start: 50, end: 0, sender: accounts[1].address, recipient: accounts[2].address }
-      ]
-    }
+    let invalidTransaction = _.cloneDeep(transaction)
+    invalidTransaction.transfers[0].start = 50
+    invalidTransaction.transfers[0].end = 0
 
     verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid transaction')
   })
 
   it('should not verify a zero-length range', () => {
-    const invalidTransaction = {
-      block: 2,
-      transfers: [
-        { token: 0, start: 0, end: 0, sender: accounts[1].address, recipient: accounts[2].address }
-      ]
-    }
+    let invalidTransaction = _.cloneDeep(transaction)
+    invalidTransaction.transfers[0].end = 0
 
     verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid transaction')
   })
 
   it('should not verify with missing chunks of history', () => {
-    const invalidProof = [
-      {
-        transaction: {
-          block: 1,
-          transfers: [
-            { token: 0, start: 0, end: 25, sender: accounts[0].address, recipient: accounts[1].address }
-          ]
-        },
-        proof: [
-          {
-            leafIndex: new BigNum(0),
-            parsedSum: new BigNum('ffffffffffffffffffffffffffffffff'),
-            inclusionProof: [
-              '0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff'
-            ],
-            signature: {
-              v: '1c',
-              r: 'f5a40ed275abebfa762285be122600fa5988c4e07911b6d93944f9772b86c7ce',
-              s: '517fc1f9fe01d76bee4fa940f75ab97937897b611db77fd317166b3ee029b2d8'
-            }
-          }
-        ]
-      }
-    ]
-    app.services.eth.contract.blocks[1] = 'f3b046095f1677c11ea526702c4e5601a5832d8fa4b664313ab8aff889e6572cffffffffffffffffffffffffffffffff'
+    let invalidProof = _.cloneDeep(proof)
+    invalidProof[0].transaction.transfers[0].end = 25
+    invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
+    app.services.eth.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
 
     verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
 
   it('should not verify an invalid history', () => {
-    const invalidProof = [
-      {
-        transaction: {
-          block: 1,
-          transfers: [
-            { token: 0, start: 0, end: 50, sender: accounts[1].address, recipient: accounts[0].address }
-          ]
-        },
-        proof: [
-          {
-            leafIndex: new BigNum(0),
-            parsedSum: new BigNum('ffffffffffffffffffffffffffffffff'),
-            inclusionProof: [
-              '0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff'
-            ],
-            signature: {
-              v: '1c',
-              r: '1b54e1576c5e361178202729e95bcfba676adaf78e20c70a9ace45f0208d18c7',
-              s: '413d7a8ec51b9bbf295efa366ba96aa7d508c226b44d299ba872dd65408d593c'
-            }
-          }
-        ]
-      }
-    ]
-    app.services.eth.contract.blocks[1] = 'e8564e8cdf308d1e64065634e5464f7722dd7cb0b20c8d5629a2fbc782b67c58ffffffffffffffffffffffffffffffff'
+    let invalidProof = _.cloneDeep(proof)
+    invalidProof[0].transaction.transfers[0].sender = accounts[1].address
+    invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
+    app.services.eth.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
 
     verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
+  })
+
+  it('should not verify a transaction with an invalid signature', () => {
+    let invalidProof = _.cloneDeep(proof)
+    invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].recipient, invalidProof[0].transaction)
+
+    verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid transaction signature')
+  })
+
+  it('should not verify a transaction with an invalid inclusion proof', () => {
+    let invalidProof = _.cloneDeep(proof)
+    invalidProof[0].proof[0].inclusionProof = [
+      '0000000000000000000000000000000000000000000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    ]
+
+    verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid inclusion proof')
   })
 })

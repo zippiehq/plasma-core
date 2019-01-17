@@ -1,6 +1,7 @@
 const EphemDBProvider = require('../src/services/db').EphemDBProvider
 const RangeManager = require('../src/services/range-manager-service')
 const ETHService = require('../src/services/eth/eth-service')
+const MockWalletProvider = require('../src/services/wallet/mock-provider')
 
 class App {
   constructor () {
@@ -9,9 +10,9 @@ class App {
   }
 
   async startServices () {
-    await this.services.db.start()
-    await this.services.rangeManager.start()
-    await this.services.eth.start()
+    for (let service in this.services) {
+      await this.services[service].start()
+    }
   }
 
   async reset () {
@@ -19,11 +20,13 @@ class App {
       started: true,
       addTransaction: (transaction) => {
         return true
-      }
+      },
+      start: async () => { return true }
     }
     this.services.db = new EphemDBProvider({ app: this })
     this.services.rangeManager = new RangeManager({ app: this })
     this.services.eth = new ETHService({ app: this })
+    this.services.wallet = new MockWalletProvider({ app: this })
 
     await this.startServices()
   }
