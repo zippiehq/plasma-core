@@ -13,19 +13,29 @@ class SyncService extends BaseService {
 
     // TODO: What happens if the client comes online later and needs to catch up?
     // TODO: Hmmm... maybe want a layer of abstraction here instead of watching events directly?
-    this.services.eth.contract.on('event:BlockCreated', this._onBlockCreated)
-    this.on('TransactionReceived', this._onTransactionReceived)
+    this.services.eth.contract.on(
+      'event:BlockSubmitted',
+      this._onBlockSubmitted.bind(this)
+    )
+    this.on('TransactionReceived', this._onTransactionReceived.bind(this))
 
     this._pollPendingTransactions()
   }
 
   async stop () {
-    this.services.eth.contract.off('event:BlockCreated', this._onBlockCreated)
-    this.off('TransactionReceived', this._onTransactionReceived)
+    this.services.eth.contract.off(
+      'event:BlockSubmitted',
+      this._onBlockSubmitted.bind(this)
+    )
+    this.off('TransactionReceived', this._onTransactionReceived.bind(this))
+
+    this._stopPollingPendingTransactions()
   }
 
   _pollPendingTransactions () {
-    setInterval(async () => {
+    this._stopPollingPendingTransactions()
+
+    this.pollRef = setInterval(async () => {
       const addresses = await this.services.wallet.getAccounts()
       const address = addresses[0]
       const pending = await this.services.operator.getPendingTransactions(
@@ -39,6 +49,12 @@ class SyncService extends BaseService {
     }, 1000)
   }
 
+  _stopPollingPendingTransactions () {
+    if (this.pollRef) {
+      clearInterval(this.pollRef)
+    }
+  }
+
   async _onTransactionReceived (event) {
     const hasTransaction = await this.services.chain.hasTransaction(event.hash)
     if (hasTransaction) {
@@ -49,10 +65,11 @@ class SyncService extends BaseService {
     await this.services.chain.addTransaction(transaction)
   }
 
-  async _onBlockCreated (event) {
+  async _onBlockSubmitted (event) {
     await this.services.chain.addBlockHeader(event.number, event.hash)
 
     // TODO: Figure out what to do if the operator tries to cheat.
+    /*
     const ranges = await this.services.chain.getOwnedRanges()
     for (let range of ranges) {
       let transaction = await this.services.operator.getTransaction(
@@ -61,6 +78,7 @@ class SyncService extends BaseService {
       )
       await this.services.chain.addTransaction(transaction)
     }
+    */
   }
 }
 

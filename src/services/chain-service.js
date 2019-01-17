@@ -61,53 +61,6 @@ class ChainService extends BaseService {
   }
 
   /**
-   * Checks if the chunks in a history are actually part of their respective blocks.
-   * @param {*} history A set of history chunks.
-   * @return {boolean} `true` if the chunks are included, `false` otherwise.
-   */
-  checkHistoryChunksValid (history) {
-    throw new Error('Not implemented')
-  }
-
-  /**
-   * Checks that a transaction proof is valid.
-   * @param {*} range A range identifier.
-   * @param {*} history A history that contains proofs.
-   * @return {boolean} `true` if the proof is valid, `false` otherwise.
-   */
-  checkTransactionProof (range, history) {
-    throw new Error('Not implemented')
-  }
-
-  /**
-   * Checks if a set of history chunks is valid and adds it to the chain.
-   * @param {*} history A set of history chunks.
-   */
-  addHistory (history) {
-    if (!this.checkHistoryChunksValid(history)) {
-      throw new Error('History is not valid')
-    }
-    this._addHistory(history)
-  }
-
-  /**
-   * Checks a transaction proof and adds history if the transaction is valid.
-   * @param {*} transaction A transaction object
-   */
-  checkProofAndAddHistory (transaction) {
-    // TODO: This is not actually how new transactions should be handled.
-    this.addTransaction(transaction)
-
-    /*
-    // TODO: Make sure this correctly checks the transaction proof.
-    if (this.checkTransactionProof(transaction.range, transaction.history)) {
-      throw new Error('Transaction proof is not valid')
-    }
-    this._addHistory(transaction.history)
-    */
-  }
-
-  /**
    * Checks if the chain has stored a specific transaction already.
    * @param {string} hash The transaction hash.
    * @return {boolean} `true` if the chain has stored the transaction, `false` otherwise.
@@ -141,8 +94,6 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object.
    */
   async sendTransaction (transaction) {
-    // TODO: Check that the range being sent is valid.
-
     transaction.transfers.forEach((transfer) => {
       const senderOwnsRange = this.services.rangeManager.ownsRange(
         transfer.sender,
@@ -169,15 +120,6 @@ class ChainService extends BaseService {
     })
 
     return receipt
-  }
-
-  /**
-   * Inserts a set of history chunks into the chain.
-   * @private
-   * @param {*} history A set of history chunks.
-   */
-  _addHistory (history) {
-    throw new Error('Not implemented')
   }
 }
 

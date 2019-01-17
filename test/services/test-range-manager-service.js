@@ -26,7 +26,6 @@ describe('RangeManagerService', async () => {
     it('should return correct service name', async () => {
       const expecation = 'rangeManager'
 
-      // Mock db methods
       range.name.should.equal(expecation)
     })
   })

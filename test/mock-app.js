@@ -15,6 +15,10 @@ class App {
     }
   }
 
+  registerService (service) {
+    this.services[service.name] = service
+  }
+
   async reset () {
     this.services.chain = {
       started: true,

@@ -36,6 +36,7 @@ class MockContractProvider extends BaseContractProvider {
     this.blocks[this.nextBlock] = hash
 
     this._emitEvent('BlockSubmitted', {
+      number: this.nextBlock,
       hash: hash
     })
 
