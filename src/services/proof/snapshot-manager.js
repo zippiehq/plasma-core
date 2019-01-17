@@ -128,6 +128,11 @@ class SnapshotManager {
     return snapshot.start.lt(snapshot.end)
   }
 
+  /**
+   * Casts a snapshot-like object into a snapshot.
+   * @param snapshot A snapshot-like object.
+   * @return A Snapshot object.
+   */
   _castSnapshot (snapshot) {
     return {
       start: new BigNum(snapshot.start),

@@ -6,12 +6,8 @@ const MockWalletProvider = require('../../src/services/wallet').MockWalletProvid
 const app = require('../mock-app')
 
 describe('ChainService', async () => {
-  const chain = new ChainService({
-    app: app
-  })
-  const wallet = new MockWalletProvider({
-    app: app
-  })
+  const chain = new ChainService({ app: app })
+  const wallet = new MockWalletProvider({ app: app })
 
   let accounts
   before(async () => {
