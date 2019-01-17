@@ -5,6 +5,16 @@ const ETHService = require('../src/services/eth/eth-service')
 class App {
   constructor () {
     this.services = {}
+    this.reset()
+  }
+
+  async startServices () {
+    await this.services.db.start()
+    await this.services.rangeManager.start()
+    await this.services.eth.start()
+  }
+
+  async reset () {
     this.services.chain = {
       started: true,
       addTransaction: (transaction) => {
@@ -15,13 +25,7 @@ class App {
     this.services.rangeManager = new RangeManager({ app: this })
     this.services.eth = new ETHService({ app: this })
 
-    this.startServices()
-  }
-
-  async startServices () {
-    await this.services.db.start()
-    await this.services.rangeManager.start()
-    await this.services.eth.start()
+    await this.startServices()
   }
 }
 

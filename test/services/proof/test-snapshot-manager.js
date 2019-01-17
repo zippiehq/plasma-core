@@ -1,4 +1,6 @@
 const chai = require('chai')
+const BigNum = require('bn.js')
+
 const should = chai.should()
 
 const SnapshotManager = require('../../../src/services/proof/snapshot-manager')
@@ -6,7 +8,7 @@ const constants = require('../../constants')
 const accounts = constants.ACCOUNTS
 
 describe('SnapshotManager', () => {
-  const deposit = { start: 0, end: 100, block: 0, owner: accounts[0] }
+  const deposit = { start: new BigNum(0), end: new BigNum(100), block: new BigNum(0), owner: accounts[0].address }
 
   it('should be able to apply a deposit', () => {
     const snapshotManager = new SnapshotManager()
@@ -19,10 +21,10 @@ describe('SnapshotManager', () => {
     const transaction = {
       block: 1,
       transfers: [
-        { start: 0, end: 100, from: accounts[0], to: accounts[1] }
+        { start: 0, end: 100, sender: accounts[0].address, recipient: accounts[1].address }
       ]
     }
-    const expected = { start: 0, end: 100, block: 1, owner: accounts[1] }
+    const expected = { start: new BigNum(0), end: new BigNum(100), block: new BigNum(1), owner: accounts[1].address }
 
     const snapshotManager = new SnapshotManager()
     snapshotManager.applyDeposit(deposit)
@@ -35,10 +37,10 @@ describe('SnapshotManager', () => {
     const transaction = {
       block: 1,
       transfers: [
-        { start: 0, end: 200, from: accounts[0], to: accounts[1] }
+        { start: 0, end: 200, sender: accounts[0].address, recipient: accounts[1].address }
       ]
     }
-    const expected = { start: 0, end: 100, block: 1, owner: accounts[1] }
+    const expected = { start: new BigNum(0), end: new BigNum(100), block: new BigNum(1), owner: accounts[1].address }
 
     const snapshotManager = new SnapshotManager()
     snapshotManager.applyDeposit(deposit)
@@ -51,12 +53,12 @@ describe('SnapshotManager', () => {
     const transaction = {
       block: 1,
       transfers: [
-        { start: 0, end: 50, from: accounts[0], to: accounts[1] }
+        { start: 0, end: 50, sender: accounts[0].address, recipient: accounts[1].address }
       ]
     }
     const expected = [
-      { start: 0, end: 50, block: 1, owner: accounts[1] },
-      { start: 50, end: 100, block: 0, owner: accounts[0] }
+      { start: new BigNum(0), end: new BigNum(50), block: new BigNum(1), owner: accounts[1].address },
+      { start: new BigNum(50), end: new BigNum(100), block: new BigNum(0), owner: accounts[0].address }
     ]
 
     const snapshotManager = new SnapshotManager()
@@ -70,7 +72,7 @@ describe('SnapshotManager', () => {
     const transaction = {
       block: 1,
       transfers: [
-        { start: 0, end: 100, from: accounts[1], to: accounts[0] }
+        { start: 0, end: 100, sender: accounts[1].address, recipient: accounts[0].address }
       ]
     }
 

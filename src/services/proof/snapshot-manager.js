@@ -1,3 +1,5 @@
+const BigNum = require('bn.js')
+
 /**
  * Subcomponent of ProofService.
  * Manages a temporary state that's built upon by a transaction proof.
@@ -36,8 +38,8 @@ class SnapshotManager {
       const overlapping = this._getOverlappingSnapshots(transfer)
       overlapping.forEach((snapshot) => {
         if (
-          snapshot.owner !== transfer.from ||
-          snapshot.block + 1 !== transaction.block
+          snapshot.owner !== transfer.sender ||
+          !snapshot.block.add(new BigNum(1)).eq(new BigNum(transaction.block))
         ) {
           throw new Error('Invalid state transition')
         }
@@ -66,7 +68,7 @@ class SnapshotManager {
           start: Math.max(snapshot.start, transfer.start),
           end: Math.min(snapshot.end, transfer.end),
           block: transaction.block,
-          owner: transfer.to
+          owner: transfer.recipient
         })
       })
     })
@@ -83,7 +85,7 @@ class SnapshotManager {
         start: transfer.start,
         end: transfer.end,
         block: transaction.block,
-        owner: transfer.to
+        owner: transfer.recipient
       })
     })
   }
@@ -94,11 +96,12 @@ class SnapshotManager {
    * @return {boolean} `true` if the state contains the snapshot, `false` otherwise.
    */
   _hasSnapshot (snapshot) {
+    snapshot = this._castSnapshot(snapshot)
     return this.snapshots.some((s) => {
       return (
-        s.start === snapshot.start &&
-        s.end === snapshot.end &&
-        s.block === snapshot.block &&
+        s.start.eq(snapshot.start) &&
+        s.end.eq(snapshot.end) &&
+        s.block.eq(snapshot.block) &&
         s.owner === snapshot.owner
       )
     })
@@ -121,7 +124,17 @@ class SnapshotManager {
    * @return {boolean} `true` if the snapshot is valid, `false` otherwise.
    */
   _validSnapshot (snapshot) {
-    return snapshot.start < snapshot.end
+    snapshot = this._castSnapshot(snapshot)
+    return snapshot.start.lt(snapshot.end)
+  }
+
+  _castSnapshot (snapshot) {
+    return {
+      start: new BigNum(snapshot.start),
+      end: new BigNum(snapshot.end),
+      block: new BigNum(snapshot.block),
+      owner: snapshot.owner
+    }
   }
 
   /**
@@ -129,6 +142,8 @@ class SnapshotManager {
    * @param {*} snapshot A Snapshot object to insert.
    */
   _insertSnapshot (snapshot) {
+    snapshot = this._castSnapshot(snapshot)
+
     this.snapshots.push(snapshot)
     this.snapshots.sort((a, b) => {
       return a.start - b.start
@@ -159,14 +174,14 @@ class SnapshotManager {
     snapshots.forEach((snapshot) => {
       let left, right
       merged.forEach((s, i) => {
-        if (s.block !== snapshot.block || s.owner !== snapshot.owner) {
+        if (!s.block.eq(snapshot.block) || s.owner !== snapshot.owner) {
           return
         }
 
-        if (s.end === snapshot.start) {
+        if (s.end.eq(snapshot.start)) {
           left = i
         }
-        if (s.start === snapshot.end) {
+        if (s.start.eq(snapshot.end)) {
           right = i
         }
       })

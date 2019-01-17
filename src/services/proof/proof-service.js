@@ -1,10 +1,18 @@
+const Web3 = require('web3')
 const BaseService = require('../base-service')
 const SnapshotManager = require('./snapshot-manager')
+const utils = require('plasma-utils')
 
 /**
  * Service that handles checking history proofs.
  */
 class ProofSerivce extends BaseService {
+  constructor (options) {
+    super(options)
+
+    this.web3 = new Web3()
+  }
+
   get name () {
     return 'prover'
   }
@@ -29,7 +37,7 @@ class ProofSerivce extends BaseService {
 
     // Apply each element of the proof.
     for (let element of proof) {
-      if (!(await this._transactionValid(element))) {
+      if (!(await this._transactionValid(element.transaction, element.proof))) {
         throw new Error('Invalid transaction')
       }
       snapshotManager.applyTransaction(element.transaction)
@@ -58,9 +66,43 @@ class ProofSerivce extends BaseService {
    * @param {*} transaction A Transaction object.
    * @return {boolean} `true` if the transaction is valid, `false` otherwise.
    */
-  async _transactionValid (transaction) {
-    return true // TODO: Implement this.
-    // throw new Error('Not implemented')
+  async _transactionValid (transaction, proof) {
+    const serializedTx = new utils.serialization.models.Transaction(transaction)
+    const blockHash = await this.services.eth.contract.getBlock(
+      transaction.block
+    )
+
+    // Verify signatures and inclusion proofs for every transfer in the transaction.
+    for (let i = 0; i < transaction.transfers.length; i++) {
+      let transferProof = proof[i]
+      let transfer = transaction.transfers[i]
+
+      // Convert the signature to a string if necessary.
+      let signature = transferProof.signature
+      if (!(signature instanceof String || typeof signature === 'string')) {
+        signature = '0x' + signature.r + signature.s + signature.v
+      }
+
+      // Check that this transfer was correctly signed.
+      let signer = this.web3.eth.accounts.recover(serializedTx.hash, signature)
+      if (signer !== transfer.sender) {
+        throw new Error('Invalid transaction signature')
+      }
+
+      // Check that the transfer was included in the block.
+      let included = utils.PlasmaMerkleSumTree.checkInclusion(
+        transferProof.leafIndex,
+        serializedTx,
+        i,
+        transferProof.inclusionProof,
+        blockHash
+      )
+      if (!included) {
+        throw new Error('Invalid inclusion proof')
+      }
+    }
+
+    return true
   }
 }
 

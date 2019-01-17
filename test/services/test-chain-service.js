@@ -12,9 +12,12 @@ describe('ChainService', async () => {
   const wallet = new MockWalletProvider({
     app: app
   })
-  wallet.start()
 
-  const accounts = await wallet.getAccounts()
+  let accounts
+  before(async () => {
+    await wallet.start()
+    accounts = await wallet.getAccounts()
+  })
 
   it('should return the balances of an address', async () => {
     const balances = await chain.getBalances(accounts[0])
