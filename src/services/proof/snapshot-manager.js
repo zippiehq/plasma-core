@@ -1,4 +1,5 @@
 const BigNum = require('bn.js')
+const _ = require('lodash')
 
 /**
  * Subcomponent of ProofService.
@@ -79,9 +80,11 @@ class SnapshotManager {
    * @param {*} transaction A Transaction object.
    * @return {boolean} `true` if the transaction is valid, `false` otherwise.
    */
-  verifyTransaction (transaction) {
+  static verifyTransaction (transaction, snapshots) {
+    const snapshotManager = new SnapshotManager(_.cloneDeep(snapshots))
+    snapshotManager.applyTransaction(transaction)
     return transaction.transfers.every((transfer) => {
-      return this._hasSnapshot({
+      return snapshotManager._hasSnapshot({
         start: transfer.start,
         end: transfer.end,
         block: transaction.block,

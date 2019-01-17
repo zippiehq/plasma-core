@@ -94,20 +94,11 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object.
    */
   async sendTransaction (transaction) {
-    transaction.transfers.forEach((transfer) => {
-      const senderOwnsRange = this.services.rangeManager.ownsRange(
-        transfer.sender,
-        {
-          token: transfer.token,
-          start: transfer.start,
-          end: transfer.end
-        }
-      )
-
-      if (!senderOwnsRange) {
-        throw new Error('Sender does not own the specified range')
-      }
-    })
+    // Check if the transaction is valid.
+    const relevantRanges = this.services.rangeManager.getRelevantRanges(
+      transaction
+    )
+    this.services.proof.checkTransaction(transaction, relevantRanges)
 
     const receipt = await this.services.operator.sendTransaction(transaction)
 

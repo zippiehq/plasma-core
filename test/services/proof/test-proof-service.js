@@ -14,6 +14,38 @@ const app = require('../../mock-app')
 const constants = require('../../constants')
 const accounts = constants.ACCOUNTS
 
+/* Helper functions */
+const submitDeposits = async (deposits) => {
+  for (let deposit of deposits) {
+    await app.services.eth.contract.deposit(0, deposit.end - deposit.start, deposit.owner)
+  }
+}
+
+const submitBlocks = async (blocks) => {
+  for (let block of blocks) {
+    await app.services.eth.contract.submitBlock(block)
+  }
+}
+
+const hash = (transaction) => {
+  return (new Transaction(transaction)).hash.slice(2)
+}
+
+const sign = (address, transaction) => {
+  const account = accounts.find((account) => {
+    return account.address === address
+  })
+  return web3.eth.accounts.privateKeyToAccount(account.key).sign('0x' + hash(transaction)).signature
+}
+
+const autoSign = (transaction) => {
+  for (let transfer of transaction.transfers) {
+    transfer.signature = sign(transfer.sender, transaction)
+  }
+  return transaction
+}
+
+/* Useful constants */
 const deposits = [
   { token: 0, block: 0, start: 0, end: 50, owner: accounts[0].address }
 ]
@@ -48,35 +80,13 @@ const blocks = [
   '652bd4ecfdb5162357089395a3f23ef42144d2907c5110f8c6ff909c4bb17d1cffffffffffffffffffffffffffffffff'
 ]
 
-const transaction = {
+let transaction = {
   block: 2,
   transfers: [
     { token: 0, start: 0, end: 50, sender: accounts[1].address, recipient: accounts[2].address }
   ]
 }
-
-const submitDeposits = async (deposits) => {
-  for (let deposit of deposits) {
-    await app.services.eth.contract.deposit(0, deposit.end - deposit.start, deposit.owner)
-  }
-}
-
-const submitBlocks = async (blocks) => {
-  for (let block of blocks) {
-    await app.services.eth.contract.submitBlock(block)
-  }
-}
-
-const hash = (transaction) => {
-  return (new Transaction(transaction)).hash.slice(2)
-}
-
-const sign = (address, transaction) => {
-  const account = accounts.find((account) => {
-    return account.address === address
-  })
-  return web3.eth.accounts.privateKeyToAccount(account.key).sign('0x' + hash(transaction)).signature
-}
+transaction = autoSign(transaction)
 
 describe('ProofService', async () => {
   const verifier = new ProofService({ app: app })
@@ -159,12 +169,13 @@ describe('ProofService', async () => {
         ]
       }
     ]
-    const manyDepositTx = {
+    let manyDepositTx = {
       block: 3,
       transfers: [
         { token: 0, start: 50, end: 100, sender: accounts[1].address, recipient: accounts[2].address }
       ]
     }
+    manyDepositTx = autoSign(manyDepositTx)
 
     await submitDeposits(manyDeposits)
     await submitBlocks(['b4c4b4d13ff92bb050e7f3b9816a5738424b2413178661d0c42348dc90db870dffffffffffffffffffffffffffffffff'])
@@ -186,6 +197,7 @@ describe('ProofService', async () => {
     let invalidTransaction = _.cloneDeep(transaction)
     invalidTransaction.transfers[0].start = 50
     invalidTransaction.transfers[0].end = 0
+    invalidTransaction = autoSign(invalidTransaction)
 
     verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid transaction')
   })
@@ -193,6 +205,7 @@ describe('ProofService', async () => {
   it('should not verify a zero-length range', () => {
     let invalidTransaction = _.cloneDeep(transaction)
     invalidTransaction.transfers[0].end = 0
+    invalidTransaction = autoSign(invalidTransaction)
 
     verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid transaction')
   })

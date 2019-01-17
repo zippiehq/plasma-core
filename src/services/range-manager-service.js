@@ -76,10 +76,23 @@ class RangeManagerService extends BaseService {
   /**
    * Returns the list of ranges owned by an address.
    * @param {string} address An address.
-   * @return {*} List of owned ranges.
+   * @return {Array} List of owned ranges.
    */
   async getOwnedRanges (address) {
     return this.services.db.get(`ranges:${address}`, [])
+  }
+
+  /**
+   * Returns a list of ranges relevant to a transaction.
+   * @param {*} transaction A Transaction object.
+   * @return {Array} List of ranges relevant to that transaction.
+   */
+  async getRelevantRanges (transaction) {
+    let ranges = []
+    for (let transfer of transaction.transfers) {
+      ranges.concat(await this.getOwnedRanges(transfer.sender))
+    }
+    return ranges
   }
 
   /**

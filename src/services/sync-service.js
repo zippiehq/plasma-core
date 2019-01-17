@@ -23,11 +23,14 @@ class SyncService extends BaseService {
   }
 
   async stop () {
-    this.services.eth.contract.off(
+    this.services.eth.contract.removeListener(
       'event:BlockSubmitted',
       this._onBlockSubmitted.bind(this)
     )
-    this.off('TransactionReceived', this._onTransactionReceived.bind(this))
+    this.removeListener(
+      'TransactionReceived',
+      this._onTransactionReceived.bind(this)
+    )
 
     this._stopPollingPendingTransactions()
   }

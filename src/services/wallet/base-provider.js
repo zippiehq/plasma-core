@@ -29,6 +29,16 @@ class BaseWalletProvider extends BaseService {
       'Classes that extend BaseWalletProvider must implement this method'
     )
   }
+
+  /**
+   * Recovers the address that signed a message.
+   * @param {string} message Message that was signed.
+   * @param {string} signature Signature generated.
+   * @return {string} Address of the signer.
+   */
+  recover (message, signature) {
+    return this.web3.eth.accounts.recover(message, signature)
+  }
 }
 
 module.exports = BaseWalletProvider
