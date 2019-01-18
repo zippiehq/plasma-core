@@ -19,22 +19,12 @@ class SyncService extends BaseService {
   async start () {
     this.started = true
 
-    // TODO: What happens if the client comes online later and needs to catch up?
-    // TODO: Hmmm... maybe want a layer of abstraction here instead of watching events directly?
-    this.services.eth.contract.on(
-      'event:BlockSubmitted',
-      this._onBlockSubmitted.bind(this)
-    )
     this.on('TransactionReceived', this._onTransactionReceived.bind(this))
 
     this._pollPendingTransactions()
   }
 
   async stop () {
-    this.services.eth.contract.removeListener(
-      'event:BlockSubmitted',
-      this._onBlockSubmitted.bind(this)
-    )
     this.removeListener(
       'TransactionReceived',
       this._onTransactionReceived.bind(this)
@@ -90,11 +80,6 @@ class SyncService extends BaseService {
       proof
     } = await this.services.operator.getTransaction(event.transaction)
     await this.services.chain.addTransaction(transaction, deposits, proof)
-  }
-
-  // TODO: Figure out if this is necessary at all.
-  async _onBlockSubmitted (event) {
-    await this.services.chain.addBlockHeader(event.number, event.hash)
   }
 }
 
