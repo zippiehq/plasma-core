@@ -24,7 +24,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
   }
 
   async sendTransaction (transaction) {
-    // TODO: Check transaction validity.
+    // TODO: Worth it to transaction validity?
     const tx = new utils.serialization.models.Transaction(transaction)
 
     this.transactions[tx.hash] = tx

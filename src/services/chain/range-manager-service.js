@@ -11,7 +11,7 @@ const BaseService = require('../base-service')
  * @return {boolean} `true` if the range is valid, `false` otherwise.
  */
 function isValidRange (range) {
-  // TODO(tarrencev): Validate token
+  // TODO: Check that the token is valid.
   return range.start.gte(0) && range.start.lt(range.end)
 }
 

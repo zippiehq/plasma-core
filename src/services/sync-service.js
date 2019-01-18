@@ -43,7 +43,7 @@ class SyncService extends BaseService {
       const address = addresses[0]
 
       const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
-      // TODO: Should this be determined locally?
+      // TODO: Should this be determined locally? Also, should we store blocks locally?
       const currentBlock = await this.services.eth.contract.getCurrentBlock()
 
       const pending = await this.services.operator.getTransactions(
