@@ -1,5 +1,5 @@
 # plasma-core
-[![Coverage Status](https://coveralls.io/repos/github/plasma-group/plasma-core/badge.svg?branch=master)](https://coveralls.io/github/plasma-group/plasma-core?branch=master) [![Build Status](https://travis-ci.org/plasma-group/plasma-core.svg?branch=master)](https://travis-ci.org/plasma-group/plasma-core)
+[![Coverage Status](https://coveralls.io/repos/github/plasma-group/plasma-core/badge.svg?branch=master)](https://coveralls.io/github/plasma-group/plasma-core?branch=master) [![Build Status](https://travis-ci.org/plasma-group/plasma-core.svg?branch=master)](https://travis-ci.org/plasma-group/plasma-core) [![Codacy Badge](https://api.codacy.com/project/badge/Grade/a20be2fa68eb4066a4bcd49dd1f91c74)](https://www.codacy.com/app/kfichter/plasma-core?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=plasma-group/plasma-core&amp;utm_campaign=Badge_Grade)
 
 `plasma-core` is Plasma Group's core node software. With `plasma-core`, you can either launch a node from your command line or include the library into another project to add additional functionality. 
 
