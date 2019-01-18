@@ -1,5 +1,8 @@
+const BigNum = require('bn.js')
+
 const BaseService = require('../base-service')
 
+// TODO: Maybe make these functions into static methods?
 /**
  * Validates a range.
  * - Range start should be >= 0
@@ -9,7 +12,7 @@ const BaseService = require('../base-service')
  */
 function isValidRange (range) {
   // TODO(tarrencev): Validate token
-  return range.start >= 0 && range.start < range.end
+  return range.start.gte(0) && range.start.lt(range.end)
 }
 
 /**
@@ -20,14 +23,14 @@ function isValidRange (range) {
  */
 function orderRanges (rangeA, rangeB) {
   // No curRange and new range comes before current range
-  if (rangeA.end < rangeB.start) {
+  if (rangeA.end.lt(rangeB.start)) {
     return [rangeA, rangeB]
-  } else if (rangeA.start === rangeB.end) {
+  } else if (rangeA.start.eq(rangeB.end)) {
     // No curRange and new range start == current range end
     // merge to end of current range
     rangeB.end = rangeA.end
     return [rangeB]
-  } else if (rangeA.end === rangeB.start) {
+  } else if (rangeA.end.eq(rangeB.start)) {
     // If new range end == current range start
     // merge to front of current range
     rangeB.start = rangeA.start
@@ -46,7 +49,7 @@ function orderRanges (rangeA, rangeB) {
 function containsRange (ranges, range) {
   return ranges.some(
     ({ start: ownedRangeStart, end: ownedRangeEnd }) =>
-      ownedRangeStart <= range.start && ownedRangeEnd >= range.end
+      ownedRangeStart.lte(range.start) && ownedRangeEnd.gte(range.end)
   )
 }
 
@@ -59,9 +62,9 @@ function containsRange (ranges, range) {
  */
 function createRange (token, start, end) {
   return {
-    token,
-    start,
-    end
+    token: token,
+    start: new BigNum(start),
+    end: new BigNum(end)
   }
 }
 
@@ -79,7 +82,7 @@ class RangeManagerService extends BaseService {
    * @return {Array} List of owned ranges.
    */
   async getOwnedRanges (address) {
-    return this.services.db.get(`ranges:${address}`, [])
+    return this._getRanges(address)
   }
 
   /**
@@ -104,6 +107,8 @@ class RangeManagerService extends BaseService {
    * @return {boolean} `true` if the user owns the range, `false` otherwise.
    */
   async ownsRange (address, range) {
+    range = this._castRange(range)
+
     const ownedRanges = await this.getOwnedRanges(address)
     return containsRange(ownedRanges, range)
   }
@@ -116,13 +121,15 @@ class RangeManagerService extends BaseService {
    * @return {*} List of ranges to use for the transaction.
    */
   async pickRanges (address, token, amount) {
+    amount = new BigNum(amount)
+
     const ownedRanges = await this.getOwnedRanges(address)
-    const sortedRanges = ownedRanges.sort(
-      (a, b) => b.end - b.start - (a.end - a.start)
+    const sortedRanges = ownedRanges.sort((a, b) =>
+      b.end.sub(b.start).sub(a.end.sub(a.start))
     )
     const pickedRanges = []
 
-    while (amount > 0) {
+    while (amount.gt(new BigNum(0))) {
       // throw if no ranges left
       if (sortedRanges.length === 0) {
         throw new Error(
@@ -133,17 +140,17 @@ class RangeManagerService extends BaseService {
       const smallestRange = sortedRanges.pop()
 
       if (smallestRange.token === token) {
-        const smallestRangeLength = smallestRange.end - smallestRange.start
+        const smallestRangeLength = smallestRange.end.sub(smallestRange.start)
 
-        if (smallestRangeLength <= amount) {
+        if (smallestRangeLength.lte(amount)) {
           pickedRanges.push(smallestRange)
-          amount -= smallestRangeLength
+          amount = amount.sub(smallestRangeLength)
         } else {
           // Pick a partial range
           const partialRange = createRange(
             smallestRange.token,
             smallestRange.start,
-            smallestRange.start + amount
+            smallestRange.start.add(amount)
           )
           pickedRanges.push(partialRange)
           break
@@ -151,7 +158,7 @@ class RangeManagerService extends BaseService {
       }
     }
 
-    pickedRanges.sort((a, b) => a.start - b.start)
+    pickedRanges.sort((a, b) => a.start.sub(b.start))
     return pickedRanges
   }
 
@@ -187,6 +194,8 @@ class RangeManagerService extends BaseService {
    * @param {*} ranges Ranges to add.
    */
   async addRanges (address, ranges) {
+    ranges = this._castRanges(ranges)
+
     // Throw if provided range is invalid
     if (ranges.some((range) => !isValidRange(range))) {
       throw new Error(`Invalid range provided: ${ranges}`)
@@ -197,12 +206,12 @@ class RangeManagerService extends BaseService {
     // If there are no owned ranges,
     // just sort and add the new ranges
     if (ownedRanges.length === 0) {
-      ranges.sort((a, b) => a.start - b.start)
-      return this.services.db.set(`ranges:${address}`, ranges)
+      ranges.sort((a, b) => a.start.sub(b.start))
+      return this._setRanges(address, ranges)
     }
 
     ranges = ranges.concat(ownedRanges)
-    ranges.sort((a, b) => a.start - b.start)
+    ranges.sort((a, b) => a.start.sub(b.start))
 
     const nextRanges = ranges.reduce((nextRanges, newRange) => {
       if (nextRanges.length === 0) {
@@ -212,7 +221,7 @@ class RangeManagerService extends BaseService {
       return nextRanges.concat(orderRanges(lastRange, newRange))
     }, [])
 
-    return this.services.db.set(`ranges:${address}`, nextRanges)
+    return this._setRanges(address, nextRanges)
   }
 
   /**
@@ -230,13 +239,15 @@ class RangeManagerService extends BaseService {
    * @param {*} ranges An array of ranges to remove.
    */
   async removeRanges (address, ranges) {
+    ranges = this._castRanges(ranges)
+
     const ownedRanges = await this.getOwnedRanges(address)
 
     if (ranges.some((range) => !containsRange(ownedRanges, range))) {
       throw new Error(`Attempted to remove a range not owned by address.`)
     }
 
-    ranges.sort((a, b) => b.start - a.start)
+    ranges.sort((a, b) => b.start.sub(a.start))
 
     let toRemove = ranges.pop()
     const nextRanges = ownedRanges.reduce((nextRanges, ownedRange) => {
@@ -244,15 +255,15 @@ class RangeManagerService extends BaseService {
         // All ranges removed already
         nextRanges.push(ownedRange)
       } else if (
-        ownedRange.start === toRemove.start &&
-        ownedRange.end === toRemove.end &&
+        ownedRange.start.eq(toRemove.start) &&
+        ownedRange.end.eq(toRemove.end) &&
         ownedRange.token === toRemove.token
       ) {
         // Remove this range
         toRemove = ranges.pop()
       } else if (
-        ownedRange.start < toRemove.start &&
-        ownedRange.end > toRemove.end &&
+        ownedRange.start.lt(toRemove.start) &&
+        ownedRange.end.gt(toRemove.end) &&
         ownedRange.token === toRemove.token
       ) {
         // This range contains the range to remove
@@ -262,8 +273,8 @@ class RangeManagerService extends BaseService {
         ])
         toRemove = ranges.pop()
       } else if (
-        ownedRange.start === toRemove.start &&
-        ownedRange.end > toRemove.end &&
+        ownedRange.start.eq(toRemove.start) &&
+        ownedRange.end.gt(toRemove.end) &&
         ownedRange.token === toRemove.token
       ) {
         // Remove front of a range
@@ -272,8 +283,8 @@ class RangeManagerService extends BaseService {
         )
         toRemove = ranges.pop()
       } else if (
-        ownedRange.start < toRemove.start &&
-        ownedRange.end === toRemove.end &&
+        ownedRange.start.lt(toRemove.start) &&
+        ownedRange.end.eq(toRemove.end) &&
         ownedRange.token === toRemove.token
       ) {
         // Remove end of a range
@@ -287,7 +298,27 @@ class RangeManagerService extends BaseService {
       return nextRanges
     }, [])
 
-    return this.services.db.set(`ranges:${address}`, nextRanges)
+    return this._setRanges(address, nextRanges)
+  }
+
+  async _setRanges (address, ranges) {
+    return this.services.db.set(`ranges:${address}`, ranges)
+  }
+
+  async _getRanges (address) {
+    return this._castRanges(await this.services.db.get(`ranges:${address}`, []))
+  }
+
+  _castRanges (ranges) {
+    return ranges.map(this._castRange.bind(this))
+  }
+
+  _castRange (range) {
+    return {
+      start: new BigNum(range.start),
+      end: new BigNum(range.end),
+      token: range.token
+    }
   }
 }
 

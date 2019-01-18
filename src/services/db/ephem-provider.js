@@ -20,10 +20,15 @@ class EphemDBProvider extends BaseDBProvider {
       }
     }
 
-    return this.db.get(key)
+    let result = this.db.get(key)
+    return this._isJson(result) ? JSON.parse(result) : result
   }
 
   async set (key, value) {
+    if (!(value instanceof String || typeof value === 'string')) {
+      value = JSON.stringify(value)
+    }
+
     this.db.set(key, value)
   }
 
@@ -33,6 +38,15 @@ class EphemDBProvider extends BaseDBProvider {
 
   async exists (key) {
     return this.db.has(key)
+  }
+
+  _isJson (str) {
+    try {
+      JSON.parse(str)
+    } catch (err) {
+      return false
+    }
+    return true
   }
 }
 

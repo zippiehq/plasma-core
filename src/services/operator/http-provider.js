@@ -18,6 +18,18 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     return 'http'
   }
 
+  async getRangesByOwner (owner, startBlock) {
+    return this._handle('op_getRangesByOwner', [owner, startBlock])
+  }
+
+  async getTransactionHistory (transaction, startBlock) {
+    return this._handle('op_getTxHistory', [transaction, startBlock])
+  }
+
+  async sendTransaction (transaction) {
+    return this._handle('op_sendTransaction', [transaction])
+  }
+
   async _handle (method, params) {
     const rawResponse = await this.http.post('/', {
       jsonrpc: '2.0',
@@ -30,18 +42,6 @@ class HttpOperatorProvider extends BaseOperatorProvider {
       throw response.error
     }
     return response.result
-  }
-
-  async getRangesByOwner (owner, startBlock) {
-    return this._handle('op_getRangesByOwner', [owner, startBlock])
-  }
-
-  async getTransactionHistory (transaction, startBlock) {
-    return this._handle('op_getTxHistory', [transaction, startBlock])
-  }
-
-  async sendTransaction (transaction) {
-    return this._handle('op_sendTransaction', [transaction])
   }
 }
 

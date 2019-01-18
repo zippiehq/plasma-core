@@ -69,9 +69,11 @@ describe('RangeManagerService', async () => {
   describe('getOwnedRanges(address)', () => {
     it('should return owned ranges for address', async () => {
       const ownedRanges = [{ token: '0xdeadbeef', start: 10, end: 100 }]
+      const expectation = range._castRanges(ownedRanges)
+
       // Mock db methods
       app.services.db.get = sinon.fake.returns(ownedRanges)
-      range.getOwnedRanges(bob).should.eventually.equal(ownedRanges)
+      range.getOwnedRanges(bob).should.eventually.deep.equal(expectation)
       app.services.db.get.should.be.calledWith(`ranges:${bob}`)
     })
   })
@@ -120,7 +122,7 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 80, end: 85 },
         { token: '0xdeadbeef', start: 200, end: 250 }
       ]
-      const expectation = [{ token: '0xdeadbeef', start: 80, end: 85 }]
+      const expectation = range._castRanges([{ token: '0xdeadbeef', start: 80, end: 85 }])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -133,7 +135,7 @@ describe('RangeManagerService', async () => {
       const amount = 50
       const token = '0xdeadbeef'
       const existing = [{ token: '0xdeadbeef', start: 200, end: 300 }]
-      const expectation = [{ token: '0xdeadbeef', start: 200, end: 250 }]
+      const expectation = range._castRanges([{ token: '0xdeadbeef', start: 200, end: 250 }])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -151,11 +153,11 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 80, end: 100 },
         { token: '0xdeadbeef', start: 200, end: 250 }
       ]
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 10 },
         { token: '0xdeadbeef', start: 30, end: 50 },
         { token: '0xdeadbeef', start: 80, end: 100 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -173,12 +175,12 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 80, end: 100 },
         { token: '0xdeadbeef', start: 200, end: 250 }
       ]
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 10 },
         { token: '0xdeadbeef', start: 30, end: 50 },
         { token: '0xdeadbeef', start: 80, end: 100 },
         { token: '0xdeadbeef', start: 200, end: 205 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -206,7 +208,7 @@ describe('RangeManagerService', async () => {
   describe('addRange(address, range)', () => {
     it('should add a range for address who owns no existing ranges', async () => {
       const toAdd = { token: '0xdeadbeef', start: 0, end: 100 }
-      const expectation = [toAdd]
+      const expectation = range._castRanges([toAdd])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -219,7 +221,7 @@ describe('RangeManagerService', async () => {
     it('should add a range for address who owns existing ranges', async () => {
       const toAdd = { token: '0xdeadbeef', start: 0, end: 100 }
       const existing = [{ token: '0xdeadbeef', start: 200, end: 205 }]
-      const expectation = [toAdd, ...existing]
+      const expectation = range._castRanges([toAdd, ...existing])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -240,10 +242,10 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 0, end: 80 },
         { token: '0xdeadbeef', start: 200, end: 210 }
       ]
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 100 },
         { token: '0xdeadbeef', start: 200, end: 210 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -259,10 +261,10 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 0, end: 80 },
         { token: '0xdeadbeef', start: 200, end: 210 }
       ]
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 80 },
         { token: '0xdeadbeef', start: 110, end: 210 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -278,10 +280,10 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 0, end: 99 },
         { token: '0xdeadbeef', start: 200, end: 205 }
       ]
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 99 },
         { token: '0xdeadbeef', start: 100, end: 205 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -297,7 +299,7 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 0, end: 80 },
         { token: '0xdeadbeef', start: 200, end: 210 }
       ]
-      const expectation = [{ token: '0xdeadbeef', start: 0, end: 210 }]
+      const expectation = range._castRanges([{ token: '0xdeadbeef', start: 0, end: 210 }])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -315,13 +317,13 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 93, end: 97 },
         { token: '0xdeadbeef', start: 200, end: 210 }
       ]
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 80 },
         { token: '0xdeadbeef', start: 81, end: 82 },
         { token: '0xdeadbeef', start: 93, end: 97 },
         { token: '0xdeadbeef', start: 100, end: 150 },
         { token: '0xdeadbeef', start: 200, end: 210 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -344,14 +346,14 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 0, end: 80 },
         { token: '0xdeadbeef', start: 200, end: 210 }
       ]
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 80 },
         { token: '0xdeadbeef', start: 81, end: 82 },
         { token: '0xdeadbeef', start: 85, end: 90 },
         { token: '0xdeadbeef', start: 100, end: 150 },
         { token: '0xdeadbeef', start: 200, end: 210 },
         { token: '0xdeadbeef', start: 250, end: 300 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -379,10 +381,10 @@ describe('RangeManagerService', async () => {
     it('should remove a range for address where partial range is removed', async () => {
       const ownedRanges = [{ token: '0xdeadbeef', start: 0, end: 200 }]
       const toRemove = { token: '0xdeadbeef', start: 100, end: 150 }
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 100 },
         { token: '0xdeadbeef', start: 150, end: 200 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -395,7 +397,7 @@ describe('RangeManagerService', async () => {
     it('should remove a range for address where start of a range is removed', async () => {
       const ownedRanges = [{ token: '0xdeadbeef', start: 0, end: 200 }]
       const toRemove = { token: '0xdeadbeef', start: 0, end: 100 }
-      const expectation = [{ token: '0xdeadbeef', start: 100, end: 200 }]
+      const expectation = range._castRanges([{ token: '0xdeadbeef', start: 100, end: 200 }])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -408,7 +410,7 @@ describe('RangeManagerService', async () => {
     it('should remove a range for address where end of a range is removed', async () => {
       const ownedRanges = [{ token: '0xdeadbeef', start: 0, end: 200 }]
       const toRemove = { token: '0xdeadbeef', start: 100, end: 200 }
-      const expectation = [{ token: '0xdeadbeef', start: 0, end: 100 }]
+      const expectation = range._castRanges([{ token: '0xdeadbeef', start: 0, end: 100 }])
 
       // Mock db methods
       app.services.db.set = sinon.fake()
@@ -431,12 +433,12 @@ describe('RangeManagerService', async () => {
         { token: '0xdeadbeef', start: 25, end: 100 },
         { token: '0xdeadbeef', start: 250, end: 349 }
       ]
-      const expectation = [
+      const expectation = range._castRanges([
         { token: '0xdeadbeef', start: 0, end: 10 },
         { token: '0xdeadbeef', start: 100, end: 200 },
         { token: '0xdeadbeef', start: 349, end: 350 },
         { token: '0xdeadbeef', start: 500, end: 600 }
-      ]
+      ])
 
       // Mock db methods
       app.services.db.set = sinon.fake()

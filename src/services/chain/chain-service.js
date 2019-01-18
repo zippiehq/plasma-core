@@ -52,21 +52,22 @@ class ChainService extends BaseService {
   }
 
   /**
-   * Adds a block header to the database.
-   * @param {*} block Number of the block to add.
-   * @param {string} header Header of the given block.
-   */
-  async addBlockHeader (block, header) {
-    return this.services.db.set(`header:${block}`, header)
-  }
-
-  /**
    * Checks if the chain has stored a specific transaction already.
    * @param {string} hash The transaction hash.
    * @return {boolean} `true` if the chain has stored the transaction, `false` otherwise.
    */
   async hasTransaction (hash) {
     return this.services.db.exists(`transaction:${hash}`)
+  }
+
+  /**
+   * Adds a block header to the database.
+   * @param {*} block Number of the block to add.
+   * @param {string} header Header of the given block.
+   */
+  async addBlockHeader (block, header) {
+    // TODO: This should probably check that the block header is correct.
+    return this.services.db.set(`header:${block}`, header)
   }
 
   /**
@@ -114,6 +115,7 @@ class ChainService extends BaseService {
     this.services.proof.checkTransaction(transaction, relevantRanges)
     */
 
+    // TODO: Check this receipt is valid.
     const receipt = await this.services.operator.sendTransaction(transaction)
 
     // TODO: Ideally we don't want to be modifying ranges like this.
