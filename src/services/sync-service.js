@@ -1,9 +1,17 @@
 const BaseService = require('./base-service')
 
+const utils = require('plasma-utils')
+const Transaction = utils.serialization.models.Transaction
+
 /**
  * Handles automatically synchronizing latest history proofs.
  */
 class SyncService extends BaseService {
+  constructor (options) {
+    super(options)
+    this.pollInterval = 1000
+  }
+
   get name () {
     return 'sync'
   }
@@ -36,20 +44,32 @@ class SyncService extends BaseService {
   }
 
   _pollPendingTransactions () {
+    // Stop polling to prevent duplicate listeners,
     this._stopPollingPendingTransactions()
 
     this.pollRef = setInterval(async () => {
+      // TODO: Support importing transactions for multiple accounts.
       const addresses = await this.services.wallet.getAccounts()
       const address = addresses[0]
-      const pending = await this.services.operator.getPendingTransactions(
-        address
+
+      const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
+      // TODO: Should this be determined locally?
+      const currentBlock = await this.services.eth.contract.getCurrentBlock()
+
+      const pending = await this.services.operator.getTransactions(
+        address,
+        lastSyncedBlock + 1,
+        currentBlock
       )
-      pending.forEach((hash) => {
+
+      pending.forEach((transaction) => {
         this.emit('TransactionReceived', {
-          hash: hash
+          transaction: transaction
         })
       })
-    }, 1000)
+
+      await this.services.db.set(`sync.block`, currentBlock)
+    }, this.pollInterval)
   }
 
   _stopPollingPendingTransactions () {
@@ -59,29 +79,22 @@ class SyncService extends BaseService {
   }
 
   async _onTransactionReceived (event) {
-    const hasTransaction = await this.services.chain.hasTransaction(event.hash)
-    if (hasTransaction) {
+    const serializedTx = new Transaction(event.transaction)
+    if (!(await this.services.chain.hasTransaction(serializedTx.hash))) {
       return
     }
 
-    const transaction = await this.services.operator.getTransaction(event.hash)
-    await this.services.chain.addTransaction(transaction)
+    const {
+      transaction,
+      deposits,
+      proof
+    } = await this.services.operator.getTransaction(event.transaction)
+    await this.services.chain.addTransaction(transaction, deposits, proof)
   }
 
+  // TODO: Figure out if this is necessary at all.
   async _onBlockSubmitted (event) {
     await this.services.chain.addBlockHeader(event.number, event.hash)
-
-    // TODO: Figure out what to do if the operator tries to cheat.
-    /*
-    const ranges = await this.services.chain.getOwnedRanges()
-    for (let range of ranges) {
-      let transaction = await this.services.operator.getTransaction(
-        range,
-        event.number
-      )
-      await this.services.chain.addTransaction(transaction)
-    }
-    */
   }
 }
 

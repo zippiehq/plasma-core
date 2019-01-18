@@ -48,7 +48,11 @@ class JSONRPCService extends BaseService {
     super(options)
 
     this.subdispatchers = []
-    const subdispatchers = [ChainSubdispatcher, WalletSubdispatcher]
+    const subdispatchers = [
+      ChainSubdispatcher,
+      WalletSubdispatcher,
+      ETHSubdispatcher
+    ]
     for (let subdispatcher of subdispatchers) {
       this._registerSubdispatcher(subdispatcher)
     }
@@ -158,6 +162,7 @@ class JSONRPCService extends BaseService {
 class Subdispatcher {
   constructor (options) {
     this.options = options
+    this.app = options.app
   }
 
   /**
@@ -182,11 +187,6 @@ class Subdispatcher {
  * Subdispatcher that handles chain-related requests.
  */
 class ChainSubdispatcher extends Subdispatcher {
-  constructor (options) {
-    super()
-    this.app = options.app
-  }
-
   get prefix () {
     return 'pg_'
   }
@@ -212,11 +212,6 @@ class ChainSubdispatcher extends Subdispatcher {
  * Subdispatcher that handles wallet-related requests.
  */
 class WalletSubdispatcher extends Subdispatcher {
-  constructor (options) {
-    super()
-    this.app = options.app
-  }
-
   get prefix () {
     return 'pg_'
   }
@@ -227,6 +222,19 @@ class WalletSubdispatcher extends Subdispatcher {
 
   async sign (address, data) {
     return this.app.services.wallet.sign(address, data)
+  }
+}
+
+/**
+ * Subdispatcher that handles Ethereum-related requests.
+ */
+class ETHSubdispatcher extends Subdispatcher {
+  get prefix () {
+    return 'pg_'
+  }
+
+  async deposit (token, amount, owner) {
+    return this.app.services.eth.contract.deposit(token, amount, owner)
   }
 }
 

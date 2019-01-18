@@ -49,21 +49,6 @@ class MockWalletProvider extends BaseWalletProvider {
     this.addresses = this.accounts.map((account) => {
       return account.address
     })
-
-    this.addresses.forEach((address, i) => {
-      this.services.chain.addTransaction({
-        block: 0,
-        transfers: [
-          {
-            sender: address,
-            recipient: address,
-            token: 0,
-            start: i * 1000000,
-            end: (i + 1) * 1000000
-          }
-        ]
-      })
-    })
   }
 }
 

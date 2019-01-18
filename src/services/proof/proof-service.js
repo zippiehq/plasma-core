@@ -18,6 +18,8 @@ class ProofSerivce extends BaseService {
    * @return {boolean} `true` if the transaction is valid.
    */
   async checkProof (transaction, deposits, proof) {
+    // TODO: Maybe deposits should just be a special case of proof element?
+    // Could be something like a single transfer transaction where sender is 0x0.
     const snapshotManager = new SnapshotManager()
 
     // Apply all of the deposits.

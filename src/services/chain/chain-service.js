@@ -1,4 +1,4 @@
-const BaseService = require('./base-service')
+const BaseService = require('../base-service')
 
 /**
  * Manages the local blockchain.
@@ -66,18 +66,25 @@ class ChainService extends BaseService {
    * @return {boolean} `true` if the chain has stored the transaction, `false` otherwise.
    */
   async hasTransaction (hash) {
-    const tx = await this.services.db.get(`transaction:${hash}`, undefined)
-    return tx !== undefined
+    return this.services.db.exists(`transaction:${hash}`)
   }
 
   /**
    * Adds a new transaction to a history if it's valid.
-   * @param {*} transaction A transaction object.
+   * @param {*} transaction A Transaction object.
+   * @param {*} deposits A list of deposits for the transaction.
+   * @param {*} proof A Proof object.
    */
-  async addTransaction (transaction) {
-    // TODO: Check if the transaction is valid.
+  async addTransaction (transaction, deposits, proof) {
+    // TODO: Really we should also be checking that the transaction is actually relevant to the user.
+    // We can do this by checking that the recipient of some xfer belongs to some account.
 
-    // Add each transfer in the transaction to the local state.
+    if (!(await this.services.proof.checkProof(transaction, deposits, proof))) {
+      throw new Error('Invalid transaction proof')
+    }
+
+    // TODO: Ideally we don't want to be modifying ranges like this.
+    // Instead, we should just be storing the transactions and calculating ranges automatically.
     transaction.transfers.forEach((transfer) => {
       this.services.rangeManager.addRange(transfer.recipient, {
         token: transfer.token,
@@ -86,7 +93,11 @@ class ChainService extends BaseService {
       })
     })
 
-    await this.services.db.set(`transaction:${transaction.hash}`, transaction)
+    await this.services.db.set(
+      `transaction:${transaction.hash}`,
+      transaction.encoded
+    )
+    await this.services.db.set(`proof:${transaction.hash}`, proof)
   }
 
   /**
@@ -94,14 +105,19 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object.
    */
   async sendTransaction (transaction) {
-    // Check if the transaction is valid.
+    /*
+    // Make sure the transaction is valid.
+    // TODO: This relies on the revamp of internal storage, not really important for now.
     const relevantRanges = this.services.rangeManager.getRelevantRanges(
       transaction
     )
     this.services.proof.checkTransaction(transaction, relevantRanges)
+    */
 
     const receipt = await this.services.operator.sendTransaction(transaction)
 
+    // TODO: Ideally we don't want to be modifying ranges like this.
+    // Instead, we should just be storing the transactions and calculating ranges automatically.
     transaction.transfers.forEach((transfer) => {
       this.services.rangeManager.removeRange(transfer.sender, {
         token: transfer.token,

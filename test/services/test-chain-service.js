@@ -1,7 +1,7 @@
 const chai = require('chai')
 chai.should()
 
-const ChainService = require('../../src/services/chain-service')
+const ChainService = require('../../src/services/chain/chain-service')
 const MockWalletProvider = require('../../src/services/wallet').MockWalletProvider
 const app = require('../mock-app')
 

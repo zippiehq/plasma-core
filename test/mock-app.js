@@ -1,5 +1,5 @@
 const EphemDBProvider = require('../src/services/db').EphemDBProvider
-const RangeManager = require('../src/services/range-manager-service')
+const RangeManager = require('../src/services/chain/range-manager-service')
 const ETHService = require('../src/services/eth/eth-service')
 const MockWalletProvider = require('../src/services/wallet/mock-provider')
 

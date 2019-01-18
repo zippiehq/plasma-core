@@ -7,7 +7,7 @@ chai.should()
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
 
-const RangeManagerService = require('../../src/services/range-manager-service')
+const RangeManagerService = require('../../src/services/chain/range-manager-service')
 const MockWalletProvider = require('../../src/services/wallet')
   .MockWalletProvider
 const app = require('../mock-app')
