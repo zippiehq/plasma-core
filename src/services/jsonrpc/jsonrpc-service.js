@@ -1,21 +1,5 @@
-const BaseService = require('./base-service')
-
-/**
- * Returns all the functions of a given class instance
- * @param {*} instance Class instance to be queried.
- * @param {*} ignore Names of functions to ignore.
- * @param {*} prefix A prefix to be added to each function.
- * @return {Object} An object that maps function names to functions.
- */
-const getAllFunctions = (instance, ignore = [], prefix = '') => {
-  let fns = {}
-  Object.getOwnPropertyNames(instance.constructor.prototype).forEach((prop) => {
-    if (!ignore.includes(prop)) {
-      fns[prefix + prop] = instance[prop].bind(instance)
-    }
-  })
-  return fns
-}
+const BaseService = require('../base-service')
+const subdispatchers = require('./subdispatchers')
 
 const JSONRPC_ERRORS = {
   PARSE_ERROR: {
@@ -48,12 +32,7 @@ class JSONRPCService extends BaseService {
     super(options)
 
     this.subdispatchers = []
-    const subdispatchers = [
-      ChainSubdispatcher,
-      WalletSubdispatcher,
-      ETHSubdispatcher
-    ]
-    for (let subdispatcher of subdispatchers) {
+    for (let subdispatcher in subdispatchers) {
       this._registerSubdispatcher(subdispatcher)
     }
   }
@@ -153,88 +132,6 @@ class JSONRPCService extends BaseService {
         app: this.app
       })
     )
-  }
-}
-
-/**
- * Base class for JSON-RPC subdispatchers that handle requests.
- */
-class Subdispatcher {
-  constructor (options) {
-    this.options = options
-    this.app = options.app
-  }
-
-  /**
-   * Returns the JSON-RPC prefix of this subdispatcher.
-   */
-  get prefix () {
-    throw new Error(
-      'Classes that extend Subdispatcher must implement this method'
-    )
-  }
-
-  /**
-   * Returns all JSON-RPC methods of this subdispatcher.
-   */
-  getMethods () {
-    const ignore = ['constructor', 'prefix']
-    return getAllFunctions(this, ignore, this.prefix)
-  }
-}
-
-/**
- * Subdispatcher that handles chain-related requests.
- */
-class ChainSubdispatcher extends Subdispatcher {
-  get prefix () {
-    return 'pg_'
-  }
-
-  async getBalances (address) {
-    return this.app.services.chain.getBalances(address)
-  }
-
-  async getBlock (block) {
-    return this.app.services.chain.getBlock(block)
-  }
-
-  async getTransaction (hash) {
-    return this.app.services.chain.getTransaction(hash)
-  }
-
-  async sendTransaction (transaction) {
-    return this.app.services.chain.sendTransaction(transaction)
-  }
-}
-
-/**
- * Subdispatcher that handles wallet-related requests.
- */
-class WalletSubdispatcher extends Subdispatcher {
-  get prefix () {
-    return 'pg_'
-  }
-
-  async getAccounts () {
-    return this.app.services.wallet.getAccounts()
-  }
-
-  async sign (address, data) {
-    return this.app.services.wallet.sign(address, data)
-  }
-}
-
-/**
- * Subdispatcher that handles Ethereum-related requests.
- */
-class ETHSubdispatcher extends Subdispatcher {
-  get prefix () {
-    return 'pg_'
-  }
-
-  async deposit (token, amount, owner) {
-    return this.app.services.eth.contract.deposit(token, amount, owner)
   }
 }
 

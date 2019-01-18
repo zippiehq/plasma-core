@@ -4,9 +4,9 @@ const DefaultDBProvider = require('./services/db').DefaultDBProvider
 const DefaultOperatorProvider = require('./services/operator')
   .DefaultOperatorProvider
 const DefaultWalletProvider = require('./services/wallet').DefaultWalletProvider
-const JSONRPCService = require('./services/jsonrpc-service')
-const ChainService = require('./services/chain-service')
-const RangeManagerService = require('./services/range-manager-service')
+const JSONRPCService = require('./services/jsonrpc/jsonrpc-service')
+const ChainService = require('./services/chain/chain-service')
+const RangeManagerService = require('./services/chain/range-manager-service')
 const ETHService = require('./services/eth/eth-service')
 const SyncService = require('./services/sync-service')
 
