@@ -6,7 +6,7 @@ class MockContractProvider extends BaseContractProvider {
     super()
 
     this.lastRange = 0
-    this.nextBlock = 0
+    this.nextBlock = 1
     this.blocks = {}
     this.deposits = []
   }
@@ -53,7 +53,7 @@ class MockContractProvider extends BaseContractProvider {
   }
 
   async getCurrentBlock () {
-    return this.nextBlock > 0 ? this.nextBlock - 1 : 0
+    return this.nextBlock - 1
   }
 
   _emitEvent (name, event) {

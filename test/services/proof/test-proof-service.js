@@ -76,7 +76,6 @@ const proof = [
 ]
 
 const blocks = [
-  '0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff',
   '652bd4ecfdb5162357089395a3f23ef42144d2907c5110f8c6ff909c4bb17d1cffffffffffffffffffffffffffffffff'
 ]
 
