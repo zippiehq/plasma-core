@@ -19,6 +19,17 @@ class MockOperatorProvider extends BaseOperatorProvider {
     return decoded
   }
 
+  async getTransactions (address, start, end) {
+    let transactions = []
+    for (let hash in this.transactions) {
+      let tx = this.transactions[hash]
+      if (tx.address === address && tx.block >= start && tx.block <= end) {
+        transactions.push(tx)
+      }
+    }
+    return transactions
+  }
+
   async getPendingTransactions (address) {
     return this.pending[address] || []
   }

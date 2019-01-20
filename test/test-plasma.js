@@ -1,6 +1,9 @@
 const chai = require('chai')
+const chaiAsPromised = require('chai-as-promised')
 const Plasma = require('../src/plasma')
-const should = chai.should()
+
+chai.should()
+chai.use(chaiAsPromised)
 
 describe('Plasma Core', () => {
   const core = new Plasma({
@@ -16,8 +19,6 @@ describe('Plasma Core', () => {
   })
 
   it('should run', async () => {
-    should.not.Throw(() => {
-      core.startServices()
-    })
+    await core.startServices().should.eventually.be.fulfilled
   })
 })

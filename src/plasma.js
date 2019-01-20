@@ -23,9 +23,9 @@ const defaultOptions = {
 class Plasma {
   constructor (options = {}) {
     this.options = Object.assign({}, defaultOptions, options)
-    this.services = {}
-    this.logger = options.logger
+    this.logger = this.options.logger
 
+    this.services = {}
     this._registerServices()
   }
 
@@ -64,7 +64,7 @@ class Plasma {
    * Starts a single service.
    * @param {*} name Name of the service to start.
    */
-  startService (name) {
+  async startService (name) {
     let service = this.services[name]
     service
       .start()
@@ -80,7 +80,7 @@ class Plasma {
    * Stops a single service.
    * @param {*} name Name of the service to stop.
    */
-  stopService (name) {
+  async stopService (name) {
     let service = this.services[name]
     service
       .stop()
@@ -95,18 +95,18 @@ class Plasma {
   /**
    * Starts all available services.
    */
-  startServices () {
+  async startServices () {
     for (let service in this.services) {
-      this.startService(service)
+      await this.startService(service)
     }
   }
 
   /**
    * Stops all available services.
    */
-  stopServices () {
+  async stopServices () {
     for (let service in this.services) {
-      this.stopService(service)
+      await this.stopService(service)
     }
   }
 }
