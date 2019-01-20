@@ -33,7 +33,7 @@ class JSONRPCService extends BaseService {
 
     this.subdispatchers = []
     for (let subdispatcher in subdispatchers) {
-      this._registerSubdispatcher(subdispatcher)
+      this._registerSubdispatcher(subdispatchers[subdispatcher])
     }
   }
 
