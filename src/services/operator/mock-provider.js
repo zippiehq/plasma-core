@@ -9,7 +9,6 @@ class MockOperatorProvider extends BaseOperatorProvider {
     super(options)
 
     this.transactions = {}
-    this.pending = {}
   }
 
   async getTransaction (hash) {
@@ -22,16 +21,15 @@ class MockOperatorProvider extends BaseOperatorProvider {
   async getTransactions (address, start, end) {
     let transactions = []
     for (let hash in this.transactions) {
-      let tx = this.transactions[hash]
-      if (tx.address === address && tx.block >= start && tx.block <= end) {
+      const tx = this.transactions[hash]
+      const isRecipient = tx.transfers.some((transfer) => {
+        return transfer.recipient === address
+      })
+      if (isRecipient && tx.block >= start && tx.block <= end) {
         transactions.push(tx)
       }
     }
     return transactions
-  }
-
-  async getPendingTransactions (address) {
-    return this.pending[address] || []
   }
 
   async sendTransaction (transaction) {
@@ -40,12 +38,8 @@ class MockOperatorProvider extends BaseOperatorProvider {
 
     this.transactions[tx.hash] = tx
 
-    tx.decoded.transfers.forEach((transfer) => {
-      if (!this.pending[transfer.recipient]) {
-        this.pending[transfer.recipient] = []
-      }
-      this.pending[transfer.recipient].push(tx.hash)
-    })
+    // TODO: Use the real block hash.
+    await this.services.eth.contract.submitBlock('0x0')
 
     return tx.hash
   }
