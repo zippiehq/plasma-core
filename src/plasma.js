@@ -9,6 +9,7 @@ const ChainService = require('./services/chain/chain-service')
 const RangeManagerService = require('./services/chain/range-manager-service')
 const ETHService = require('./services/eth/eth-service')
 const SyncService = require('./services/sync-service')
+const ProofService = require('./services/proof/proof-service')
 
 const defaultOptions = {
   logger: new utils.logging.DefaultLogger(),
@@ -52,7 +53,8 @@ class Plasma {
       { type: this.options.operatorProvider },
       { type: this.options.walletProvider },
       { type: ETHService },
-      { type: SyncService }
+      { type: SyncService },
+      { type: ProofService }
     ]
 
     for (let service of services) {

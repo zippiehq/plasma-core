@@ -7,7 +7,7 @@ const utils = require('plasma-utils')
  */
 class ProofSerivce extends BaseService {
   get name () {
-    return 'prover'
+    return 'proof'
   }
 
   /**

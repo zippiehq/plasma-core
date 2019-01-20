@@ -315,8 +315,8 @@ class RangeManagerService extends BaseService {
 
   _castRange (range) {
     return {
-      start: new BigNum(range.start),
-      end: new BigNum(range.end),
+      start: new BigNum(range.start, 'hex'),
+      end: new BigNum(range.end, 'hex'),
       token: range.token
     }
   }

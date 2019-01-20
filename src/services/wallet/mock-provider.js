@@ -22,7 +22,14 @@ class MockWalletProvider extends BaseWalletProvider {
 
   async sign (address, data) {
     const account = this._getAccount(address)
-    return account.sign(data)
+    const signature = account.sign(data)
+
+    return {
+      signature: signature.signature,
+      v: signature.v.slice(2),
+      r: signature.r.slice(2),
+      s: signature.s.slice(2)
+    }
   }
 
   /**

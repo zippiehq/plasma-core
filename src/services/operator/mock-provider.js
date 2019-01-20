@@ -1,3 +1,4 @@
+const BigNum = require('bn.js')
 const BaseOperatorProvider = require('./base-provider')
 const utils = require('plasma-utils')
 
@@ -15,10 +16,31 @@ class MockOperatorProvider extends BaseOperatorProvider {
     const tx = this.transactions[encoded]
     let decoded = tx.decoded
     decoded.hash = tx.hash
-    return decoded
+
+    const deposits = this.services.eth.contract.deposits.filter((deposit) => {
+      return decoded.transfers.some((transfer) => {
+        return (
+          transfer.token.eq(new BigNum(deposit.token)) &&
+          Math.max(transfer.start, deposit.start) <
+            Math.min(transfer.end, deposit.end)
+        )
+      })
+    })
+
+    // TODO: ?? Generate a proof?
+    const proof = []
+
+    return {
+      transaction: decoded,
+      deposits: deposits,
+      proof: proof
+    }
   }
 
   async getTransactions (address, start, end) {
+    start = new BigNum(start, 'hex')
+    end = new BigNum(end, 'hex')
+
     let transactions = []
     for (let hash in this.transactions) {
       const tx = this.transactions[hash]
@@ -33,13 +55,16 @@ class MockOperatorProvider extends BaseOperatorProvider {
   }
 
   async sendTransaction (transaction) {
-    // TODO: Worth it to transaction validity?
     const tx = new utils.serialization.models.Transaction(transaction)
+    const signedTx = new utils.serialization.models.SignedTransaction(
+      transaction
+    )
 
-    this.transactions[tx.encoded] = tx
+    this.transactions[tx.encoded] = signedTx
 
     // TODO: Use the real block hash.
-    await this.services.eth.contract.submitBlock('0x0')
+    const blockhash = new utils.PlasmaMerkleSumTree([tx]).root().data
+    await this.services.eth.contract.submitBlock(blockhash)
 
     return tx.hash
   }

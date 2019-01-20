@@ -117,7 +117,7 @@ class SnapshotManager {
    */
   _getOverlappingSnapshots (snapshot) {
     return this.snapshots.filter((s) => {
-      return Math.max(s.start, snapshot.start) <= Math.min(s.end, snapshot.end)
+      return Math.max(s.start, snapshot.start) < Math.min(s.end, snapshot.end)
     })
   }
 
