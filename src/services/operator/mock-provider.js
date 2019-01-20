@@ -11,8 +11,8 @@ class MockOperatorProvider extends BaseOperatorProvider {
     this.transactions = {}
   }
 
-  async getTransaction (hash) {
-    const tx = this.transactions[hash]
+  async getTransaction (encoded) {
+    const tx = this.transactions[encoded]
     let decoded = tx.decoded
     decoded.hash = tx.hash
     return decoded
@@ -36,7 +36,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
     // TODO: Worth it to transaction validity?
     const tx = new utils.serialization.models.Transaction(transaction)
 
-    this.transactions[tx.hash] = tx
+    this.transactions[tx.encoded] = tx
 
     // TODO: Use the real block hash.
     await this.services.eth.contract.submitBlock('0x0')

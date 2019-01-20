@@ -37,19 +37,21 @@ class SyncService extends BaseService {
     this._stopPollingPendingTransactions()
 
     this.pollRef = setInterval(async () => {
-      // TODO: Support importing transactions for multiple accounts.
-      const addresses = await this.services.wallet.getAccounts()
-      const address = addresses[0]
-
       const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
       // TODO: Should this be determined locally? Also, should we store blocks locally?
       const currentBlock = await this.services.eth.contract.getCurrentBlock()
 
-      const pending = await this.services.operator.getTransactions(
-        address,
-        lastSyncedBlock + 1,
-        currentBlock
-      )
+      let pending = []
+      const addresses = await this.services.wallet.getAccounts()
+      for (let address of addresses) {
+        pending = pending.concat(
+          await this.services.operator.getTransactions(
+            address,
+            lastSyncedBlock + 1,
+            currentBlock
+          )
+        )
+      }
 
       pending.forEach((transaction) => {
         this.emit('TransactionReceived', {
@@ -57,7 +59,7 @@ class SyncService extends BaseService {
         })
       })
 
-      await this.services.db.set(`sync.block`, currentBlock)
+      await this.services.db.set(`sync:block`, currentBlock)
     }, this.pollInterval)
   }
 
@@ -69,7 +71,7 @@ class SyncService extends BaseService {
 
   async _onTransactionReceived (event) {
     const serializedTx = new Transaction(event.transaction)
-    if (!(await this.services.chain.hasTransaction(serializedTx.hash))) {
+    if (await this.services.chain.hasTransaction(serializedTx.hash)) {
       return
     }
 
@@ -77,7 +79,7 @@ class SyncService extends BaseService {
       transaction,
       deposits,
       proof
-    } = await this.services.operator.getTransaction(event.transaction)
+    } = await this.services.operator.getTransaction(serializedTx.encoded)
     await this.services.chain.addTransaction(transaction, deposits, proof)
   }
 
