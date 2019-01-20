@@ -19,17 +19,16 @@ class SyncService extends BaseService {
   async start () {
     this.started = true
 
+    this.services.eth.contract.on('event:Deposit', this._onDeposit.bind(this))
     this.on('TransactionReceived', this._onTransactionReceived.bind(this))
 
     this._pollPendingTransactions()
   }
 
   async stop () {
-    this.removeListener(
-      'TransactionReceived',
-      this._onTransactionReceived.bind(this)
-    )
+    this.started = false
 
+    this.removeAllListeners()
     this._stopPollingPendingTransactions()
   }
 
@@ -80,6 +79,12 @@ class SyncService extends BaseService {
       proof
     } = await this.services.operator.getTransaction(event.transaction)
     await this.services.chain.addTransaction(transaction, deposits, proof)
+  }
+
+  async _onDeposit (event) {
+    // TODO: Where should address filtering be done?
+    // Probably wherever events are originally watched to reduce total events pulled.
+    await this.services.chain.addDeposit(event)
   }
 }
 

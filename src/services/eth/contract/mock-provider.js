@@ -11,6 +11,11 @@ class MockContractProvider extends BaseContractProvider {
     this.deposits = []
   }
 
+  async stop () {
+    this.started = false
+    this.removeAllListeners()
+  }
+
   async deposit (token, amount, owner) {
     const deposit = {
       token: token,

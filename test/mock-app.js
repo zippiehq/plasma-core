@@ -15,17 +15,27 @@ class App {
     }
   }
 
+  async stopServices () {
+    for (let service in this.services) {
+      await this.services[service].stop()
+    }
+  }
+
   registerService (service) {
     this.services[service.name] = service
   }
 
   async reset () {
+    await this.stopServices()
+    this.services = {}
+
     this.services.chain = {
       started: true,
-      addTransaction: (transaction) => {
+      addTransaction: () => {
         return true
       },
-      start: async () => { return true }
+      start: async () => { return true },
+      stop: async () => { return true }
     }
     this.services.db = new EphemDBProvider({ app: this })
     this.services.rangeManager = new RangeManager({ app: this })

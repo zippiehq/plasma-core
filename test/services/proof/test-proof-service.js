@@ -96,7 +96,7 @@ describe('ProofService', async () => {
   })
 
   beforeEach(async () => {
-    app.reset()
+    await app.reset()
     await submitDeposits(deposits)
     await submitBlocks(blocks)
   })

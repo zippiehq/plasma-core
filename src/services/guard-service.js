@@ -16,10 +16,6 @@ class GuardService extends BaseService {
 
   async stop () {
     this.started = false
-    this.services.eth.removeListener(
-      'event:ExitStarted',
-      this._onExitStarted.bind(this)
-    )
   }
 
   /**

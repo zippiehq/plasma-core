@@ -130,6 +130,18 @@ class ChainService extends BaseService {
 
     return receipt
   }
+
+  /**
+   * Adds a record of a deposit for a user.
+   * @param {*} deposit A Deposit object.
+   */
+  async addDeposit (deposit) {
+    this.services.rangeManager.addRange(deposit.owner, {
+      token: deposit.token,
+      start: deposit.start,
+      end: deposit.end
+    })
+  }
 }
 
 module.exports = ChainService
