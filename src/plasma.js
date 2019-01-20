@@ -10,14 +10,21 @@ const RangeManagerService = require('./services/chain/range-manager-service')
 const ETHService = require('./services/eth/eth-service')
 const SyncService = require('./services/sync-service')
 
+const defaultOptions = {
+  logger: new utils.logging.DefaultLogger(),
+  dbProvider: DefaultDBProvider,
+  operatorProvider: DefaultOperatorProvider,
+  walletProvider: DefaultWalletProvider
+}
+
 /**
  * Main class that runs and manages all services.
  */
 class Plasma {
   constructor (options = {}) {
-    this.options = options
+    this.options = Object.assign({}, defaultOptions, options)
     this.services = {}
-    this.logger = new utils.logging.DefaultLogger()
+    this.logger = options.logger
 
     this._registerServices()
   }
@@ -38,12 +45,12 @@ class Plasma {
    */
   _registerServices () {
     const services = [
-      { type: this.options.dbProvider || DefaultDBProvider },
+      { type: this.options.dbProvider },
       { type: ChainService },
       { type: RangeManagerService },
       { type: JSONRPCService },
-      { type: this.options.operatorProvider || DefaultOperatorProvider },
-      { type: this.options.walletProvider || DefaultWalletProvider },
+      { type: this.options.operatorProvider },
+      { type: this.options.walletProvider },
       { type: ETHService },
       { type: SyncService }
     ]
@@ -55,7 +62,7 @@ class Plasma {
 
   /**
    * Starts a single service.
-   * @param {*} name Name of the service to start
+   * @param {*} name Name of the service to start.
    */
   startService (name) {
     let service = this.services[name]
@@ -70,11 +77,36 @@ class Plasma {
   }
 
   /**
+   * Stops a single service.
+   * @param {*} name Name of the service to stop.
+   */
+  stopService (name) {
+    let service = this.services[name]
+    service
+      .stop()
+      .then(() => {
+        this.logger.log(`${service.name}: OK`)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  }
+
+  /**
    * Starts all available services.
    */
   startServices () {
     for (let service in this.services) {
       this.startService(service)
+    }
+  }
+
+  /**
+   * Stops all available services.
+   */
+  stopServices () {
+    for (let service in this.services) {
+      this.stopService(service)
     }
   }
 }
