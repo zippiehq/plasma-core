@@ -51,14 +51,25 @@ const deposits = [
   { token: 0, block: 0, start: 0, end: 50, owner: accounts[0].address }
 ]
 
+let transaction1 = {
+  block: 1,
+  transfers: [
+    { token: 0, start: 0, end: 50, sender: accounts[0].address, recipient: accounts[1].address }
+  ]
+}
+transaction1 = autoSign(transaction1)
+
+let transaction2 = {
+  block: 2,
+  transfers: [
+    { token: 0, start: 0, end: 50, sender: accounts[1].address, recipient: accounts[2].address }
+  ]
+}
+transaction2 = autoSign(transaction2)
+
 const proof = [
   {
-    transaction: {
-      block: 1,
-      transfers: [
-        { token: 0, start: 0, end: 50, sender: accounts[0].address, recipient: accounts[1].address }
-      ]
-    },
+    transaction: transaction1,
     proof: [
       {
         leafIndex: new BigNum(0),
@@ -66,27 +77,15 @@ const proof = [
         inclusionProof: [
           '0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff'
         ],
-        signature: {
-          v: '1c',
-          r: '02183cd7e1d8e3ff24d3eac4960b377abe96a35e41767b0dcac7b96346ac0e26',
-          s: '4f2734a6b2d70844dde0959b386f0c47f414ceef0ca6b57406d72a2e69e01959'
-        }
+        signature: transaction1.signatures[0]
       }
     ]
   }
 ]
 
 const blocks = [
-  '652bd4ecfdb5162357089395a3f23ef42144d2907c5110f8c6ff909c4bb17d1cffffffffffffffffffffffffffffffff'
+  hash(transaction1) + 'ffffffffffffffffffffffffffffffff'
 ]
-
-let transaction = {
-  block: 2,
-  transfers: [
-    { token: 0, start: 0, end: 50, sender: accounts[1].address, recipient: accounts[2].address }
-  ]
-}
-transaction = autoSign(transaction)
 
 describe('ProofService', async () => {
   const verifier = new ProofService({ app: app })
@@ -102,7 +101,7 @@ describe('ProofService', async () => {
   })
 
   it('should correctly check a valid transaction proof', async () => {
-    const validity = await verifier.checkProof(transaction, deposits, proof)
+    const validity = await verifier.checkProof(transaction2, deposits, proof)
 
     validity.should.be.true
   })
@@ -145,14 +144,26 @@ describe('ProofService', async () => {
         owner: accounts[0].address
       }
     ]
+
+    let manyDepositTx1 = {
+      block: 2,
+      transfers: [
+        { token: 0, start: 50, end: 100, sender: accounts[0].address, recipient: accounts[1].address }
+      ]
+    }
+    manyDepositTx1 = autoSign(manyDepositTx1)
+
+    let manyDepositTx2 = {
+      block: 3,
+      transfers: [
+        { token: 0, start: 50, end: 100, sender: accounts[1].address, recipient: accounts[2].address }
+      ]
+    }
+    manyDepositTx2 = autoSign(manyDepositTx2)
+
     const manyDepositProof = [
       {
-        transaction: {
-          block: 2,
-          transfers: [
-            { token: 0, start: 50, end: 100, sender: accounts[0].address, recipient: accounts[1].address }
-          ]
-        },
+        transaction: manyDepositTx1,
         proof: [
           {
             leafIndex: new BigNum(0),
@@ -160,27 +171,16 @@ describe('ProofService', async () => {
             inclusionProof: [
               '0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff'
             ],
-            signature: {
-              v: '1b',
-              r: '2ce7b4dbfee647f99b1e2454d61fe323261253bd0bab36e38876e37ffe7a8470',
-              s: '16023f2cf78553ef6f20ec93557eb9f2f9a5b51423d3eae322419242e01b5a03'
-            }
+            signature: manyDepositTx1.signatures[0]
           }
         ]
       }
     ]
-    let manyDepositTx = {
-      block: 3,
-      transfers: [
-        { token: 0, start: 50, end: 100, sender: accounts[1].address, recipient: accounts[2].address }
-      ]
-    }
-    manyDepositTx = autoSign(manyDepositTx)
 
     await submitDeposits(manyDeposits)
-    await submitBlocks(['b4c4b4d13ff92bb050e7f3b9816a5738424b2413178661d0c42348dc90db870dffffffffffffffffffffffffffffffff'])
+    await submitBlocks([hash(manyDepositTx1) + 'ffffffffffffffffffffffffffffffff'])
 
-    const validity = await verifier.checkProof(manyDepositTx, manyDeposits, manyDepositProof)
+    const validity = await verifier.checkProof(manyDepositTx2, manyDeposits, manyDepositProof)
 
     validity.should.be.true
   })
@@ -190,11 +190,11 @@ describe('ProofService', async () => {
       { token: 0, block: 0, start: 0, end: 10, owner: accounts[0].address }
     ]
 
-    await verifier.checkProof(transaction, invalidDeposits, proof).should.be.rejectedWith('Invalid deposit')
+    await verifier.checkProof(transaction2, invalidDeposits, proof).should.be.rejectedWith('Invalid deposit')
   })
 
   it('should not verify an invalid range', () => {
-    let invalidTransaction = _.cloneDeep(transaction)
+    let invalidTransaction = _.cloneDeep(transaction2)
     invalidTransaction.transfers[0].start = 50
     invalidTransaction.transfers[0].end = 0
     invalidTransaction = autoSign(invalidTransaction)
@@ -203,7 +203,7 @@ describe('ProofService', async () => {
   })
 
   it('should not verify a zero-length range', () => {
-    let invalidTransaction = _.cloneDeep(transaction)
+    let invalidTransaction = _.cloneDeep(transaction2)
     invalidTransaction.transfers[0].end = 0
     invalidTransaction = autoSign(invalidTransaction)
 
@@ -216,7 +216,7 @@ describe('ProofService', async () => {
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
     app.services.eth.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
 
-    verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
+    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
 
   it('should not verify an invalid history', () => {
@@ -225,14 +225,14 @@ describe('ProofService', async () => {
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
     app.services.eth.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
 
-    verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
+    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
 
   it('should not verify a transaction with an invalid signature', () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].recipient, invalidProof[0].transaction)
 
-    verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid transaction signature')
+    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid transaction signature')
   })
 
   it('should not verify a transaction with an invalid inclusion proof', () => {
@@ -241,6 +241,6 @@ describe('ProofService', async () => {
       '0000000000000000000000000000000000000000000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
     ]
 
-    verifier.checkProof(transaction, deposits, invalidProof).should.be.rejectedWith('Invalid inclusion proof')
+    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid inclusion proof')
   })
 })
