@@ -19,9 +19,12 @@ class MockOperatorProvider extends BaseOperatorProvider {
 
     const deposits = this._getDeposits(decoded)
 
-    const earliestBlock = deposits.reduce((prev, curr) => {
-      return prev.block > curr.block ? curr : prev
-    })
+    const earliestBlock = deposits.reduce(
+      (prev, curr) => {
+        return prev.block > curr.block ? curr.block : prev.block
+      },
+      { block: 999999999 }
+    )
     const currentBlock = await this.services.eth.contract.getCurrentBlock()
 
     // TODO: ?? Generate a proof?
@@ -84,7 +87,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
       // Figure out which transactions overlap with the range.
       let overlapping = transactions.filter((tx) => {
         return tx.transfers.some((tsfr) => {
-          return transaction.transfers((transfer) => {
+          return transaction.transfers.some((transfer) => {
             return this._rangesOverlap(tsfr, transfer)
           })
         })
@@ -126,7 +129,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
 
   _rangesOverlap (a, b) {
     return (
-      a.token.eq(new BigNum(a.token)) &&
+      new BigNum(a.token).eq(new BigNum(a.token)) &&
       Math.max(a.start, b.start) < Math.min(a.end, b.end)
     )
   }

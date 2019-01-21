@@ -62,9 +62,9 @@ function containsRange (ranges, range) {
  */
 function createRange (token, start, end) {
   return {
-    token: token,
-    start: new BigNum(start),
-    end: new BigNum(end)
+    token: new BigNum(token, 'hex'),
+    start: new BigNum(start, 'hex'),
+    end: new BigNum(end, 'hex')
   }
 }
 
@@ -121,7 +121,8 @@ class RangeManagerService extends BaseService {
    * @return {*} List of ranges to use for the transaction.
    */
   async pickRanges (address, token, amount) {
-    amount = new BigNum(amount)
+    token = new BigNum(token, 'hex')
+    amount = new BigNum(amount, 'hex')
 
     const ownedRanges = await this.getOwnedRanges(address)
     const sortedRanges = ownedRanges.sort((a, b) =>
@@ -139,7 +140,7 @@ class RangeManagerService extends BaseService {
 
       const smallestRange = sortedRanges.pop()
 
-      if (smallestRange.token === token) {
+      if (smallestRange.token.eq(token)) {
         const smallestRangeLength = smallestRange.end.sub(smallestRange.start)
 
         if (smallestRangeLength.lte(amount)) {
@@ -257,14 +258,14 @@ class RangeManagerService extends BaseService {
       } else if (
         ownedRange.start.eq(toRemove.start) &&
         ownedRange.end.eq(toRemove.end) &&
-        ownedRange.token === toRemove.token
+        ownedRange.token.eq(toRemove.token)
       ) {
         // Remove this range
         toRemove = ranges.pop()
       } else if (
         ownedRange.start.lt(toRemove.start) &&
         ownedRange.end.gt(toRemove.end) &&
-        ownedRange.token === toRemove.token
+        ownedRange.token.eq(toRemove.token)
       ) {
         // This range contains the range to remove
         nextRanges = nextRanges.concat([
@@ -275,7 +276,7 @@ class RangeManagerService extends BaseService {
       } else if (
         ownedRange.start.eq(toRemove.start) &&
         ownedRange.end.gt(toRemove.end) &&
-        ownedRange.token === toRemove.token
+        ownedRange.token.eq(toRemove.token)
       ) {
         // Remove front of a range
         nextRanges.push(
@@ -285,7 +286,7 @@ class RangeManagerService extends BaseService {
       } else if (
         ownedRange.start.lt(toRemove.start) &&
         ownedRange.end.eq(toRemove.end) &&
-        ownedRange.token === toRemove.token
+        ownedRange.token.eq(toRemove.token)
       ) {
         // Remove end of a range
         nextRanges.push(
@@ -317,7 +318,7 @@ class RangeManagerService extends BaseService {
     return {
       start: new BigNum(range.start, 'hex'),
       end: new BigNum(range.end, 'hex'),
-      token: range.token
+      token: new BigNum(range.token, 'hex')
     }
   }
 }

@@ -84,6 +84,10 @@ class ProofSerivce extends BaseService {
    * @return {boolean} `true` if the transaction is valid, `false` otherwise.
    */
   async _transactionValid (transaction, proof, checkInclusion = true) {
+    // Covert out of Signed/UnsignedTransaction if necessary.
+    // TODO: This isn't very clean, would prefer better serialization.
+    transaction = transaction.decoded || transaction
+
     const serializedTx = new utils.serialization.models.Transaction(transaction)
     let blockHash
     if (checkInclusion) {
