@@ -1,7 +1,7 @@
 const BaseService = require('./base-service')
 
 const utils = require('plasma-utils')
-const Transaction = utils.serialization.models.Transaction
+const UnsignedTransaction = utils.serialization.models.UnsignedTransaction
 
 /**
  * Handles automatically synchronizing latest history proofs.
@@ -70,7 +70,7 @@ class SyncService extends BaseService {
   }
 
   async _onTransactionReceived (event) {
-    const serializedTx = new Transaction(event.transaction)
+    const serializedTx = new UnsignedTransaction(event.transaction)
     if (await this.services.chain.hasTransaction(serializedTx.hash)) {
       return
     }

@@ -49,9 +49,9 @@ class ProofSerivce extends BaseService {
   }
 
   async checkTransaction (transaction, snapshots) {
-    const proof = transaction.transfers.map((transfer) => {
+    const proof = transaction.signatures.map((signature) => {
       return {
-        signature: transfer.signature
+        signature: signature
       }
     })
 
@@ -98,7 +98,11 @@ class ProofSerivce extends BaseService {
       // Convert the signature to a string if necessary.
       let signature = transferProof.signature
       if (!(signature instanceof String || typeof signature === 'string')) {
-        signature = '0x' + signature.r + signature.s + signature.v
+        signature =
+          '0x' +
+          signature.r.toString('hex') +
+          signature.s.toString('hex') +
+          signature.v.toString('hex')
       }
 
       // Check that this transfer was correctly signed.

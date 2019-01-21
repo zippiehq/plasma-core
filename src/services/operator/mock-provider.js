@@ -31,7 +31,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
     const proof = []
 
     return {
-      transaction: decoded,
+      transaction: new utils.serialization.models.UnsignedTransaction(decoded),
       deposits: deposits,
       proof: proof
     }
@@ -48,7 +48,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
         return transfer.recipient === address
       })
       if (isRecipient && tx.block >= start && tx.block <= end) {
-        transactions.push(tx)
+        transactions.push(tx.encoded)
       }
     }
     return transactions

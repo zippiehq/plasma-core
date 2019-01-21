@@ -39,8 +39,9 @@ const sign = (address, transaction) => {
 }
 
 const autoSign = (transaction) => {
+  transaction.signatures = []
   for (let transfer of transaction.transfers) {
-    transfer.signature = sign(transfer.sender, transaction)
+    transaction.signatures.push(sign(transfer.sender, transaction))
   }
   return transaction
 }
