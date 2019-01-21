@@ -67,6 +67,7 @@
     "lodash": "^4.17.11",
     "plasma-utils": "github:plasma-group/plasma-utils",
     "uuid": "^3.3.2",
-    "web3": "^1.0.0-beta.37"
+    "web3": "^1.0.0-beta.37",
+    "websocket": "^1.0.28"
   }
 }
