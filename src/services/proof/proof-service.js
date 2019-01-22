@@ -53,6 +53,7 @@ class ProofSerivce extends BaseService {
   }
 
   async checkTransaction (transaction, snapshots) {
+    // TODO: This is really silly and should be handled by utils.
     transaction.signatures = transaction.signatures.map((signature) => {
       return this._stringToSignature(signature)
     })

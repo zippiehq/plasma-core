@@ -5,7 +5,7 @@ const Web3 = require('web3')
 const utils = require('plasma-utils')
 
 const web3 = new Web3()
-const Transaction = utils.serialization.models.Transaction
+const UnsignedTransaction = utils.serialization.models.UnsignedTransaction
 chai.should()
 
 const ProofService = require('../../../src/services/proof/proof-service')
@@ -28,7 +28,7 @@ const submitBlocks = async (blocks) => {
 }
 
 const hash = (transaction) => {
-  return (new Transaction(transaction)).hash.slice(2)
+  return (new UnsignedTransaction(transaction)).hash.slice(2)
 }
 
 const sign = (address, transaction) => {
