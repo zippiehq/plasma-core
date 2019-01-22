@@ -1,6 +1,9 @@
 const BigNum = require('bn.js')
 const BaseOperatorProvider = require('./base-provider')
 const utils = require('plasma-utils')
+const models = utils.serialization.models
+const SignedTransaction = models.SignedTransaction
+const UnsignedTransaction = models.UnsignedTransaction
 
 /**
  * Mocks an operator instead of sending real external requests.
@@ -27,11 +30,10 @@ class MockOperatorProvider extends BaseOperatorProvider {
     )
     const currentBlock = await this.services.eth.contract.getCurrentBlock()
 
-    // TODO: ?? Generate a proof?
     const proof = this._getHistory(decoded, earliestBlock, currentBlock)
 
     return {
-      transaction: new utils.serialization.models.UnsignedTransaction(decoded),
+      transaction: new UnsignedTransaction(decoded),
       deposits: deposits,
       proof: proof
     }
@@ -55,14 +57,10 @@ class MockOperatorProvider extends BaseOperatorProvider {
   }
 
   async sendTransaction (transaction) {
-    const tx = new utils.serialization.models.Transaction(transaction)
-    const signedTx = new utils.serialization.models.SignedTransaction(
-      transaction
-    )
+    const tx = new UnsignedTransaction(transaction)
 
-    this.transactions[tx.encoded] = signedTx
+    this.transactions[tx.encoded] = new SignedTransaction(transaction)
 
-    // TODO: Use the real block hash.
     const blockhash = new utils.PlasmaMerkleSumTree([tx]).root().data
     await this.services.eth.contract.submitBlock(blockhash)
 
@@ -100,11 +98,9 @@ class MockOperatorProvider extends BaseOperatorProvider {
           transaction: element,
           proof: element.signatures.map((signature) => {
             return {
-              leafIndex: new BigNum(0),
-              parsedSum: new BigNum('ffffffffffffffffffffffffffffffff'),
-              inclusionProof: [
-                '0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff'
-              ],
+              leafIndex: new BigNum('0', 'hex'),
+              parsedSum: new BigNum('ffffffffffffffffffffffffffffffff', 'hex'),
+              inclusionProof: [],
               signature: signature
             }
           })
