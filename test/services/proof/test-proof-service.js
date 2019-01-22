@@ -73,10 +73,8 @@ const proof = [
     proof: [
       {
         leafIndex: new BigNum(0),
-        parsedSum: new BigNum('ffffffffffffffffffffffffffffffff'),
-        inclusionProof: [
-          '0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff'
-        ],
+        parsedSum: new BigNum('ffffffffffffffffffffffffffffffff', 'hex'),
+        inclusionProof: [],
         signature: transaction1.signatures[0]
       }
     ]
@@ -167,10 +165,8 @@ describe('ProofService', async () => {
         proof: [
           {
             leafIndex: new BigNum(0),
-            parsedSum: 'ffffffffffffffffffffffffffffffff',
-            inclusionProof: [
-              '0000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffff'
-            ],
+            parsedSum: new BigNum('ffffffffffffffffffffffffffffffff', 'hex'),
+            inclusionProof: [],
             signature: manyDepositTx1.signatures[0]
           }
         ]
@@ -232,7 +228,7 @@ describe('ProofService', async () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].recipient, invalidProof[0].transaction)
 
-    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid transaction signature')
+    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid transaction')
   })
 
   it('should not verify a transaction with an invalid inclusion proof', () => {
@@ -241,6 +237,6 @@ describe('ProofService', async () => {
       '0000000000000000000000000000000000000000000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
     ]
 
-    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid inclusion proof')
+    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid transaction')
   })
 })

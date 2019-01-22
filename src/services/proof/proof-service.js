@@ -1,6 +1,10 @@
 const BaseService = require('../base-service')
 const SnapshotManager = require('./snapshot-manager')
 const utils = require('plasma-utils')
+const models = utils.serialization.models
+const Signature = models.Signature
+const SignedTransaction = models.SignedTransaction
+const TransactionProof = models.TransactionProof
 
 /**
  * Service that handles checking history proofs.
@@ -49,22 +53,16 @@ class ProofSerivce extends BaseService {
   }
 
   async checkTransaction (transaction, snapshots) {
-    const proof = transaction.signatures.map((signature) => {
-      return {
-        signature: signature
-      }
+    transaction.signatures = transaction.signatures.map((signature) => {
+      return this._stringToSignature(signature)
     })
+    const serializedTx = new SignedTransaction(transaction)
 
     const validTransition = SnapshotManager.verifyTransaction(
       transaction,
       snapshots
     )
-    const validTransaction = await this._transactionValid(
-      transaction,
-      proof,
-      false
-    )
-    return validTransition && validTransaction
+    return validTransition && serializedTx.checkSigs()
   }
 
   /**
@@ -80,57 +78,40 @@ class ProofSerivce extends BaseService {
    * Checks whether a transaction is valid.
    * @param {*} transaction A Transaction object.
    * @param {*} proof A Proof object.
-   * @param {boolean} checkInclusion Whether to check that the transfers were included.
    * @return {boolean} `true` if the transaction is valid, `false` otherwise.
    */
-  async _transactionValid (transaction, proof, checkInclusion = true) {
-    // Covert out of Signed/UnsignedTransaction if necessary.
-    // TODO: This isn't very clean, would prefer better serialization.
-    transaction = transaction.decoded || transaction
+  async _transactionValid (transaction, proof) {
+    proof.forEach((element) => {
+      element.signature = this._stringToSignature(element.signature)
+    })
 
-    const serializedTx = new utils.serialization.models.Transaction(transaction)
-    let blockHash
-    if (checkInclusion) {
-      blockHash = await this.services.eth.contract.getBlock(transaction.block)
+    transaction.signatures = proof.map((element) => {
+      return element.signature
+    })
+
+    const serializedTx = new SignedTransaction(transaction)
+    const serializedProof = new TransactionProof({
+      transferProofs: proof
+    })
+    const root = await this.services.eth.contract.getBlock(transaction.block)
+
+    return utils.PlasmaMerkleSumTree.checkTransactionProof(
+      serializedTx,
+      serializedProof,
+      root
+    )
+  }
+
+  _stringToSignature (signature) {
+    if (signature instanceof String || typeof signature === 'string') {
+      let sig = signature.startsWith('0x') ? signature.slice(2) : signature
+      signature = new Signature({
+        r: sig.slice(0, 64),
+        s: sig.slice(64, 128),
+        v: sig.slice(128, 132)
+      })
     }
-
-    // Verify signatures and inclusion proofs for every transfer in the transaction.
-    for (let i = 0; i < transaction.transfers.length; i++) {
-      let transferProof = proof[i]
-      let transfer = transaction.transfers[i]
-
-      // Convert the signature to a string if necessary.
-      let signature = transferProof.signature
-      if (!(signature instanceof String || typeof signature === 'string')) {
-        signature =
-          '0x' +
-          signature.r.toString('hex') +
-          signature.s.toString('hex') +
-          signature.v.toString('hex')
-      }
-
-      // Check that this transfer was correctly signed.
-      let signer = this.services.wallet.recover(serializedTx.hash, signature)
-      if (signer !== transfer.sender) {
-        throw new Error('Invalid transaction signature')
-      }
-
-      if (checkInclusion) {
-        // Check that the transfer was included in the block.
-        let included = utils.PlasmaMerkleSumTree.checkInclusion(
-          transferProof.leafIndex,
-          serializedTx,
-          i,
-          transferProof.inclusionProof,
-          blockHash
-        )
-        if (!included) {
-          throw new Error('Invalid inclusion proof')
-        }
-      }
-    }
-
-    return true
+    return signature
   }
 }
 
