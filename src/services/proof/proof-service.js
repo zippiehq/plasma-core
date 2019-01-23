@@ -2,7 +2,6 @@ const BaseService = require('../base-service')
 const SnapshotManager = require('./snapshot-manager')
 const utils = require('plasma-utils')
 const models = utils.serialization.models
-const Signature = models.Signature
 const SignedTransaction = models.SignedTransaction
 const TransactionProof = models.TransactionProof
 
@@ -52,10 +51,16 @@ class ProofSerivce extends BaseService {
     return true
   }
 
+  /**
+   * Checks that an individual transaction is valid given a set of snapshots.
+   * @param {SignedTransaction} transaction A SignedTransaction object.
+   * @param {*} snapshots A set of validated snapshots.
+   * @return {boolean} `true` if the transaction is valid, `false` otherwise.
+   */
   async checkTransaction (transaction, snapshots) {
-    // TODO: This is really silly and should be handled by utils.
+    // TODO: Fix utils so we don't need to do this.
     transaction.signatures = transaction.signatures.map((signature) => {
-      return this._stringToSignature(signature)
+      return utils.utils.stringToSignature(signature)
     })
     const serializedTx = new SignedTransaction(transaction)
 
@@ -77,42 +82,26 @@ class ProofSerivce extends BaseService {
 
   /**
    * Checks whether a transaction is valid.
-   * @param {*} transaction A Transaction object.
-   * @param {*} proof A Proof object.
+   * @param {UnsignedTransaction} transaction An UnsignedTransaction object.
+   * @param {TransactionProof} proof A TransactionProof object.
    * @return {boolean} `true` if the transaction is valid, `false` otherwise.
    */
   async _transactionValid (transaction, proof) {
+    // TODO: Fix utils so we don't need to do this.
     proof.forEach((element) => {
-      element.signature = this._stringToSignature(element.signature)
+      element.signature = utils.utils.stringToSignature(element.signature)
     })
 
-    transaction.signatures = proof.map((element) => {
-      return element.signature
-    })
-
-    const serializedTx = new SignedTransaction(transaction)
     const serializedProof = new TransactionProof({
       transferProofs: proof
     })
     const root = await this.services.eth.contract.getBlock(transaction.block)
 
     return utils.PlasmaMerkleSumTree.checkTransactionProof(
-      serializedTx,
+      transaction,
       serializedProof,
       root
     )
-  }
-
-  _stringToSignature (signature) {
-    if (signature instanceof String || typeof signature === 'string') {
-      let sig = signature.startsWith('0x') ? signature.slice(2) : signature
-      signature = new Signature({
-        r: sig.slice(0, 64),
-        s: sig.slice(64, 128),
-        v: sig.slice(128, 132)
-      })
-    }
-    return signature
   }
 }
 
