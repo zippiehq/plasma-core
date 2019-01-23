@@ -20,9 +20,11 @@ class BaseService extends EventEmitter {
   get services () {
     return new Proxy(this.app.services, {
       get: (obj, prop) => {
+        // Block services from trying to access inactive services.
         if (!obj[prop].started) {
           throw new Error(`Service not started: ${prop}`)
         }
+
         return obj[prop]
       }
     })

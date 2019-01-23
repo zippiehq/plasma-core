@@ -1,7 +1,9 @@
-const BaseService = require('../base-service')
+const BigNum = require('bn.js')
 const utils = require('plasma-utils')
 const models = utils.serialization.models
 const UnsignedTransaction = models.UnsignedTransaction
+
+const BaseService = require('../base-service')
 
 /**
  * Manages the local blockchain.
@@ -12,26 +14,24 @@ class ChainService extends BaseService {
   }
 
   /**
-   * Determines whether the chain is currently syncing.
-   * @return {boolean} `true` if the chain is syncing, `false` otherwise.
-   */
-  isSyncing () {
-    throw new Error('Not implemented')
-  }
-
-  /**
    * Returns the balances of an account.
    * @param {string} address Address of the account to query.
    * @return {*} A list of tokens and balances.
    */
   async getBalances (address) {
     const ranges = await this.services.rangeManager.getOwnedRanges(address)
+
     let balances = {}
     for (let range of ranges) {
+      // Set the balance of this token to zero if it hasn't been seen yet.
       if (!(range.token in balances)) {
-        balances[range.token] = 0
+        balances[range.token] = new BigNum(0)
       }
-      balances[range.token] += range.end - range.start
+
+      // Add the size of this range.
+      balances[range.token] = balances[range.token].add(
+        range.end.sub(range.start)
+      )
     }
     return balances
   }
@@ -70,6 +70,7 @@ class ChainService extends BaseService {
    */
   async addBlockHeader (block, header) {
     // TODO: This should probably check that the block header is correct.
+    // Or does that matter?
     return this.services.db.set(`header:${block}`, header)
   }
 
@@ -110,14 +111,8 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object.
    */
   async sendTransaction (transaction) {
-    /*
-    // Make sure the transaction is valid.
-    // TODO: This relies on the revamp of internal storage, not really important for now.
-    const relevantRanges = this.services.rangeManager.getRelevantRanges(
-      transaction
-    )
-    this.services.proof.checkTransaction(transaction, relevantRanges)
-    */
+    // TODO: Make sure the transaction is valid.
+    // This relies on the revamp of internal storage, not really important for now.
 
     // TODO: Check this receipt is valid.
     const receipt = await this.services.operator.sendTransaction(transaction)
@@ -140,6 +135,7 @@ class ChainService extends BaseService {
    * @param {*} deposit A Deposit object.
    */
   async addDeposit (deposit) {
+    // TODO: Add a serialization object for Deposits.
     this.services.rangeManager.addRange(deposit.owner, {
       token: deposit.token,
       start: deposit.start,

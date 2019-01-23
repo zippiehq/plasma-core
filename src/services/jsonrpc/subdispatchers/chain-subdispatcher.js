@@ -1,5 +1,9 @@
 const BaseSubdispatcher = require('./base-subdispatcher')
 
+// TODO: Since subdispatchers are just pointing to other methods,
+// should we just have them be objects with function names as keys
+// and functions as values?
+
 /**
  * Subdispatcher that handles chain-related requests.
  */

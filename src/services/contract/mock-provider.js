@@ -26,7 +26,7 @@ class MockContractProvider extends BaseContractProvider {
     }
     this.deposits.push(deposit)
 
-    this._emitEvent('Deposit', deposit)
+    this.emitContractEvent('Deposit', deposit)
 
     this.lastRange += amount
   }
@@ -40,7 +40,7 @@ class MockContractProvider extends BaseContractProvider {
   async submitBlock (hash) {
     this.blocks[this.nextBlock] = hash
 
-    this._emitEvent('BlockSubmitted', {
+    this.emitContractEvent('BlockSubmitted', {
       number: this.nextBlock,
       hash: hash
     })
@@ -54,10 +54,6 @@ class MockContractProvider extends BaseContractProvider {
 
   async getCurrentBlock () {
     return this.nextBlock - 1
-  }
-
-  _emitEvent (name, event) {
-    this.emit(`event:${name}`, event)
   }
 }
 

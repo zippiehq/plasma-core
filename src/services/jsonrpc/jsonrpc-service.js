@@ -97,6 +97,7 @@ class JSONRPCService extends BaseService {
     try {
       result = await this.callMethod(request.method, request.params)
     } catch (err) {
+      // TODO: How should we handle these errors?
       console.log(err)
       return this._buildError('INTERNAL_ERROR', request.id)
     }

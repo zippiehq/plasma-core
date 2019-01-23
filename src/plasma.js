@@ -105,6 +105,8 @@ class Plasma {
       })
   }
 
+  // TODO: Just replace these two with "start" and "stop".
+
   /**
    * Starts all available services.
    */

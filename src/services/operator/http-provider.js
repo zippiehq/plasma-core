@@ -30,6 +30,12 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     return this._handle('op_sendTransaction', [transaction])
   }
 
+  /**
+   * Sends a JSON-RPC command as a HTTP POST request.
+   * @param {string} method Name of the method to call.
+   * @param {Array} params Any extra parameters.
+   * @return {*} The result of the operation or an error.
+   */
   async _handle (method, params) {
     const rawResponse = await this.http.post('/', {
       jsonrpc: '2.0',

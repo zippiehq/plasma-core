@@ -49,6 +49,9 @@ class MockWalletProvider extends BaseWalletProvider {
     return account
   }
 
+  /**
+   * Setup the intial set of fake accounts.
+   */
   _initAccounts () {
     this.accounts = Array.from({ length: 10 }, () => {
       return this.web3.eth.accounts.create()

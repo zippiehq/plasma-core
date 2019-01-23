@@ -5,6 +5,8 @@ const models = utils.serialization.models
 const SignedTransaction = models.SignedTransaction
 const UnsignedTransaction = models.UnsignedTransaction
 
+// TODO: Should we even bother with a mock operator?
+
 /**
  * Mocks an operator instead of sending real external requests.
  */
@@ -26,7 +28,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
       (prev, curr) => {
         return prev.block > curr.block ? curr.block : prev.block
       },
-      { block: 999999999 }
+      { block: 999999999 } // TODO: Can we get rid of this?
     )
     const currentBlock = await this.services.contract.getCurrentBlock()
 

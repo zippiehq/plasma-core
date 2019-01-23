@@ -32,6 +32,10 @@ class SyncService extends BaseService {
     this._stopPollingPendingTransactions()
   }
 
+  /**
+   * Regularly watch for new transactions.
+   * Starts an interval that can be stopped later.
+   */
   _pollPendingTransactions () {
     // Stop polling to prevent duplicate listeners,
     this._stopPollingPendingTransactions()
@@ -63,12 +67,19 @@ class SyncService extends BaseService {
     }, this.pollInterval)
   }
 
+  /**
+   * Stops watching for new transactions.
+   */
   _stopPollingPendingTransactions () {
     if (this.pollRef) {
       clearInterval(this.pollRef)
     }
   }
 
+  /**
+   * Tries to add any newly received transactions.
+   * @param {*} event A TransactionReceived event.
+   */
   async _onTransactionReceived (event) {
     const serializedTx = new UnsignedTransaction(event.transaction)
     if (await this.services.chain.hasTransaction(serializedTx.hash)) {
@@ -83,6 +94,10 @@ class SyncService extends BaseService {
     await this.services.chain.addTransaction(transaction, deposits, proof)
   }
 
+  /**
+   * Handles adding new deposits for the user.
+   * @param {*} event A Deposit event.
+   */
   async _onDeposit (event) {
     // TODO: Where should address filtering be done?
     // Probably wherever events are originally watched to reduce total events pulled.

@@ -40,6 +40,11 @@ class EphemDBProvider extends BaseDBProvider {
     return this.db.has(key)
   }
 
+  /**
+   * Checks if a thing is a valid JSON string.
+   * @param {*} str Thing to check.
+   * @return {boolean} `true` if it's a JSON string, `false` otherwise.
+   */
   _isJson (str) {
     try {
       JSON.parse(str)
