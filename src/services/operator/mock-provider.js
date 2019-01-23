@@ -28,7 +28,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
       },
       { block: 999999999 }
     )
-    const currentBlock = await this.services.eth.contract.getCurrentBlock()
+    const currentBlock = await this.services.contract.getCurrentBlock()
 
     const proof = this._getHistory(decoded, earliestBlock, currentBlock)
 
@@ -62,13 +62,13 @@ class MockOperatorProvider extends BaseOperatorProvider {
     this.transactions[tx.encoded] = new SignedTransaction(transaction)
 
     const blockhash = new utils.PlasmaMerkleSumTree([tx]).root().data
-    await this.services.eth.contract.submitBlock(blockhash)
+    await this.services.contract.submitBlock(blockhash)
 
     return tx.hash
   }
 
   _getDeposits (transaction) {
-    return this.services.eth.contract.deposits.filter((deposit) => {
+    return this.services.contract.deposits.filter((deposit) => {
       return transaction.transfers.some((transfer) => {
         return this._rangesOverlap(deposit, transfer)
       })

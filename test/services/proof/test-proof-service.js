@@ -17,13 +17,13 @@ const accounts = constants.ACCOUNTS
 /* Helper functions */
 const submitDeposits = async (deposits) => {
   for (let deposit of deposits) {
-    await app.services.eth.contract.deposit(0, deposit.end - deposit.start, deposit.owner)
+    await app.services.contract.deposit(0, deposit.end - deposit.start, deposit.owner)
   }
 }
 
 const submitBlocks = async (blocks) => {
   for (let block of blocks) {
-    await app.services.eth.contract.submitBlock(block)
+    await app.services.contract.submitBlock(block)
   }
 }
 
@@ -210,7 +210,7 @@ describe('ProofService', async () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].transaction.transfers[0].end = 25
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
-    app.services.eth.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
+    app.services.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
 
     verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
@@ -219,7 +219,7 @@ describe('ProofService', async () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].transaction.transfers[0].sender = accounts[1].address
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
-    app.services.eth.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
+    app.services.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
 
     verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })

@@ -77,7 +77,7 @@ class ProofSerivce extends BaseService {
    * @return {boolean} `true` if the deposit valid, `false` otherwise.
    */
   async _depositValid (deposit) {
-    return this.services.eth.contract.depositValid(deposit)
+    return this.services.contract.depositValid(deposit)
   }
 
   /**
@@ -95,7 +95,7 @@ class ProofSerivce extends BaseService {
     const serializedProof = new TransactionProof({
       transferProofs: proof
     })
-    const root = await this.services.eth.contract.getBlock(transaction.block)
+    const root = await this.services.contract.getBlock(transaction.block)
 
     return utils.PlasmaMerkleSumTree.checkTransactionProof(
       transaction,

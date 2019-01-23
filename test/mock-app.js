@@ -1,7 +1,8 @@
-const EphemDBProvider = require('../src/services/db').EphemDBProvider
-const RangeManager = require('../src/services/chain/range-manager-service')
-const ETHService = require('../src/services/eth/eth-service')
-const MockWalletProvider = require('../src/services/wallet/mock-provider')
+const services = require('../src/services/index')
+const EphemDBProvider = services.DBProviders.EphemDBProvider
+const RangeManager = services.RangeManagerService
+const ContractProvider = services.ContractProviders.MockContractProvider
+const MockWalletProvider = services.WalletProviders.MockWalletProvider
 
 class App {
   constructor () {
@@ -39,7 +40,7 @@ class App {
     }
     this.services.db = new EphemDBProvider({ app: this })
     this.services.rangeManager = new RangeManager({ app: this })
-    this.services.eth = new ETHService({ app: this })
+    this.services.contract = new ContractProvider({ app: this })
     this.services.wallet = new MockWalletProvider({ app: this })
 
     await this.startServices()

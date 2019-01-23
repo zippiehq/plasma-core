@@ -11,7 +11,10 @@ class GuardService extends BaseService {
   async start () {
     this.started = true
     // TODO: Figure out a better way to handle starting and stopping listeners.
-    this.services.eth.on('event:ExitStarted', this._onExitStarted.bind(this))
+    this.services.contract.on(
+      'event:ExitStarted',
+      this._onExitStarted.bind(this)
+    )
   }
 
   async stop () {

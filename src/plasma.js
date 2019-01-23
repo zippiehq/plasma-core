@@ -1,21 +1,24 @@
 const utils = require('plasma-utils')
+const services = require('./services/index')
 
-const DefaultDBProvider = require('./services/db').DefaultDBProvider
-const DefaultOperatorProvider = require('./services/operator')
-  .DefaultOperatorProvider
-const DefaultWalletProvider = require('./services/wallet').DefaultWalletProvider
-const JSONRPCService = require('./services/jsonrpc/jsonrpc-service')
-const ChainService = require('./services/chain/chain-service')
-const RangeManagerService = require('./services/chain/range-manager-service')
-const ETHService = require('./services/eth/eth-service')
-const SyncService = require('./services/sync-service')
-const ProofService = require('./services/proof/proof-service')
+const DefaultDBProvider = services.DBProviders.DefaultDBProvider
+const DefaultOperatorProvider =
+  services.OperatorProviders.DefaultOperatorProvider
+const DefaultWalletProvider = services.WalletProviders.DefaultWalletProvider
+const DefaultContractProvider =
+  services.ContractProviders.DefaultContractProvider
+const JSONRPCService = services.JSONRPCService
+const ChainService = services.ChainService
+const RangeManagerService = services.RangeManagerService
+const SyncService = services.SyncService
+const ProofService = services.ProofService
 
 const defaultOptions = {
   logger: new utils.logging.DefaultLogger(),
   dbProvider: DefaultDBProvider,
   operatorProvider: DefaultOperatorProvider,
-  walletProvider: DefaultWalletProvider
+  walletProvider: DefaultWalletProvider,
+  contractProvider: DefaultContractProvider
 }
 
 /**
@@ -52,7 +55,7 @@ class Plasma {
       { type: JSONRPCService },
       { type: this.options.operatorProvider },
       { type: this.options.walletProvider },
-      { type: ETHService },
+      { type: this.options.contractProvider },
       { type: SyncService },
       { type: ProofService }
     ]

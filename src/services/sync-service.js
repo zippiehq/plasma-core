@@ -19,7 +19,7 @@ class SyncService extends BaseService {
   async start () {
     this.started = true
 
-    this.services.eth.contract.on('event:Deposit', this._onDeposit.bind(this))
+    this.services.contract.on('event:Deposit', this._onDeposit.bind(this))
     this.on('TransactionReceived', this._onTransactionReceived.bind(this))
 
     this._pollPendingTransactions()
@@ -39,7 +39,7 @@ class SyncService extends BaseService {
     this.pollRef = setInterval(async () => {
       const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
       // TODO: Should this be determined locally? Also, should we store blocks locally?
-      const currentBlock = await this.services.eth.contract.getCurrentBlock()
+      const currentBlock = await this.services.contract.getCurrentBlock()
 
       let pending = []
       const addresses = await this.services.wallet.getAccounts()
