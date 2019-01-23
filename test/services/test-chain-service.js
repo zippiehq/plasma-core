@@ -9,14 +9,20 @@ const ChainService = require('../../src/services/chain/chain-service')
 const MockWalletProvider = require('../../src/services/wallet').MockWalletProvider
 const app = require('../mock-app')
 
-describe('ChainService', async () => {
+describe('ChainService', () => {
   const chain = new ChainService({ app: app })
   const wallet = new MockWalletProvider({ app: app })
 
   let accounts
   before(async () => {
+    await app.reset()
+    await chain.start()
     await wallet.start()
     accounts = await wallet.getAccounts()
+  })
+
+  after(async () => {
+    await app.stop()
   })
 
   it('should return the balances of an address', async () => {

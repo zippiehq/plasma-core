@@ -13,13 +13,25 @@ const MockWalletProvider = require('../../src/services/wallet')
 const app = require('../mock-app')
 
 describe('RangeManagerService', async () => {
-  let range, wallet, bob
+  const range = new RangeManagerService({ app: app })
+  const wallet = new MockWalletProvider({ app: app })
+  let bob
+
   beforeEach(async () => {
-    range = new RangeManagerService({ app: app })
-    wallet = new MockWalletProvider({ app: app })
-    wallet.start()
+    await app.reset()
+    await range.start()
+    await wallet.start()
 
     bob = (await wallet.getAccounts())[0]
+  })
+
+  afterEach(async () => {
+    await range.stop()
+    await wallet.stop()
+  })
+
+  after(async () => {
+    await app.stop()
   })
 
   describe('name', () => {

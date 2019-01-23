@@ -14,8 +14,13 @@ describe('MockWalletProvider', async () => {
 
   let accounts
   before(async () => {
+    await app.reset()
     await wallet.start()
     accounts = await wallet.getAccounts()
+  })
+
+  after(async () => {
+    await app.stop()
   })
 
   it('should generate ten accounts', () => {

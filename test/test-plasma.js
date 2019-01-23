@@ -15,10 +15,15 @@ describe('Plasma Core', () => {
   })
 
   afterEach(() => {
-    core.stopServices()
+    core.stop()
   })
 
   it('should run', async () => {
-    await core.startServices().should.eventually.be.fulfilled
+    await core.start().should.eventually.be.fulfilled
+  })
+
+  it('should stop', async () => {
+    await core.start()
+    await core.stop().should.eventually.be.fulfilled
   })
 })

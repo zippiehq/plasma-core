@@ -105,12 +105,10 @@ class Plasma {
       })
   }
 
-  // TODO: Just replace these two with "start" and "stop".
-
   /**
    * Starts all available services.
    */
-  async startServices () {
+  async start () {
     for (let service in this.services) {
       await this.startService(service)
     }
@@ -119,7 +117,7 @@ class Plasma {
   /**
    * Stops all available services.
    */
-  async stopServices () {
+  async stop () {
     for (let service in this.services) {
       await this.stopService(service)
     }

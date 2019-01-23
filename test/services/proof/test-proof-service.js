@@ -98,6 +98,10 @@ describe('ProofService', async () => {
     await submitBlocks(blocks)
   })
 
+  after(async () => {
+    await app.stop()
+  })
+
   it('should correctly check a valid transaction proof', async () => {
     const validity = await verifier.checkProof(transaction2, deposits, proof)
 

@@ -13,13 +13,15 @@ describe('SyncService', async () => {
 
   beforeEach(async () => {
     await app.reset()
-    app.registerService(sync)
-
     await sync.start()
   })
 
   afterEach(async () => {
     await sync.stop()
+  })
+
+  after(async () => {
+    await app.stop()
   })
 
   it('should start correctly', () => {

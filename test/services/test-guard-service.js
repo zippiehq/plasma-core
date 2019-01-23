@@ -10,13 +10,15 @@ describe('GuardService', async () => {
 
   beforeEach(async () => {
     await app.reset()
-    app.registerService(guard)
-
     await guard.start()
   })
 
   afterEach(async () => {
     await guard.stop()
+  })
+
+  after(async () => {
+    await app.stop()
   })
 
   it('should start correctly', () => {
