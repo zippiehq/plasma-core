@@ -33,7 +33,7 @@ class MockOperatorProvider extends BaseOperatorProvider {
     const proof = this._getHistory(decoded, earliestBlock, currentBlock)
 
     return {
-      transaction: new UnsignedTransaction(decoded),
+      transaction: tx,
       deposits: deposits,
       proof: proof
     }

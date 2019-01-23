@@ -1,4 +1,7 @@
 const BaseService = require('../base-service')
+const utils = require('plasma-utils')
+const models = utils.serialization.models
+const UnsignedTransaction = models.UnsignedTransaction
 
 /**
  * Manages the local blockchain.
@@ -94,11 +97,12 @@ class ChainService extends BaseService {
       })
     })
 
+    const unsignedTx = new UnsignedTransaction(transaction)
     await this.services.db.set(
-      `transaction:${transaction.hash}`,
+      `transaction:${unsignedTx.hash}`,
       transaction.encoded
     )
-    await this.services.db.set(`proof:${transaction.hash}`, proof)
+    await this.services.db.set(`proof:${unsignedTx.hash}`, proof)
   }
 
   /**
