@@ -39,8 +39,16 @@ class Plasma {
    * @param {*} options Any additional options.
    */
   registerService (Service, options = {}) {
-    const appInject = { app: this }
-    const service = new Service({ ...options, ...appInject })
+    let service = Service
+
+    // Check if it's a class or an instance of the class.
+    if (typeof Service === 'function') {
+      const appInject = { app: this }
+      service = new Service({ ...options, ...appInject })
+    } else {
+      service.app = this
+    }
+
     this.services[service.name] = service
   }
 
