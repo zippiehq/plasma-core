@@ -5,7 +5,7 @@ class MockContractProvider extends BaseContractProvider {
   constructor () {
     super()
 
-    this.lastRange = 0
+    this.lastRanges = {}
     this.nextBlock = 1
     this.blocks = {}
     this.deposits = []
@@ -17,10 +17,16 @@ class MockContractProvider extends BaseContractProvider {
   }
 
   async deposit (token, amount, owner) {
+    // Initialize if this token hasn't been deposited before.
+    if (!(token in this.lastRanges)) {
+      this.lastRanges[token] = 0
+    }
+
+    const end = this.lastRanges[token] + amount
     const deposit = {
       token: token,
-      start: this.lastRange,
-      end: this.lastRange + amount,
+      start: this.lastRanges[token],
+      end: end,
       owner: owner,
       block: await this.getCurrentBlock()
     }
@@ -28,7 +34,7 @@ class MockContractProvider extends BaseContractProvider {
 
     this.emitContractEvent('Deposit', deposit)
 
-    this.lastRange += amount
+    this.lastRanges[token] = end
   }
 
   async depositValid (deposit) {

@@ -9,6 +9,7 @@ const JSONRPCService = require('./jsonrpc/jsonrpc-service')
 const OperatorProviders = require('./operator/index')
 const ProofService = require('./proof/proof-service')
 const WalletProviders = require('./wallet/index')
+const Web3Provider = require('./web3-provider')
 
 module.exports = {
   BaseService,
@@ -21,5 +22,6 @@ module.exports = {
   JSONRPCService,
   OperatorProviders,
   ProofService,
-  WalletProviders
+  WalletProviders,
+  Web3Provider
 }

@@ -37,7 +37,7 @@ class BaseWalletProvider extends BaseService {
    * @return {string} Address of the signer.
    */
   recover (message, signature) {
-    return this.web3.eth.accounts.recover(message, signature)
+    return this.services.web3.eth.accounts.recover(message, signature)
   }
 }
 

@@ -12,13 +12,15 @@ const ChainService = services.ChainService
 const RangeManagerService = services.RangeManagerService
 const SyncService = services.SyncService
 const ProofService = services.ProofService
+const Web3Provider = services.Web3Provider
 
 const defaultOptions = {
   logger: new utils.logging.DefaultLogger(),
   dbProvider: DefaultDBProvider,
   operatorProvider: DefaultOperatorProvider,
   walletProvider: DefaultWalletProvider,
-  contractProvider: DefaultContractProvider
+  contractProvider: DefaultContractProvider,
+  web3Provider: Web3Provider
 }
 
 /**
@@ -57,6 +59,7 @@ class Plasma {
    */
   _registerServices () {
     const services = [
+      { type: this.options.web3Provider },
       { type: this.options.dbProvider },
       { type: ChainService },
       { type: RangeManagerService },

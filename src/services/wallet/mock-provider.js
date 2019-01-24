@@ -1,16 +1,9 @@
-const Web3 = require('web3')
 const BaseWalletProvider = require('./base-provider')
 
 /**
  * Provider that mocks a wallet and shouldn't be used in production.
  */
 class MockWalletProvider extends BaseWalletProvider {
-  constructor (options) {
-    super(options)
-
-    this.web3 = new Web3()
-  }
-
   async start () {
     this.started = true
     this._initAccounts()
@@ -54,7 +47,7 @@ class MockWalletProvider extends BaseWalletProvider {
    */
   _initAccounts () {
     this.accounts = Array.from({ length: 10 }, () => {
-      return this.web3.eth.accounts.create()
+      return this.services.web3.eth.accounts.create()
     })
     this.addresses = this.accounts.map((account) => {
       return account.address
