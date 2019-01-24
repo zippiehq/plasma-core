@@ -1,4 +1,3 @@
-const utils = require('plasma-utils')
 const BaseService = require('./base-service')
 
 const defaultOptions = {
@@ -18,18 +17,12 @@ class EventWatcher extends BaseService {
 
   async start () {
     this.started = true
-    this._reset()
-    this.services.web3._provider.on('error', async () => {
-      await this._reset()
-    })
-    this.services.web3._provider.on('end', async () => {
-      await this._reset()
-    })
+    this._startWatchingEvents()
   }
 
   async stop () {
     this.started = false
-    await this._stopWatchingEvents()
+    this._stopWatchingEvents()
   }
 
   subscribe (event, listener) {
@@ -49,70 +42,56 @@ class EventWatcher extends BaseService {
     }
   }
 
-  _startWatchingEvents () {
-    this.ethSubscription = this.services.web3.eth.subscribe(
-      'newBlockHeaders',
-      async (err, block) => {
-        if (err) {
-          throw err
-        }
-        const lastFinalBlock = block.number - this.options.finalityDepth
-
-        for (let event in this.events) {
-          if (!this.events[event].active) {
-            continue
-          }
-          let lastLoggedBLock = await this.services.db.get(
-            `lastlogged:${event}`,
-            0
-          )
-
-          this.services.contract.contract.getPastEvents(
-            event,
-            {
-              fromBlock: lastLoggedBLock + 1,
-              toBlock: lastFinalBlock
-            },
-            (err, events) => {
-              if (err) {
-                throw err
-              }
-
-              this.subscriptions[event].forEach((listener) => {
-                events.forEach((e) => {
-                  listener(e)
-                })
-              })
-              this.services.db.set(`lastlogged:${event}`, lastLoggedBLock)
-            }
-          )
-        }
+  async _startWatchingEvents () {
+    this._stopWatchingEvents()
+    this.watchIntervalRef = setInterval(async () => {
+      if (!this.started) {
+        await this._stopWatchingEvents()
+        return
       }
-    )
+      if (!this.app.services.web3.started) {
+        return
+      }
+
+      const block = await this.services.web3.eth.getBlockNumber()
+      const lastFinalBlock = block - this.options.finalityDepth
+
+      for (let event in this.events) {
+        if (!this.events[event].active) {
+          continue
+        }
+
+        let lastLoggedBLock = await this.services.db.get(
+          `lastlogged:${event}`,
+          0
+        )
+
+        this.services.contract.contract.getPastEvents(
+          event,
+          {
+            fromBlock: lastLoggedBLock + 1,
+            toBlock: lastFinalBlock
+          },
+          (err, events) => {
+            if (err) {
+              throw err
+            }
+
+            this.subscriptions[event].forEach((listener) => {
+              events.forEach((e) => {
+                listener(e)
+              })
+            })
+            this.services.db.set(`lastlogged:${event}`, lastLoggedBLock)
+          }
+        )
+      }
+    }, 100) // TODO: How often should this ping?
   }
 
   _stopWatchingEvents () {
-    return new Promise((resolve) => {
-      if (this.ethSubscription) {
-        this.ethSubscription.unsubscribe((err, res) => {
-          if (err) {
-            throw err
-          }
-          this.ethSubscription = null
-          resolve()
-        })
-      }
-    })
-  }
-
-  async _reset () {
-    if (!this.app.services.web3.started) return
-
-    if (this.services.web3._provider.connected) {
-      this._startWatchingEvents()
-    } else {
-      await utils.utils.sleep(1000)
-      await this._reset()
+    if (this.watchIntervalRef) {
+      clearInterval(this.watchIntervalRef)
     }
   }
 }

@@ -2,6 +2,7 @@ const chai = require('chai')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 const chaiAsPromised = require('chai-as-promised')
+const utils = require('plasma-utils')
 const plasmaChainCompiled = require('plasma-contracts').plasmaChainCompiled
 
 chai.should()
@@ -32,7 +33,6 @@ describe('Contract Interactions', () => {
     contract = new HttpContractProvider({ app: app })
     watcher = new EventWatcherService({ app: app, finalityDepth: 0 })
     app.services.contract = contract
-    app.services.eventWatcher = watcher
     await contract.start()
     await watcher.start()
 
@@ -52,6 +52,7 @@ describe('Contract Interactions', () => {
   })
 
   after(async () => {
+    await watcher.stop()
     await app.stop()
     await app.stopEth()
   })
@@ -93,6 +94,9 @@ describe('Contract Interactions', () => {
       await contract.deposit(ETH, 100, operator)
       const expected = { owner: operator, amount: '100' }
 
+      // Wait so the event can be detected.
+      await utils.utils.sleep(100)
+
       fake.should.be.calledWith(expected)
     })
 
@@ -107,6 +111,9 @@ describe('Contract Interactions', () => {
       await contract.submitBlock(ZERO_HASH)
       const currentBlock = await contract.getCurrentBlock()
       const expected = { block: currentBlock.toString(), hash: ZERO_HASH }
+
+      // Wait so the event can be detected.
+      await utils.utils.sleep(100)
 
       fake.should.be.calledWith(expected)
     })
