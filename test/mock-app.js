@@ -23,7 +23,8 @@ const options = {
   walletProvider: MockWalletProvider,
   logger: {
     log: () => { return true }
-  }
+  },
+  finalityDepth: 0
 }
 
 let core = new PlasmaCore(options)

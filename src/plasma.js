@@ -60,21 +60,21 @@ class Plasma {
    */
   _registerServices () {
     const services = [
-      { type: this.options.web3Provider },
-      { type: this.options.dbProvider },
-      { type: ChainService },
-      { type: RangeManagerService },
-      { type: JSONRPCService },
-      { type: this.options.operatorProvider },
-      { type: this.options.walletProvider },
-      { type: this.options.contractProvider },
-      { type: SyncService },
-      { type: ProofService },
-      { type: EventWatcherService }
+      this.options.web3Provider,
+      this.options.dbProvider,
+      ChainService,
+      RangeManagerService,
+      JSONRPCService,
+      this.options.operatorProvider,
+      this.options.walletProvider,
+      this.options.contractProvider,
+      SyncService,
+      ProofService,
+      EventWatcherService
     ]
 
     for (let service of services) {
-      this.registerService(service.type, service.options)
+      this.registerService(service, this.options)
     }
   }
 

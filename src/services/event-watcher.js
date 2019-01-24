@@ -34,9 +34,9 @@ class EventWatcher extends BaseService {
 
   subscribe (event, listener) {
     if (!(event in this.events)) {
+      this.events[event] = { active: true }
       this.subscriptions[event] = []
     }
-    this.events[event].active = true
     this.subscriptions[event].push(listener)
   }
 
@@ -70,7 +70,7 @@ class EventWatcher extends BaseService {
           this.services.contract.contract.getPastEvents(
             event,
             {
-              fromBlock: this.events[event].lastLoggedBlock + 1,
+              fromBlock: lastLoggedBLock + 1,
               toBlock: lastFinalBlock
             },
             (err, events) => {
