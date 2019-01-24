@@ -15,7 +15,7 @@ class HttpContractProvider extends BaseContractProvider {
 
   // TODO: Fix this for ERC20 support.
   async deposit (token, amount, owner) {
-    return this.contract.methods.submitDeposit().send({
+    return this.contract.methods.depositETH().send({
       from: owner,
       value: amount,
       gas: 6000000 // TODO: Figure out how much this should be.

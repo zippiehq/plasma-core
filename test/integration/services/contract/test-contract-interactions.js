@@ -45,7 +45,7 @@ describe('Contract Interactions', () => {
       gasPrice: '1'
     })
     contract.contract.options.address = deployed.options.address
-    await contract.contract.methods.setup(operator).send({
+    await contract.contract.methods.setup(operator, 1, 99999999999).send({
       from: operator,
       gas: 6000000
     })

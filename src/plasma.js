@@ -87,7 +87,7 @@ class Plasma {
     service
       .start()
       .then(() => {
-        this.logger.log(`${service.name}: OK`)
+        this.logger.log(`${service.name}: STARTED`)
       })
       .catch((err) => {
         console.log(err)
@@ -103,7 +103,7 @@ class Plasma {
     service
       .stop()
       .then(() => {
-        this.logger.log(`${service.name}: OK`)
+        this.logger.log(`${service.name}: STOPPED`)
       })
       .catch((err) => {
         console.log(err)
