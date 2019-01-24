@@ -30,7 +30,7 @@ describe('Web3WalletProvider', async () => {
   it('should be able to sign some data', async () => {
     const accounts = await wallet.getAccounts()
     const signature = await wallet.sign(accounts[0], 'Hello!')
-    const address = web3.eth.accounts.recover('Hello!', signature)
+    const address = web3.eth.accounts.recover('Hello!', signature.signature)
 
     address.should.equal(accounts[0])
   })

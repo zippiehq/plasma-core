@@ -1,3 +1,4 @@
+const utils = require('plasma-utils')
 const BaseWalletProvider = require('./base-provider')
 
 /**
@@ -9,7 +10,11 @@ class Web3WalletProvider extends BaseWalletProvider {
   }
 
   async sign (address, data) {
-    return this.services.web3.eth.sign(data, address)
+    const signature = await this.services.web3.eth.sign(data, address)
+    return {
+      ...utils.utils.stringToSignature(signature),
+      ...{ signature: signature }
+    }
   }
 }
 
