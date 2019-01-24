@@ -7,6 +7,22 @@ class HttpContractProvider extends BaseContractProvider {
     this.contract = new this.services.web3.eth.Contract(plasmaChainCompiled.abi)
   }
 
+  // TODO: Fix this for ERC20 support.
+  async deposit (token, amount, owner) {
+    return this.contract.methods.submitDeposit().send({
+      from: owner,
+      value: amount,
+      gas: 6000000 // TODO: Figure out how much this should be.
+    })
+  }
+
+  // TODO: Rewrite when we add generic signature support.
+  async submitBlock (hash) {
+    return this.contract.methods.submitBlock(hash).send({
+      from: await this.getOperator()
+    })
+  }
+
   async getBlock (block) {
     return this.contract.methods.blockHashes(block).call()
   }
@@ -16,6 +32,10 @@ class HttpContractProvider extends BaseContractProvider {
       .nextPlasmaBlockNumber()
       .call()
     return nextBlockNumber - 1
+  }
+
+  async getOperator () {
+    return this.contract.methods.operator().call()
   }
 }
 

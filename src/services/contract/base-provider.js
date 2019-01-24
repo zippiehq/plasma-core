@@ -60,6 +60,16 @@ class BaseContractProvider extends BaseService {
   }
 
   /**
+   * Returns the address of the operator.
+   * @return {string} Address of the operator.
+   */
+  async getOperator () {
+    throw new Error(
+      'Classes that extend BaseContractProvider must implement this method'
+    )
+  }
+
+  /**
    * Emits a prefixed event.
    * @param {string} name Name of the event.
    * @param {*} event Event object.
