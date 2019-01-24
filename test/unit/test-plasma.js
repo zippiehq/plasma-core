@@ -1,6 +1,6 @@
 const chai = require('chai')
 const chaiAsPromised = require('chai-as-promised')
-const Plasma = require('../src/plasma')
+const Plasma = require('../../src/plasma')
 
 chai.should()
 chai.use(chaiAsPromised)

@@ -5,8 +5,8 @@ const sinonChai = require('sinon-chai')
 chai.should()
 chai.use(sinonChai)
 
-const SyncService = require('../../src/services/sync-service')
-const app = require('../mock-app')
+const SyncService = require('../../../src/services/sync-service')
+const app = require('../../mock-app')
 
 describe('SyncService', async () => {
   const sync = new SyncService({ app: app })

@@ -2,8 +2,8 @@ const chai = require('chai')
 
 chai.should()
 
-const GuardService = require('../../src/services/guard-service')
-const app = require('../mock-app')
+const GuardService = require('../../../src/services/guard-service')
+const app = require('../../mock-app')
 
 describe('GuardService', async () => {
   const guard = new GuardService({ app: app })

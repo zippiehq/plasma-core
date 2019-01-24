@@ -4,8 +4,8 @@ const chaiAsPromised = require('chai-as-promised')
 chai.use(chaiAsPromised)
 
 const Web3 = require('web3')
-const MockWalletProvider = require('../../../src/services/wallet').MockWalletProvider
-const app = require('../../mock-app')
+const MockWalletProvider = require('../../../../src/services/wallet').MockWalletProvider
+const app = require('../../../mock-app')
 
 const web3 = new Web3()
 

@@ -1,10 +1,11 @@
 const chai = require('chai')
 const BigNum = require('bn.js')
+const utils = require('plasma-utils')
 
 const should = chai.should()
 
-const SnapshotManager = require('../../../src/services/proof/snapshot-manager')
-const constants = require('../../constants')
+const SnapshotManager = require('../../../../src/services/proof/snapshot-manager')
+const constants = utils.constants
 const accounts = constants.ACCOUNTS
 
 describe('SnapshotManager', () => {

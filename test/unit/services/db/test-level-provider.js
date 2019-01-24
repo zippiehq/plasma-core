@@ -3,7 +3,7 @@ const rimraf = require('rimraf')
 
 chai.should()
 
-const LevelDBProvider = require('../../../src/services/db/level-provider')
+const LevelDBProvider = require('../../../../src/services/db/level-provider')
 
 const TEST_DB_PATH = './.level_test'
 

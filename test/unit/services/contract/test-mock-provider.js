@@ -8,8 +8,8 @@ chai.should()
 chai.use(sinonChai)
 chai.use(chaiAsPromised)
 
-const MockContractProvider = require('../../../src/services/contract').MockContractProvider
-const app = require('../../mock-app')
+const MockContractProvider = require('../../../../src/services/contract').MockContractProvider
+const app = require('../../../mock-app')
 
 describe('MockContractProvider', async () => {
   let contract

@@ -5,9 +5,9 @@ const sinonChai = require('sinon-chai')
 chai.should()
 chai.use(sinonChai)
 
-const ChainService = require('../../src/services/chain/chain-service')
-const MockWalletProvider = require('../../src/services/wallet').MockWalletProvider
-const app = require('../mock-app')
+const ChainService = require('../../../src/services/chain/chain-service')
+const MockWalletProvider = require('../../../src/services/wallet').MockWalletProvider
+const app = require('../../mock-app')
 
 describe('ChainService', () => {
   const chain = new ChainService({ app: app })

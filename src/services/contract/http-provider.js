@@ -10,6 +10,13 @@ class HttpContractProvider extends BaseContractProvider {
   async getBlock (block) {
     return this.contract.methods.blockHashes(block).call()
   }
+
+  async getCurrentBlock () {
+    const nextBlockNumber = await this.contract.methods
+      .nextPlasmaBlockNumber()
+      .call()
+    return nextBlockNumber - 1
+  }
 }
 
 module.exports = HttpContractProvider

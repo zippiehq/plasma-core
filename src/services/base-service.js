@@ -1,12 +1,10 @@
 const EventEmitter = require('events')
 
-const defaultOptions = {}
-
 /**
  * A base class for services to extend.
  */
 class BaseService extends EventEmitter {
-  constructor (options = {}) {
+  constructor (options = {}, defaultOptions = {}) {
     super()
 
     this.options = Object.assign({}, defaultOptions, options)

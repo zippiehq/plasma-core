@@ -8,10 +8,10 @@ const web3 = new Web3()
 const UnsignedTransaction = utils.serialization.models.UnsignedTransaction
 chai.should()
 
-const ProofService = require('../../../src/services/proof/proof-service')
+const ProofService = require('../../../../src/services/proof/proof-service')
 
-const app = require('../../mock-app')
-const constants = require('../../constants')
+const app = require('../../../mock-app')
+const constants = utils.constants
 const accounts = constants.ACCOUNTS
 
 /* Helper functions */
