@@ -1,19 +1,45 @@
 const Web3 = require('web3')
 const BaseService = require('./base-service')
-
-const defaultOptions = {
-  provider: new Web3.providers.HttpProvider('http://localhost:8545')
-}
+const utils = require('plasma-utils')
 
 class Web3Provider extends BaseService {
-  constructor (options) {
-    super(options, defaultOptions)
-    this.web3 = new Web3(this.options.provider)
-    Object.assign(this, this.web3)
+  async start () {
+    this.started = true
+    this.web3 = new Web3(this._getProvider())
+    Object.assign(this, this.web3) // A bit of a hack, maybe there's a nicer way to expose this?
+  }
+
+  async stop () {
+    this.started = false
+    if (this.provider) {
+      this.provider.removeAllListeners()
+    }
   }
 
   get name () {
     return 'web3'
+  }
+
+  _getProvider () {
+    if (!this.started) return
+    if (this.provider) {
+      this.provider.removeAllListeners()
+    }
+
+    let provider = new Web3.providers.WebsocketProvider('ws://localhost:8545')
+    provider.on('error', async () => {
+      await utils.utils.sleep(100)
+      this.web3.setProvider(this._getProvider())
+    })
+    provider.on('end', async () => {
+      await utils.utils.sleep(100)
+      this.web3.setProvider(this._getProvider())
+    })
+    provider.on('connect', () => {
+      this.app.logger.log('WebSocket connection established.')
+    })
+    this.provider = provider
+    return provider
   }
 }
 

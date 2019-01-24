@@ -13,6 +13,7 @@ const RangeManagerService = services.RangeManagerService
 const SyncService = services.SyncService
 const ProofService = services.ProofService
 const Web3Provider = services.Web3Provider
+const EventWatcherService = services.EventWatcherService
 
 const defaultOptions = {
   logger: new utils.logging.DefaultLogger(),
@@ -68,7 +69,8 @@ class Plasma {
       { type: this.options.walletProvider },
       { type: this.options.contractProvider },
       { type: SyncService },
-      { type: ProofService }
+      { type: ProofService },
+      { type: EventWatcherService }
     ]
 
     for (let service of services) {

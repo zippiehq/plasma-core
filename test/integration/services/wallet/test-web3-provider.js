@@ -13,8 +13,8 @@ describe('Web3WalletProvider', async () => {
   const wallet = new Web3WalletProvider({ app: app })
 
   before(async () => {
-    await app.reset()
     await app.startEth()
+    await app.reset()
   })
 
   after(async () => {

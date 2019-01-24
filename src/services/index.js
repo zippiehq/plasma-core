@@ -10,6 +10,7 @@ const OperatorProviders = require('./operator/index')
 const ProofService = require('./proof/proof-service')
 const WalletProviders = require('./wallet/index')
 const Web3Provider = require('./web3-provider')
+const EventWatcherService = require('./event-watcher')
 
 module.exports = {
   BaseService,
@@ -23,5 +24,6 @@ module.exports = {
   OperatorProviders,
   ProofService,
   WalletProviders,
-  Web3Provider
+  Web3Provider,
+  EventWatcherService
 }

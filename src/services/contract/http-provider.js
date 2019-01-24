@@ -1,10 +1,16 @@
 const BaseContractProvider = require('./base-provider')
 const plasmaChainCompiled = require('plasma-contracts').plasmaChainCompiled
 
+// TODO: Rename this.
 class HttpContractProvider extends BaseContractProvider {
   async start () {
     this.started = true
     this.contract = new this.services.web3.eth.Contract(plasmaChainCompiled.abi)
+  }
+
+  async stop () {
+    this.started = false
+    this.removeAllListeners()
   }
 
   // TODO: Fix this for ERC20 support.
