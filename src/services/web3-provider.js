@@ -28,10 +28,12 @@ class Web3Provider extends BaseService {
 
     let provider = new Web3.providers.WebsocketProvider('ws://localhost:8545')
     provider.on('error', async () => {
+      this.app.logger.log('WebSocket error, attempting to reconnect...')
       await utils.utils.sleep(100)
       this.web3.setProvider(this._getProvider())
     })
     provider.on('end', async () => {
+      this.app.logger.log('WebSocket disconnected, attempting to reconnect...')
       await utils.utils.sleep(100)
       this.web3.setProvider(this._getProvider())
     })
