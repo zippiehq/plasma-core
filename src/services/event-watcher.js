@@ -9,6 +9,7 @@ class EventWatcher extends BaseService {
     super(options, defaultOptions)
     this.events = {}
     this.subscriptions = {}
+    this.watching = false
   }
 
   get name () {
@@ -17,7 +18,6 @@ class EventWatcher extends BaseService {
 
   async start () {
     this.started = true
-    this._startWatchingEvents()
   }
 
   async stop () {
@@ -26,6 +26,10 @@ class EventWatcher extends BaseService {
   }
 
   subscribe (event, listener) {
+    if (!this.watching) {
+      this.watching = true
+      this._startWatchingEvents()
+    }
     if (!(event in this.events)) {
       this.events[event] = { active: true }
       this.subscriptions[event] = []

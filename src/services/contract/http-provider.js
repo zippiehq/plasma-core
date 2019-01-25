@@ -5,15 +5,14 @@ const plasmaChainCompiled = require('plasma-contracts').plasmaChainCompiled
 class HttpContractProvider extends BaseContractProvider {
   constructor (options) {
     super(options)
-
-    this.contract = new this.services.web3.eth.Contract(
-      plasmaChainCompiled.abi,
-      this.options.contractAddress
-    )
   }
 
   async start () {
     this.started = true
+    this.contract = new this.services.web3.eth.Contract(
+      plasmaChainCompiled.abi,
+      this.options.contractAddress
+    )
     this.services.eventWatcher.subscribe('DepositEvent', (event) => {
       this.emitContractEvent('Deposit', event)
     })
