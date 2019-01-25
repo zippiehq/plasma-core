@@ -3,6 +3,7 @@ const uuidv4 = require('uuid/v4')
 const utils = require('plasma-utils')
 const models = utils.serialization.models
 const UnsignedTransaction = models.UnsignedTransaction
+const SignedTransaction = models.SignedTransaction
 
 const BaseOperatorProvider = require('./base-provider')
 
@@ -54,8 +55,9 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     }
   }
 
-  async sendTransaction (encoded) {
-    return this._handle('addTransaction', [encoded])
+  async sendTransaction (transaction) {
+    const tx = new SignedTransaction(transaction)
+    return this._handle('addTransaction', [tx.encoded])
   }
 
   /**
