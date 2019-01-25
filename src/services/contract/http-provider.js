@@ -5,7 +5,10 @@ const plasmaChainCompiled = require('plasma-contracts').plasmaChainCompiled
 class HttpContractProvider extends BaseContractProvider {
   async start () {
     this.started = true
-    this.contract = new this.services.web3.eth.Contract(plasmaChainCompiled.abi)
+    this.contract = new this.services.web3.eth.Contract(
+      plasmaChainCompiled.abi,
+      this.options.contractAddress
+    )
   }
 
   async stop () {
