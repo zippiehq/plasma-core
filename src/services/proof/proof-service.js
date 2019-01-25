@@ -97,6 +97,18 @@ class ProofSerivce extends BaseService {
     })
     const root = await this.services.contract.getBlock(transaction.block)
 
+    transaction.transfers.forEach((transfer, i) => {
+      const {
+        implicitStart,
+        implicitEnd
+      } = utils.PlasmaMerkleSumTree.getTransferProofBounds(
+        transaction,
+        serializedProof.transferProofs[i]
+      )
+      transfer.implicitStart = implicitStart
+      transfer.implicitEnd = implicitEnd
+    })
+
     return utils.PlasmaMerkleSumTree.checkTransactionProof(
       transaction,
       serializedProof,

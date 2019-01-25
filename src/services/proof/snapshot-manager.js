@@ -19,13 +19,7 @@ class SnapshotManager {
       throw new Error('Invalid deposit')
     }
 
-    this._insertSnapshot({
-      token: deposit.token,
-      start: deposit.start,
-      end: deposit.end,
-      block: deposit.block,
-      owner: deposit.owner
-    })
+    this._insertSnapshot(deposit)
   }
 
   /**
@@ -33,15 +27,42 @@ class SnapshotManager {
    * @param {*} transaction Transaction to apply.
    */
   applyTransaction (transaction) {
-    transaction.transfers.forEach((transfer) => {
+    let transfers = transaction.transfers.reduce((curr, transfer) => {
+      transfer = this._castTransfer(transfer)
       if (!this._validSnapshot(transfer)) {
         throw new Error('Invalid transaction')
       }
-      const overlapping = this._getOverlappingSnapshots(transfer)
+      if (!transfer.start.eq(transfer.implicitStart)) {
+        curr.push({
+          ...transfer,
+          ...{
+            start: transfer.implicitStart,
+            end: transfer.start,
+            implicit: true
+          }
+        })
+      }
+      if (!transfer.end.eq(transfer.implicitEnd)) {
+        curr.push({
+          ...transfer,
+          ...{ start: transfer.end, end: transfer.implicitEnd, implicit: true }
+        })
+      }
+      curr.push(transfer)
+      return curr
+    }, [])
+
+    transfers.forEach((transfer) => {
+      const overlapping = this.snapshots.filter((snapshot) => {
+        return (
+          Math.max(snapshot.start, transfer.start) <
+          Math.min(snapshot.end, transfer.end)
+        )
+      })
       overlapping.forEach((snapshot) => {
         if (
-          snapshot.owner !== transfer.sender ||
-          !snapshot.token.eq(new BigNum(transfer.token, 'hex')) ||
+          !(transfer.implicit || snapshot.owner === transfer.sender) ||
+          !snapshot.token.eq(transfer.token) ||
           !snapshot.block
             .add(new BigNum(1))
             .eq(new BigNum(transaction.block, 'hex'))
@@ -53,22 +74,16 @@ class SnapshotManager {
         this._removeSnapshot(snapshot)
 
         // Insert any newly created snapshots.
-        if (snapshot.start < transfer.start) {
+        if (snapshot.start.lt(transfer.start)) {
           this._insertSnapshot({
-            token: snapshot.token,
-            start: snapshot.start,
-            end: transfer.start,
-            block: snapshot.block,
-            owner: snapshot.owner
+            ...snapshot,
+            ...{ end: transfer.start }
           })
         }
-        if (snapshot.end > transfer.end) {
+        if (snapshot.end.gt(transfer.end)) {
           this._insertSnapshot({
-            token: snapshot.token,
-            start: transfer.end,
-            end: snapshot.end,
-            block: snapshot.block,
-            owner: snapshot.owner
+            ...snapshot,
+            ...{ start: transfer.end }
           })
         }
         this._insertSnapshot({
@@ -76,7 +91,7 @@ class SnapshotManager {
           start: Math.max(snapshot.start, transfer.start),
           end: Math.min(snapshot.end, transfer.end),
           block: transaction.block,
-          owner: transfer.recipient
+          owner: transfer.implicit ? snapshot.owner : transfer.recipient
         })
       })
     })
@@ -130,17 +145,6 @@ class SnapshotManager {
   }
 
   /**
-   * Returns stored snapshots that overlap with the given snapshot.
-   * @param {*} snapshot A Snapshot object.
-   * @return {Array} An array of stored snapshots that overlap with the snapshot.
-   */
-  _getOverlappingSnapshots (snapshot) {
-    return this.snapshots.filter((s) => {
-      return Math.max(s.start, snapshot.start) < Math.min(s.end, snapshot.end)
-    })
-  }
-
-  /**
    * Checks if a given snapshot is valid or not.
    * @param {*} snapshot A Snapshot object.
    * @return {boolean} `true` if the snapshot is valid, `false` otherwise.
@@ -157,11 +161,35 @@ class SnapshotManager {
    */
   _castSnapshot (snapshot) {
     return {
-      token: new BigNum(snapshot.token),
-      start: new BigNum(snapshot.start),
-      end: new BigNum(snapshot.end),
-      block: new BigNum(snapshot.block),
+      token: new BigNum(snapshot.token, 'hex'),
+      start: new BigNum(snapshot.start, 'hex'),
+      end: new BigNum(snapshot.end, 'hex'),
+      block: new BigNum(snapshot.block, 'hex'),
       owner: snapshot.owner
+    }
+  }
+
+  /**
+   * Casts a transfer-like object into a transfer.
+   * @param transfer A transfer-like object.
+   * @return A Transfer object.
+   */
+  _castTransfer (transfer) {
+    // TODO: Get rid of this.
+    transfer.implicitStart =
+      transfer.implicitStart === undefined
+        ? transfer.start
+        : transfer.implicitStart
+    transfer.implicitEnd =
+      transfer.implicitEnd === undefined ? transfer.end : transfer.implicitEnd
+    return {
+      token: new BigNum(transfer.token, 'hex'),
+      start: new BigNum(transfer.start, 'hex'),
+      end: new BigNum(transfer.end, 'hex'),
+      implicitStart: new BigNum(transfer.implicitStart, 'hex'),
+      implicitEnd: new BigNum(transfer.implicitEnd, 'hex'),
+      sender: transfer.sender,
+      recipient: transfer.recipient
     }
   }
 
