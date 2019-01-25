@@ -41,8 +41,10 @@ class SnapshotManager {
       overlapping.forEach((snapshot) => {
         if (
           snapshot.owner !== transfer.sender ||
-          !snapshot.token.eq(new BigNum(transfer.token)) ||
-          !snapshot.block.add(new BigNum(1)).eq(new BigNum(transaction.block))
+          !snapshot.token.eq(new BigNum(transfer.token, 'hex')) ||
+          !snapshot.block
+            .add(new BigNum(1))
+            .eq(new BigNum(transaction.block, 'hex'))
         ) {
           throw new Error('Invalid state transition')
         }
