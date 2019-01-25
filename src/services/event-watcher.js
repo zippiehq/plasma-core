@@ -67,8 +67,9 @@ class EventWatcher extends BaseService {
 
         let lastLoggedBLock = await this.services.db.get(
           `lastlogged:${event}`,
-          0
+          -1
         )
+        if (lastLoggedBLock + 1 > lastFinalBlock) return
 
         this.services.contract.contract.getPastEvents(
           event,
@@ -86,7 +87,7 @@ class EventWatcher extends BaseService {
                 listener(e)
               })
             })
-            this.services.db.set(`lastlogged:${event}`, lastLoggedBLock)
+            this.services.db.set(`lastlogged:${event}`, lastFinalBlock)
           }
         )
       }

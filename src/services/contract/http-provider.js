@@ -1,3 +1,4 @@
+const BigNum = require('bn.js')
 const BaseContractProvider = require('./base-provider')
 const plasmaChainCompiled = require('plasma-contracts').plasmaChainCompiled
 
@@ -7,11 +8,12 @@ class HttpContractProvider extends BaseContractProvider {
     this.started = true
     this.initContract()
     this.services.eventWatcher.subscribe('DepositEvent', (event) => {
+      const values = event.returnValues
       this.emitContractEvent('Deposit', {
-        owner: event.depositer,
-        start: event.untypedStart,
-        end: event.untypedEnd,
-        token: event.tokenType
+        owner: values.depositer,
+        start: new BigNum(values.untypedStart),
+        end: new BigNum(values.untypedEnd),
+        token: new BigNum(values.tokenType)
       })
     })
   }
