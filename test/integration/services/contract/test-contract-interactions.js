@@ -33,6 +33,7 @@ describe('Contract Interactions', () => {
     contract = new HttpContractProvider({ app: app })
     watcher = new EventWatcherService({ app: app, finalityDepth: 0 })
     app.services.contract = contract
+    contract.initContract()
 
     // Deploy and initialize the contract.
     const deployed = await contract.contract.deploy({

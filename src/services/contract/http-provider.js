@@ -3,16 +3,9 @@ const plasmaChainCompiled = require('plasma-contracts').plasmaChainCompiled
 
 // TODO: Rename this.
 class HttpContractProvider extends BaseContractProvider {
-  constructor (options) {
-    super(options)
-  }
-
   async start () {
     this.started = true
-    this.contract = new this.services.web3.eth.Contract(
-      plasmaChainCompiled.abi,
-      this.options.contractAddress
-    )
+    this.initContract()
     this.services.eventWatcher.subscribe('DepositEvent', (event) => {
       this.emitContractEvent('Deposit', event)
     })
@@ -21,6 +14,11 @@ class HttpContractProvider extends BaseContractProvider {
   async stop () {
     this.started = false
     this.removeAllListeners()
+  }
+
+  initContract () {
+    if (this.contract) return
+    this.contract = new this.services.web3.eth.Contract(plasmaChainCompiled.abi)
   }
 
   // TODO: Fix this for ERC20 support.
