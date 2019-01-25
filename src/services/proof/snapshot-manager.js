@@ -20,6 +20,7 @@ class SnapshotManager {
     }
 
     this._insertSnapshot({
+      token: deposit.token,
       start: deposit.start,
       end: deposit.end,
       block: deposit.block,
@@ -40,6 +41,7 @@ class SnapshotManager {
       overlapping.forEach((snapshot) => {
         if (
           snapshot.owner !== transfer.sender ||
+          !snapshot.token.eq(new BigNum(transfer.token)) ||
           !snapshot.block.add(new BigNum(1)).eq(new BigNum(transaction.block))
         ) {
           throw new Error('Invalid state transition')
@@ -51,6 +53,7 @@ class SnapshotManager {
         // Insert any newly created snapshots.
         if (snapshot.start < transfer.start) {
           this._insertSnapshot({
+            token: snapshot.token,
             start: snapshot.start,
             end: transfer.start,
             block: snapshot.block,
@@ -59,6 +62,7 @@ class SnapshotManager {
         }
         if (snapshot.end > transfer.end) {
           this._insertSnapshot({
+            token: snapshot.token,
             start: transfer.end,
             end: snapshot.end,
             block: snapshot.block,
@@ -66,6 +70,7 @@ class SnapshotManager {
           })
         }
         this._insertSnapshot({
+          token: snapshot.token,
           start: Math.max(snapshot.start, transfer.start),
           end: Math.min(snapshot.end, transfer.end),
           block: transaction.block,
@@ -85,6 +90,7 @@ class SnapshotManager {
     snapshotManager.applyTransaction(transaction)
     return transaction.transfers.every((transfer) => {
       return snapshotManager._hasSnapshot({
+        token: transfer.token,
         start: transfer.start,
         end: transfer.end,
         block: transaction.block,
@@ -102,12 +108,23 @@ class SnapshotManager {
     snapshot = this._castSnapshot(snapshot)
     return this.snapshots.some((s) => {
       return (
+        s.token.eq(snapshot.token) &&
         s.start.eq(snapshot.start) &&
         s.end.eq(snapshot.end) &&
         s.block.eq(snapshot.block) &&
         s.owner === snapshot.owner
       )
     })
+  }
+
+  _snapshotEquals (a, b) {
+    return (
+      a.token.eq(b.token) &&
+      a.start.eq(b.start) &&
+      a.end.eq(b.end) &&
+      a.block.eq(b.block) &&
+      a.owner === b.owner
+    )
   }
 
   /**
@@ -138,6 +155,7 @@ class SnapshotManager {
    */
   _castSnapshot (snapshot) {
     return {
+      token: new BigNum(snapshot.token),
       start: new BigNum(snapshot.start),
       end: new BigNum(snapshot.end),
       block: new BigNum(snapshot.block),
@@ -154,7 +172,7 @@ class SnapshotManager {
 
     this.snapshots.push(snapshot)
     this.snapshots.sort((a, b) => {
-      return a.start - b.start
+      return a.start.sub(b.start)
     })
     this.snapshots = this._mergeSnapshots(this.snapshots)
   }
@@ -165,7 +183,7 @@ class SnapshotManager {
    */
   _removeSnapshot (snapshot) {
     this.snapshots = this.snapshots.filter((s) => {
-      return s !== snapshot
+      return !this._snapshotEquals(s, snapshot)
     })
   }
 
@@ -182,7 +200,11 @@ class SnapshotManager {
     snapshots.forEach((snapshot) => {
       let left, right
       merged.forEach((s, i) => {
-        if (!s.block.eq(snapshot.block) || s.owner !== snapshot.owner) {
+        if (
+          !s.block.eq(snapshot.block) ||
+          s.owner !== snapshot.owner ||
+          !s.token.eq(snapshot.token)
+        ) {
           return
         }
 

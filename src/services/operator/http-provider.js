@@ -1,33 +1,61 @@
 const axios = require('axios')
 const uuidv4 = require('uuid/v4')
+const utils = require('plasma-utils')
+const models = utils.serialization.models
+const UnsignedTransaction = models.UnsignedTransaction
 
 const BaseOperatorProvider = require('./base-provider')
+
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
+const defaultOptions = {
+  url: 'http://localhost:9898'
+}
 
 /**
  * Service that wraps the interface to the operator.
  */
 class HttpOperatorProvider extends BaseOperatorProvider {
-  constructor (options = {}) {
-    super(options)
+  constructor (options) {
+    super(options, defaultOptions)
     this.http = axios.create({
-      baseURL: options.url || 'http://localhost:9898'
+      baseURL: options.url
     })
   }
 
-  get name () {
-    return 'http'
+  async getTransactions (address, start, end) {
+    return this._handle('getTransactions', [address, start, end])
   }
 
-  async getRangesByOwner (owner, startBlock) {
-    return this._handle('op_getRangesByOwner', [owner, startBlock])
+  async getTransaction (encoded) {
+    const tx = new UnsignedTransaction(encoded)
+    const rawProof = await this._handle('getHistoryProof', [
+      0,
+      tx.block,
+      encoded
+    ])
+
+    // Parse the raw proof.
+    let proof = []
+    let deposits = []
+    for (let transactionProof of rawProof) {
+      let transfer = transactionProof.transaction.transfers[0]
+      // Transfers from the zero address are deposits.
+      if (transfer.sender === NULL_ADDRESS) {
+        deposits.push(transfer)
+      } else {
+        proof.push(transactionProof)
+      }
+    }
+
+    return {
+      transaction: tx,
+      proof: proof,
+      deposits: deposits
+    }
   }
 
-  async getTransactionHistory (transaction, startBlock) {
-    return this._handle('op_getTxHistory', [transaction, startBlock])
-  }
-
-  async sendTransaction (transaction) {
-    return this._handle('op_sendTransaction', [transaction])
+  async sendTransaction (encoded) {
+    return this._handle('addTransaction', [encoded])
   }
 
   /**
