@@ -43,7 +43,9 @@ core.startEth = async function () {
   if (this.server) {
     await this.stopEth()
   }
-  this.server = ganache.server()
+  this.server = ganache.server({
+    gasLimit: '0x7A1200'
+  })
   await startServer(this.server, '8545')
 }
 

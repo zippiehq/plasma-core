@@ -40,13 +40,13 @@ describe('Contract Interactions', () => {
       data: plasmaChainCompiled.bytecode
     }).send({
       from: operator,
-      gas: 6000000,
+      gas: 7000000,
       gasPrice: '1'
     })
     contract.contract.options.address = deployed.options.address
-    await contract.contract.methods.setup(operator, 1, 99999999999).send({
+    await contract.contract.methods.setup(operator, 0).send({
       from: operator,
-      gas: 6000000
+      gas: 7000000
     })
 
     await contract.start()
@@ -89,12 +89,14 @@ describe('Contract Interactions', () => {
       let fake = sinon.fake()
       watcher.subscribe('DepositEvent', (event) => {
         fake({
-          amount: event.returnValues.depositAmount,
-          owner: event.returnValues.depositer
+          owner: event.returnValues.depositer,
+          start: event.returnValues.untypedStart,
+          end: event.returnValues.untypedEnd,
+          token: event.returnValues.tokenType
         })
       })
       await contract.deposit(ETH, 100, operator)
-      const expected = { owner: operator, amount: '100' }
+      const expected = { owner: operator, start: '0', end: '100', token: '0' }
 
       // Wait so the event can be detected.
       await utils.utils.sleep(100)

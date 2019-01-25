@@ -7,7 +7,12 @@ class HttpContractProvider extends BaseContractProvider {
     this.started = true
     this.initContract()
     this.services.eventWatcher.subscribe('DepositEvent', (event) => {
-      this.emitContractEvent('Deposit', event)
+      this.emitContractEvent('Deposit', {
+        owner: event.depositer,
+        start: event.untypedStart,
+        end: event.untypedEnd,
+        token: event.tokenType
+      })
     })
   }
 
