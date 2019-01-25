@@ -67,10 +67,10 @@ class Plasma {
       JSONRPCService,
       this.options.operatorProvider,
       this.options.walletProvider,
+      EventWatcherService,
       this.options.contractProvider,
       SyncService,
-      ProofService,
-      EventWatcherService
+      ProofService
     ]
 
     for (let service of services) {

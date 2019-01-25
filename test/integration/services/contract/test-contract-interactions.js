@@ -33,8 +33,6 @@ describe('Contract Interactions', () => {
     contract = new HttpContractProvider({ app: app })
     watcher = new EventWatcherService({ app: app, finalityDepth: 0 })
     app.services.contract = contract
-    await contract.start()
-    await watcher.start()
 
     // Deploy and initialize the contract.
     const deployed = await contract.contract.deploy({
@@ -49,6 +47,9 @@ describe('Contract Interactions', () => {
       from: operator,
       gas: 6000000
     })
+
+    await contract.start()
+    await watcher.start()
   })
 
   after(async () => {
