@@ -73,7 +73,7 @@ class HttpOperatorProvider extends BaseOperatorProvider {
       params: params,
       id: uuidv4()
     })
-    const response = JSON.parse(rawResponse.data)
+    const response = utils.utils.isString(rawResponse) ? JSON.parse(rawResponse.data) : rawResponse.data
     if (response.error) {
       throw response.error
     }
