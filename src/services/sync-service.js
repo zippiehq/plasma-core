@@ -9,7 +9,7 @@ const UnsignedTransaction = utils.serialization.models.UnsignedTransaction
 class SyncService extends BaseService {
   constructor (options) {
     super(options)
-    this.pollInterval = 1000
+    this.pollInterval = 100 // TODO: Fix this so it's dependent on config.
   }
 
   get name () {
@@ -29,51 +29,53 @@ class SyncService extends BaseService {
     this.started = false
 
     this.removeAllListeners()
-    this._stopPollingPendingTransactions()
   }
 
   /**
-   * Regularly watch for new transactions.
-   * Starts an interval that can be stopped later.
+   * Wrapper that handles regularly polling pending transactions.
    */
-  _pollPendingTransactions () {
-    // Stop polling to prevent duplicate listeners,
-    this._stopPollingPendingTransactions()
+  async _pollPendingTransactions () {
+    if (!this.started) return
 
-    this.pollRef = setInterval(async () => {
-      const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
-      // TODO: Should this be determined locally? Also, should we store blocks locally?
-      const currentBlock = await this.services.contract.getCurrentBlock()
-
-      let pending = []
-      const addresses = await this.services.wallet.getAccounts()
-      for (let address of addresses) {
-        pending = pending.concat(
-          await this.services.operator.getTransactions(
-            address,
-            lastSyncedBlock + 1,
-            currentBlock
-          )
-        )
-      }
-
-      pending.forEach((transaction) => {
-        this.emit('TransactionReceived', {
-          transaction: transaction
-        })
-      })
-
-      await this.services.db.set(`sync:block`, currentBlock)
-    }, this.pollInterval)
-  }
-
-  /**
-   * Stops watching for new transactions.
-   */
-  _stopPollingPendingTransactions () {
-    if (this.pollRef) {
-      clearInterval(this.pollRef)
+    try {
+      await this._checkPendingTransactions()
+    } finally {
+      await utils.utils.sleep(100)
+      this._pollPendingTransactions()
     }
+  }
+
+  /**
+   * Checks for any available pending transactions and emits an event for each.
+   */
+  async _checkPendingTransactions () {
+    if (!this.services.contract.contract.options.address) return
+
+    const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
+    // TODO: Should this be determined locally? Also, should we store blocks locally?
+    const currentBlock = await this.services.contract.getCurrentBlock()
+    if (lastSyncedBlock + 1 > currentBlock) return
+
+    // TODO: Figure out how handle operator errors.
+    let pending = []
+    const addresses = await this.services.wallet.getAccounts()
+    for (let address of addresses) {
+      pending = pending.concat(
+        await this.services.operator.getTransactions(
+          address,
+          lastSyncedBlock + 1,
+          currentBlock
+        )
+      )
+    }
+
+    pending.forEach((transaction) => {
+      this.emit('TransactionReceived', {
+        transaction: transaction
+      })
+    })
+
+    await this.services.db.set(`sync:block`, currentBlock)
   }
 
   /**

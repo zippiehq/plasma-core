@@ -24,7 +24,10 @@ class HttpOperatorProvider extends BaseOperatorProvider {
   }
 
   async getTransactions (address, start, end) {
-    return this._handle('getTransactions', [address, start, end])
+    const txs = await this._handle('getTransactions', [address, start, end])
+    return txs.map((tx) => {
+      return Buffer.from(tx).toString('hex')
+    })
   }
 
   async getTransaction (encoded) {
@@ -60,13 +63,17 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     return this._handle('addTransaction', [tx.encoded])
   }
 
+  async submitBlock () {
+    return this._handle('newBlock')
+  }
+
   /**
    * Sends a JSON-RPC command as a HTTP POST request.
    * @param {string} method Name of the method to call.
    * @param {Array} params Any extra parameters.
    * @return {*} The result of the operation or an error.
    */
-  async _handle (method, params) {
+  async _handle (method, params = []) {
     const rawResponse = await this.http.post('/', {
       jsonrpc: '2.0',
       method: method,

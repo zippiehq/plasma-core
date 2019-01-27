@@ -1,3 +1,4 @@
+const utils = require('plasma-utils')
 const BaseService = require('./base-service')
 
 const defaultOptions = {
@@ -22,13 +23,12 @@ class EventWatcher extends BaseService {
 
   async stop () {
     this.started = false
-    this._stopWatchingEvents()
   }
 
   subscribe (event, listener) {
     if (!this.watching) {
       this.watching = true
-      this._startWatchingEvents()
+      this._pollEvents()
     }
     if (!(event in this.events)) {
       this.events[event] = { active: true }
@@ -46,57 +46,54 @@ class EventWatcher extends BaseService {
     }
   }
 
-  async _startWatchingEvents () {
-    this._stopWatchingEvents()
-    this.watchIntervalRef = setInterval(async () => {
-      if (!this.started) {
-        await this._stopWatchingEvents()
-        return
-      }
-      if (!this.app.services.web3.started) {
-        return
-      }
+  async _pollEvents () {
+    if (!(this.started && this.app.services.web3.started)) {
+      return
+    }
 
-      const block = await this.services.web3.eth.getBlockNumber()
-      const lastFinalBlock = block - this.options.finalityDepth
-
-      for (let event in this.events) {
-        if (!this.events[event].active) {
-          continue
-        }
-
-        let lastLoggedBLock = await this.services.db.get(
-          `lastlogged:${event}`,
-          -1
-        )
-        if (lastLoggedBLock + 1 > lastFinalBlock) return
-
-        this.services.contract.contract.getPastEvents(
-          event,
-          {
-            fromBlock: lastLoggedBLock + 1,
-            toBlock: lastFinalBlock
-          },
-          (err, events) => {
-            if (err) {
-              throw err
-            }
-
-            this.subscriptions[event].forEach((listener) => {
-              events.forEach((e) => {
-                listener(e)
-              })
-            })
-            this.services.db.set(`lastlogged:${event}`, lastFinalBlock)
-          }
-        )
-      }
-    }, 100) // TODO: How often should this ping?
+    try {
+      await this._checkEvents()
+    } finally {
+      await utils.utils.sleep(100)
+      this._pollEvents()
+    }
   }
 
-  _stopWatchingEvents () {
-    if (this.watchIntervalRef) {
-      clearInterval(this.watchIntervalRef)
+  // TODO: Remove any events that have already been seen.
+  async _checkEvents () {
+    const block = await this.services.web3.eth.getBlockNumber()
+    const lastFinalBlock = block - this.options.finalityDepth
+
+    for (let eventName in this.events) {
+      if (!this.events[eventName].active) {
+        continue
+      }
+
+      let lastLoggedBLock = await this.services.db.get(
+        `lastlogged:${eventName}`,
+        -1
+      )
+      if (lastLoggedBLock + 1 > lastFinalBlock) return
+
+      let events = await this.services.contract.contract.getPastEvents(
+        eventName,
+        {
+          fromBlock: lastLoggedBLock + 1,
+          toBlock: lastFinalBlock
+        }
+      )
+
+      for (let listener of this.subscriptions[eventName]) {
+        for (let event of events) {
+          try {
+            listener(event)
+          } catch (err) {
+            console.log(err) // TODO: Handle this.
+          }
+        }
+      }
+
+      await this.services.db.set(`lastlogged:${eventName}`, lastFinalBlock)
     }
   }
 }
