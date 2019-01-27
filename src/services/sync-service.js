@@ -49,7 +49,8 @@ class SyncService extends BaseService {
    * Checks for any available pending transactions and emits an event for each.
    */
   async _checkPendingTransactions () {
-    if (!this.services.contract.contract.options.address) return
+    if (!(this.services.contract.contact &&
+          this.services.contract.contract.options.address)) return
 
     const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
     // TODO: Should this be determined locally? Also, should we store blocks locally?
