@@ -2,6 +2,9 @@ const BaseService = require('./base-service')
 
 const utils = require('plasma-utils')
 const UnsignedTransaction = utils.serialization.models.UnsignedTransaction
+const SignedTransaction = utils.serialization.models.SignedTransaction
+
+const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 /**
  * Handles automatically synchronizing latest history proofs.
@@ -20,7 +23,6 @@ class SyncService extends BaseService {
     this.started = true
 
     this.services.contract.on('event:Deposit', this._onDeposit.bind(this))
-    this.on('TransactionReceived', this._onTransactionReceived.bind(this))
 
     this._pollPendingTransactions()
   }
@@ -49,7 +51,7 @@ class SyncService extends BaseService {
    * Checks for any available pending transactions and emits an event for each.
    */
   async _checkPendingTransactions () {
-    if (!(this.services.contract.contact &&
+    if (!(this.services.contract.contract &&
           this.services.contract.contract.options.address)) return
 
     const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
@@ -70,21 +72,26 @@ class SyncService extends BaseService {
       )
     }
 
-    pending.forEach((transaction) => {
-      this.emit('TransactionReceived', {
-        transaction: transaction
-      })
-    })
+    for (let encoded of pending) {
+      await this.addTransaction(encoded)
+    }
 
     await this.services.db.set(`sync:block`, currentBlock)
   }
 
   /**
    * Tries to add any newly received transactions.
-   * @param {*} event A TransactionReceived event.
+   * @param {*} encoded An encoded transaction.
    */
-  async _onTransactionReceived (event) {
-    const serializedTx = new UnsignedTransaction(event.transaction)
+  async addTransaction (encoded) {
+    const serializedTx = new UnsignedTransaction(encoded)
+    const signedTx = new SignedTransaction(encoded)
+
+    // TODO: The operator should really be avoiding this.
+    if (signedTx.transfers[0].sender === NULL_ADDRESS) {
+      return
+    }
+
     if (await this.services.chain.hasTransaction(serializedTx.hash)) {
       return
     }
@@ -93,7 +100,7 @@ class SyncService extends BaseService {
       transaction,
       deposits,
       proof
-    } = await this.services.operator.getTransaction(serializedTx.encoded)
+    } = await this.services.operator.getTransaction(signedTx.encoded)
     await this.services.chain.addTransaction(transaction, deposits, proof)
   }
 

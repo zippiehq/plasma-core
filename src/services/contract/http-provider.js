@@ -44,6 +44,10 @@ class HttpContractProvider extends BaseContractProvider {
     })
   }
 
+  async depositValid (deposit) {
+    return true
+  }
+
   async getBlock (block) {
     return this.contract.methods.blockHashes(block).call()
   }

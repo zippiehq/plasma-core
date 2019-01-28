@@ -90,13 +90,13 @@ class ChainService extends BaseService {
 
     // TODO: Ideally we don't want to be modifying ranges like this.
     // Instead, we should just be storing the transactions and calculating ranges automatically.
-    transaction.transfers.forEach((transfer) => {
-      this.services.rangeManager.addRange(transfer.recipient, {
+    for (let transfer of transaction.transfers) {
+      await this.services.rangeManager.addRange(transfer.recipient, {
         token: transfer.token,
         start: transfer.start,
         end: transfer.end
       })
-    })
+    }
 
     const unsignedTx = new UnsignedTransaction(transaction)
     await this.services.db.set(
@@ -119,13 +119,13 @@ class ChainService extends BaseService {
 
     // TODO: Ideally we don't want to be modifying ranges like this.
     // Instead, we should just be storing the transactions and calculating ranges automatically.
-    transaction.transfers.forEach((transfer) => {
-      this.services.rangeManager.removeRange(transfer.sender, {
+    for (let transfer of transaction.transfers) {
+      await this.services.rangeManager.removeRange(transfer.sender, {
         token: transfer.token,
         start: transfer.start,
         end: transfer.end
       })
-    })
+    }
 
     return receipt
   }
@@ -136,7 +136,7 @@ class ChainService extends BaseService {
    */
   async addDeposit (deposit) {
     // TODO: Add a serialization object for Deposits.
-    this.services.rangeManager.addRange(deposit.owner, {
+    await this.services.rangeManager.addRange(deposit.owner, {
       token: deposit.token,
       start: deposit.start,
       end: deposit.end

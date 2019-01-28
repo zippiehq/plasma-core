@@ -104,7 +104,6 @@ class SnapshotManager {
    */
   static verifyTransaction (transaction, snapshots) {
     const snapshotManager = new SnapshotManager(_.cloneDeep(snapshots))
-    snapshotManager.applyTransaction(transaction)
     return transaction.transfers.every((transfer) => {
       return snapshotManager._hasSnapshot({
         token: transfer.token,
@@ -126,8 +125,8 @@ class SnapshotManager {
     return this.snapshots.some((s) => {
       return (
         s.token.eq(snapshot.token) &&
-        s.start.eq(snapshot.start) &&
-        s.end.eq(snapshot.end) &&
+        s.start.lte(snapshot.start) &&
+        s.end.gte(snapshot.end) &&
         s.block.eq(snapshot.block) &&
         s.owner === snapshot.owner
       )

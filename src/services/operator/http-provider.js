@@ -1,13 +1,14 @@
 const axios = require('axios')
 const uuidv4 = require('uuid/v4')
 const utils = require('plasma-utils')
+const BigNum = require('bn.js')
 const models = utils.serialization.models
 const UnsignedTransaction = models.UnsignedTransaction
 const SignedTransaction = models.SignedTransaction
+const TransferProof = models.TransferProof
 
 const BaseOperatorProvider = require('./base-provider')
 
-const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 const defaultOptions = {
   url: 'http://localhost:9898'
 }
@@ -31,29 +32,50 @@ class HttpOperatorProvider extends BaseOperatorProvider {
   }
 
   async getTransaction (encoded) {
-    const tx = new UnsignedTransaction(encoded)
+    const tx = new SignedTransaction(encoded)
     const rawProof = await this._handle('getHistoryProof', [
       0,
       tx.block,
       encoded
     ])
 
-    // Parse the raw proof.
-    let proof = []
-    let deposits = []
-    for (let transactionProof of rawProof) {
-      let transfer = transactionProof.transaction.transfers[0]
-      // Transfers from the zero address are deposits.
-      if (transfer.sender === NULL_ADDRESS) {
-        deposits.push(transfer)
-      } else {
-        proof.push(transactionProof)
+    const deposits = rawProof.deposits.map((deposit) => {
+      const transfer = deposit.transfers[0]
+      return {
+        block: new BigNum(deposit.block, 'hex'),
+        token: new BigNum(transfer.token, 'hex'),
+        start: new BigNum(transfer.start, 'hex'),
+        end: new BigNum(transfer.end, 'hex'),
+        owner: transfer.recipient
       }
-    }
+    }).sort((a, b) => {
+      return a.start.sub(b.start)
+    }).reduce((a, b) => {
+      // Remove any duplicates.
+      if (a.length === 0 || a.slice(-1)[0].start !== b.start) a.push(b)
+      return a
+    }, [])
+
+    const txProofs = Object.keys(rawProof.transactionHistory).reduce((proofs, block) => {
+      return proofs.concat(rawProof.transactionHistory[block])
+    }, []).map((txProof) => {
+      return {
+        transaction: new UnsignedTransaction(txProof.transaction),
+        proof: txProof.transactionProof.transferProofs.map((transferProof) => {
+          return new TransferProof(transferProof)
+        })
+      }
+    }).sort((a, b) => {
+      return a.transaction.block.sub(b.transaction.block)
+    }).reduce((a, b) => {
+      // Remove any duplicates.
+      if (a.length === 0 || a.slice(-1)[0].transaction.hash !== b.transaction.hash) a.push(b)
+      return a
+    }, [])
 
     return {
       transaction: tx,
-      proof: proof,
+      proof: txProofs,
       deposits: deposits
     }
   }

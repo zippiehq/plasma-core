@@ -95,7 +95,8 @@ class ProofSerivce extends BaseService {
     const serializedProof = new TransactionProof({
       transferProofs: proof
     })
-    const root = await this.services.contract.getBlock(transaction.block)
+    let root = await this.services.contract.getBlock(transaction.block)
+    root = root + 'ffffffffffffffffffffffffffffffff'
 
     transaction.transfers.forEach((transfer, i) => {
       const {
