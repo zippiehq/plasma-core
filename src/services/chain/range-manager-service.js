@@ -23,7 +23,7 @@ function isValidRange (range) {
  */
 function orderRanges (rangeA, rangeB) {
   // No curRange and new range comes before current range
-  if (rangeA.end.lt(rangeB.start)) {
+  if (rangeA.end.lt(rangeB.start) || !rangeA.token.eq(rangeB.token)) {
     return [rangeA, rangeB]
   } else if (rangeA.start.eq(rangeB.end)) {
     // No curRange and new range start == current range end
@@ -47,10 +47,13 @@ function orderRanges (rangeA, rangeB) {
  * @return {boolean} `true` if the user owns the range, `false` otherwise.
  */
 function containsRange (ranges, range) {
-  return ranges.some(
-    ({ start: ownedRangeStart, end: ownedRangeEnd }) =>
-      ownedRangeStart.lte(range.start) && ownedRangeEnd.gte(range.end)
-  )
+  return ranges.some((ownedRange) => {
+    return (
+      ownedRange.token.eq(range.token) &&
+      ownedRange.start.lte(range.start) &&
+      ownedRange.end.gte(range.end)
+    )
+  })
 }
 
 /**
@@ -206,13 +209,18 @@ class RangeManagerService extends BaseService {
 
     // If there are no owned ranges,
     // just sort and add the new ranges
+    ranges = ranges.concat(ownedRanges)
+    ranges.sort((a, b) => {
+      if (a.token.eq(b.token)) {
+        return a.start.sub(b.start)
+      } else {
+        return a.token.sub(b.token)
+      }
+    })
+
     if (ownedRanges.length === 0) {
-      ranges.sort((a, b) => a.start.sub(b.start))
       return this._setRanges(address, ranges)
     }
-
-    ranges = ranges.concat(ownedRanges)
-    ranges.sort((a, b) => a.start.sub(b.start))
 
     const nextRanges = ranges.reduce((nextRanges, newRange) => {
       if (nextRanges.length === 0) {
@@ -248,7 +256,13 @@ class RangeManagerService extends BaseService {
       throw new Error(`Attempted to remove a range not owned by address.`)
     }
 
-    ranges.sort((a, b) => b.start.sub(a.start))
+    ranges.sort((a, b) => {
+      if (a.token.eq(b.token)) {
+        return b.start.sub(a.start)
+      } else {
+        return b.token.sub(a.token)
+      }
+    })
 
     let toRemove = ranges.pop()
     const nextRanges = ownedRanges.reduce((nextRanges, ownedRange) => {

@@ -8,6 +8,14 @@ class ETHSubdispatcher extends BaseSubdispatcher {
     return 'pg_'
   }
 
+  async listToken (tokenAddress) {
+    return this.app.services.contract.listToken(tokenAddress)
+  }
+
+  async getTokenId (tokenAddress) {
+    return this.app.services.contract.getTokenId(tokenAddress)
+  }
+
   async deposit (token, amount, owner) {
     return this.app.services.contract.deposit(token, amount, owner)
   }
