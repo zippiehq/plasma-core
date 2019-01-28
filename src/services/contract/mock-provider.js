@@ -1,3 +1,4 @@
+const BigNum = require('bn.js')
 const BaseContractProvider = require('./base-provider')
 const _ = require('lodash')
 
@@ -17,12 +18,15 @@ class MockContractProvider extends BaseContractProvider {
   }
 
   async deposit (token, amount, owner) {
+    token = new BigNum(token, 'hex')
+    amount = new BigNum(amount, 'hex')
+
     // Initialize if this token hasn't been deposited before.
     if (!(token in this.lastRanges)) {
-      this.lastRanges[token] = 0
+      this.lastRanges[token] = new BigNum(0)
     }
 
-    const end = this.lastRanges[token] + amount
+    const end = this.lastRanges[token].add(amount)
     const deposit = {
       token: token,
       start: this.lastRanges[token],
@@ -56,6 +60,10 @@ class MockContractProvider extends BaseContractProvider {
 
   async getBlock (number) {
     return this.blocks[number]
+  }
+
+  async getNextBlock () {
+    return this.nextBlock
   }
 
   async getCurrentBlock () {

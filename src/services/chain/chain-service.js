@@ -106,6 +106,10 @@ class ChainService extends BaseService {
     await this.services.db.set(`proof:${unsignedTx.hash}`, proof)
   }
 
+  async pickRanges (address, token, amount) {
+    return this.services.rangeManager.pickRanges(address, token, amount)
+  }
+
   /**
    * Sends a transaction to the operator.
    * @param {*} transaction A transaction object.

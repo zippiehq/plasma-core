@@ -11,9 +11,9 @@ class HttpContractProvider extends BaseContractProvider {
       const values = event.returnValues
       this.emitContractEvent('Deposit', {
         owner: values.depositer,
-        start: new BigNum(values.untypedStart),
-        end: new BigNum(values.untypedEnd),
-        token: new BigNum(values.tokenType)
+        start: new BigNum(values.untypedStart, 10),
+        end: new BigNum(values.untypedEnd, 10),
+        token: new BigNum(values.tokenType, 10)
       })
     })
   }
@@ -30,6 +30,8 @@ class HttpContractProvider extends BaseContractProvider {
 
   // TODO: Fix this for ERC20 support.
   async deposit (token, amount, owner) {
+    amount = new BigNum(amount, 'hex')
+    console.log(amount)
     return this.contract.methods.depositETH().send({
       from: owner,
       value: amount,
@@ -52,10 +54,14 @@ class HttpContractProvider extends BaseContractProvider {
     return this.contract.methods.blockHashes(block).call()
   }
 
-  async getCurrentBlock () {
-    const nextBlockNumber = await this.contract.methods
+  async getNextBlock () {
+    return this.contract.methods
       .nextPlasmaBlockNumber()
       .call()
+  }
+
+  async getCurrentBlock () {
+    const nextBlockNumber = await this.getNextBlock()
     return nextBlockNumber - 1
   }
 

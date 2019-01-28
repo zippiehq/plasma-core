@@ -27,6 +27,10 @@ class ChainSubdispatcher extends BaseSubdispatcher {
   async sendTransaction (transaction) {
     return this.app.services.chain.sendTransaction(transaction)
   }
+
+  async pickRanges (address, token, amount) {
+    return this.app.services.chain.pickRanges(address, token, amount)
+  }
 }
 
 module.exports = ChainSubdispatcher
