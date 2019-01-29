@@ -56,7 +56,32 @@ class HttpOperatorProvider extends BaseOperatorProvider {
       return a
     }, [])
 
-    const txProofs = Object.keys(rawProof.transactionHistory).reduce((proofs, block) => {
+    const earliestBlock = deposits.reduce((a, b) => {
+      return a.block.lt(b.block) ? a : b
+    }).block
+
+    // TODO: This is really ugly and should be broken out for readibility.
+    let prevBlock = earliestBlock
+    const txProofs = Object.keys(rawProof.transactionHistory).sort((a, b) => {
+      return new BigNum(a, 10).sub(new BigNum(b, 10))
+    }).reduce((proofs, block) => {
+      // Fill in any missing blocks with fake transactions.
+      while (!prevBlock.addn(1).eq(new BigNum(block, 10))) {
+        proofs = proofs.concat([
+          {
+            transaction: {
+              block: prevBlock.addn(1),
+              transfers: []
+            },
+            transactionProof: {
+              transferProofs: []
+            }
+          }
+        ])
+        prevBlock = prevBlock.addn(1)
+      }
+      prevBlock = new BigNum(block, 10)
+
       return proofs.concat(rawProof.transactionHistory[block])
     }, []).map((txProof) => {
       return {

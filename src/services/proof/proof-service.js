@@ -4,6 +4,7 @@ const utils = require('plasma-utils')
 const models = utils.serialization.models
 const SignedTransaction = models.SignedTransaction
 const TransactionProof = models.TransactionProof
+const Transfer = models.Transfer
 
 /**
  * Service that handles checking history proofs.
@@ -95,9 +96,30 @@ class ProofSerivce extends BaseService {
     const serializedProof = new TransactionProof({
       transferProofs: proof
     })
+
     let root = await this.services.contract.getBlock(transaction.block)
+
+    // If the root is zero, then this block was empty so insert a fake transfer.
+    // TODO: There's probably a cleaner way to do this but it works for now.
+    if (root === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+      transaction.isEmptyBlockTransaction = true
+      transaction.transfers = [
+        new Transfer({
+          sender: '0x0000000000000000000000000000000000000000',
+          recipient: '0x0000000000000000000000000000000000000000',
+          start: 0,
+          implicitStart: 0,
+          end: 'ffffffffffffffffffffffff',
+          implicitEnd: 'ffffffffffffffffffffffff'
+        })
+      ]
+      return true
+    }
+
     root = root + 'ffffffffffffffffffffffffffffffff'
 
+    // Hack for now, make sure that all other transactions aren't fake.
+    transaction.isEmptyBlockTransaction = false
     transaction.transfers.forEach((transfer, i) => {
       const {
         implicitStart,

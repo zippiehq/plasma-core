@@ -48,7 +48,16 @@ class SnapshotManager {
           ...{ start: transfer.end, end: transfer.implicitEnd, implicit: true }
         })
       }
-      curr.push(transfer)
+      // TODO: This is kinda hacky for now, but it works.
+      // Just make sure that only empty block transactions have this flag.
+      if (transaction.isEmptyBlockTransaction) {
+        curr.push({
+          ...transfer,
+          ...{ implicit: true }
+        })
+      } else {
+        curr.push(transfer)
+      }
       return curr
     }, [])
 
@@ -62,7 +71,7 @@ class SnapshotManager {
       overlapping.forEach((snapshot) => {
         if (
           !(transfer.implicit || snapshot.owner === transfer.sender) ||
-          !snapshot.token.eq(transfer.token) ||
+          !(transaction.isEmptyBlockTransaction || snapshot.token.eq(transfer.token)) ||
           !snapshot.block
             .add(new BigNum(1))
             .eq(new BigNum(transaction.block, 'hex'))
