@@ -73,18 +73,22 @@ class EventWatcher extends BaseService {
         `lastlogged:${eventName}`,
         -1
       )
-      if (lastLoggedBLock + 1 > lastFinalBlock) return
+      let firstUnsyncedBlock = lastLoggedBLock + 1
+      if (firstUnsyncedBlock > lastFinalBlock) return
+      this.logger(
+        `Checking for new events between blocks ${firstUnsyncedBlock} and ${lastFinalBlock}`
+      )
 
       let events = await this.services.contract.contract.getPastEvents(
         eventName,
         {
-          fromBlock: lastLoggedBLock + 1,
+          fromBlock: firstUnsyncedBlock,
           toBlock: lastFinalBlock
         }
       )
 
-      for (let listener of this.subscriptions[eventName]) {
-        for (let event of events) {
+      for (let event of events) {
+        for (let listener of this.subscriptions[eventName]) {
           try {
             listener(event)
           } catch (err) {

@@ -3,6 +3,7 @@ const chaiAsPromised = require('chai-as-promised')
 const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 const utils = require('plasma-utils')
+const BigNum = require('bn.js')
 
 chai.should()
 chai.use(sinonChai)
@@ -14,9 +15,9 @@ const app = require('../../../mock-app')
 describe('MockContractProvider', async () => {
   let contract
   const deposit = {
-    token: 0,
-    amount: 100,
-    owner: utils.constants.ACCOUNTS[0]
+    token: new BigNum('0', 'hex'),
+    amount: new BigNum(100),
+    owner: utils.constants.ACCOUNTS[0].address
   }
 
   before(async () => {
@@ -40,7 +41,7 @@ describe('MockContractProvider', async () => {
     contract.emitContractEvent = sinon.fake()
     const expected = {
       token: deposit.token,
-      start: 0,
+      start: new BigNum(0),
       end: deposit.amount,
       owner: deposit.owner,
       block: 0
@@ -54,7 +55,7 @@ describe('MockContractProvider', async () => {
   it('should assert that a valid deposit is valid', async () => {
     const expected = {
       token: deposit.token,
-      start: 0,
+      start: new BigNum(0),
       end: deposit.amount,
       owner: deposit.owner,
       block: 0

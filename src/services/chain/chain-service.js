@@ -1,7 +1,7 @@
 const BigNum = require('bn.js')
 const utils = require('plasma-utils')
 const models = utils.serialization.models
-const UnsignedTransaction = models.UnsignedTransaction
+const SignedTransaction = models.SignedTransaction
 
 const BaseService = require('../base-service')
 
@@ -81,16 +81,19 @@ class ChainService extends BaseService {
    * @param {*} proof A Proof object.
    */
   async addTransaction (transaction, deposits, proof) {
+    const tx = new SignedTransaction(transaction)
+
     // TODO: Really we should also be checking that the transaction is actually relevant to the user.
     // We can do this by checking that the recipient of some xfer belongs to some account.
 
-    if (!(await this.services.proof.checkProof(transaction, deposits, proof))) {
+    if (!(await this.services.proof.checkProof(tx, deposits, proof))) {
       throw new Error('Invalid transaction proof')
     }
+    this.logger(`Verified transaction proof for: ${tx.hash}`)
 
     // TODO: Ideally we don't want to be modifying ranges like this.
     // Instead, we should just be storing the transactions and calculating ranges automatically.
-    for (let transfer of transaction.transfers) {
+    for (let transfer of tx.transfers) {
       await this.services.rangeManager.addRange(transfer.recipient, {
         token: transfer.token,
         start: transfer.start,
@@ -98,12 +101,9 @@ class ChainService extends BaseService {
       })
     }
 
-    const unsignedTx = new UnsignedTransaction(transaction)
-    await this.services.db.set(
-      `transaction:${unsignedTx.hash}`,
-      transaction.encoded
-    )
-    await this.services.db.set(`proof:${unsignedTx.hash}`, proof)
+    await this.services.db.set(`transaction:${tx.hash}`, tx.encoded)
+    await this.services.db.set(`proof:${tx.hash}`, proof)
+    this.logger(`Added transaction to database: ${tx.hash}`)
   }
 
   async pickRanges (address, token, amount) {
@@ -115,21 +115,25 @@ class ChainService extends BaseService {
    * @param {*} transaction A transaction object.
    */
   async sendTransaction (transaction) {
+    const tx = new SignedTransaction(transaction)
     // TODO: Make sure the transaction is valid.
     // This relies on the revamp of internal storage, not really important for now.
 
     // TODO: Check this receipt is valid.
-    const receipt = await this.services.operator.sendTransaction(transaction)
+    const receipt = await this.services.operator.sendTransaction(tx)
+    this.logger(`Sent transaction to operator: ${tx.hash}.`)
 
     // TODO: Ideally we don't want to be modifying ranges like this.
     // Instead, we should just be storing the transactions and calculating ranges automatically.
-    for (let transfer of transaction.transfers) {
+    for (let transfer of tx.transfers) {
       await this.services.rangeManager.removeRange(transfer.sender, {
         token: transfer.token,
         start: transfer.start,
         end: transfer.end
       })
     }
+
+    this.logger(`Added transaction to database: ${tx.hash}`)
 
     return receipt
   }
@@ -145,6 +149,7 @@ class ChainService extends BaseService {
       start: deposit.start,
       end: deposit.end
     })
+    this.logger(`Added deposit to database.`)
   }
 }
 

@@ -13,6 +13,20 @@ class BaseService extends EventEmitter {
   }
 
   /**
+   * Convenience method for accessing debug loggers.
+   */
+  get loggers () {
+    return this.app.loggers
+  }
+
+  /**
+   * Returns a default logger based on the service's name.
+   */
+  get logger () {
+    return this.loggers[`service:${this.name}`]
+  }
+
+  /**
    * Convenience method for getting available services.
    */
   get services () {

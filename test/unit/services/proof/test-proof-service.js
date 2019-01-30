@@ -9,6 +9,7 @@ const UnsignedTransaction = utils.serialization.models.UnsignedTransaction
 chai.should()
 
 const ProofService = require('../../../../src/services/proof/proof-service')
+const MockContractProvider = require('../../../../src/services/contract/mock-provider')
 
 const app = require('../../../mock-app')
 const constants = utils.constants
@@ -78,11 +79,23 @@ const proof = [
         signature: transaction1.signatures[0]
       }
     ]
+  },
+  {
+    transaction: transaction2,
+    proof: [
+      {
+        leafIndex: new BigNum(0),
+        parsedSum: new BigNum('ffffffffffffffffffffffffffffffff', 'hex'),
+        inclusionProof: [],
+        signature: transaction2.signatures[0]
+      }
+    ]
   }
 ]
 
 const blocks = [
-  hash(transaction1) + 'ffffffffffffffffffffffffffffffff'
+  hash(transaction1),
+  hash(transaction2)
 ]
 
 describe('ProofService', async () => {
@@ -94,6 +107,8 @@ describe('ProofService', async () => {
 
   beforeEach(async () => {
     await app.reset()
+    app.services.contract = new MockContractProvider({ app: app })
+    await app.services.contract.start()
     await submitDeposits(deposits)
     await submitBlocks(blocks)
   })
@@ -112,35 +127,35 @@ describe('ProofService', async () => {
     const manyDeposits = [
       {
         token: 0,
-        block: 1,
+        block: 2,
         start: 50,
         end: 60,
         owner: accounts[0].address
       },
       {
         token: 0,
-        block: 1,
+        block: 2,
         start: 60,
         end: 70,
         owner: accounts[0].address
       },
       {
         token: 0,
-        block: 1,
+        block: 2,
         start: 70,
         end: 80,
         owner: accounts[0].address
       },
       {
         token: 0,
-        block: 1,
+        block: 2,
         start: 80,
         end: 90,
         owner: accounts[0].address
       },
       {
         token: 0,
-        block: 1,
+        block: 2,
         start: 90,
         end: 100,
         owner: accounts[0].address
@@ -148,7 +163,7 @@ describe('ProofService', async () => {
     ]
 
     let manyDepositTx1 = {
-      block: 2,
+      block: 3,
       transfers: [
         { token: 0, start: 50, end: 100, sender: accounts[0].address, recipient: accounts[1].address }
       ]
@@ -156,7 +171,7 @@ describe('ProofService', async () => {
     manyDepositTx1 = autoSign(manyDepositTx1)
 
     let manyDepositTx2 = {
-      block: 3,
+      block: 4,
       transfers: [
         { token: 0, start: 50, end: 100, sender: accounts[1].address, recipient: accounts[2].address }
       ]
@@ -174,11 +189,22 @@ describe('ProofService', async () => {
             signature: manyDepositTx1.signatures[0]
           }
         ]
+      },
+      {
+        transaction: manyDepositTx2,
+        proof: [
+          {
+            leafIndex: new BigNum(0),
+            parsedSum: new BigNum('ffffffffffffffffffffffffffffffff', 'hex'),
+            inclusionProof: [],
+            signature: manyDepositTx2.signatures[0]
+          }
+        ]
       }
     ]
 
     await submitDeposits(manyDeposits)
-    await submitBlocks([hash(manyDepositTx1) + 'ffffffffffffffffffffffffffffffff'])
+    await submitBlocks([hash(manyDepositTx1), hash(manyDepositTx2)])
 
     const validity = await verifier.checkProof(manyDepositTx2, manyDeposits, manyDepositProof)
 
@@ -190,7 +216,7 @@ describe('ProofService', async () => {
       { token: 0, block: 0, start: 0, end: 10, owner: accounts[0].address }
     ]
 
-    await verifier.checkProof(transaction2, invalidDeposits, proof).should.be.rejectedWith('Invalid deposit')
+    verifier.checkProof(transaction2, invalidDeposits, proof).should.be.rejectedWith('Invalid deposit')
   })
 
   it('should not verify an invalid range', () => {
@@ -199,7 +225,7 @@ describe('ProofService', async () => {
     invalidTransaction.transfers[0].end = 0
     invalidTransaction = autoSign(invalidTransaction)
 
-    verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid transaction')
+    verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid state transition')
   })
 
   it('should not verify a zero-length range', () => {
@@ -207,14 +233,14 @@ describe('ProofService', async () => {
     invalidTransaction.transfers[0].end = 0
     invalidTransaction = autoSign(invalidTransaction)
 
-    verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid transaction')
+    verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid state transition')
   })
 
   it('should not verify with missing chunks of history', () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].transaction.transfers[0].end = 25
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
-    app.services.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
+    app.services.contract.blocks[1] = hash(invalidProof[0].transaction)
 
     verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
@@ -223,7 +249,7 @@ describe('ProofService', async () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].transaction.transfers[0].sender = accounts[1].address
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
-    app.services.contract.blocks[1] = hash(invalidProof[0].transaction) + 'ffffffffffffffffffffffffffffffff'
+    app.services.contract.blocks[1] = hash(invalidProof[0].transaction)
 
     verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })

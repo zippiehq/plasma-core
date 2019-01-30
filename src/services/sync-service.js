@@ -1,7 +1,6 @@
 const BaseService = require('./base-service')
 
 const utils = require('plasma-utils')
-const UnsignedTransaction = utils.serialization.models.UnsignedTransaction
 const SignedTransaction = utils.serialization.models.SignedTransaction
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
@@ -51,13 +50,19 @@ class SyncService extends BaseService {
    * Checks for any available pending transactions and emits an event for each.
    */
   async _checkPendingTransactions () {
-    if (!(this.services.contract.contract &&
-          this.services.contract.contract.options.address)) return
+    if (
+      !this.services.contract.contract ||
+      !this.services.contract.contract.options.address
+    ) { return }
 
     const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
+    const firstUnsyncedBlock = lastSyncedBlock + 1
     // TODO: Should this be determined locally? Also, should we store blocks locally?
     const currentBlock = await this.services.contract.getCurrentBlock()
-    if (lastSyncedBlock + 1 > currentBlock) return
+    if (firstUnsyncedBlock > currentBlock) return
+    this.logger(
+      `Checking for new transactions between blocks ${firstUnsyncedBlock} and ${currentBlock}`
+    )
 
     // TODO: Figure out how handle operator errors.
     let pending = []
@@ -66,7 +71,7 @@ class SyncService extends BaseService {
       pending = pending.concat(
         await this.services.operator.getTransactions(
           address,
-          lastSyncedBlock + 1,
+          firstUnsyncedBlock,
           currentBlock
         )
       )
@@ -84,15 +89,14 @@ class SyncService extends BaseService {
    * @param {*} encoded An encoded transaction.
    */
   async addTransaction (encoded) {
-    const serializedTx = new UnsignedTransaction(encoded)
-    const signedTx = new SignedTransaction(encoded)
+    const tx = new SignedTransaction(encoded)
 
     // TODO: The operator should really be avoiding this.
-    if (signedTx.transfers[0].sender === NULL_ADDRESS) {
+    if (tx.transfers[0].sender === NULL_ADDRESS) {
       return
     }
 
-    if (await this.services.chain.hasTransaction(serializedTx.hash)) {
+    if (await this.services.chain.hasTransaction(tx.hash)) {
       return
     }
 
@@ -100,7 +104,8 @@ class SyncService extends BaseService {
       transaction,
       deposits,
       proof
-    } = await this.services.operator.getTransaction(signedTx.encoded)
+    } = await this.services.operator.getTransaction(tx.encoded)
+    this.logger(`Importing new transaction: ${tx.hash}`)
     await this.services.chain.addTransaction(transaction, deposits, proof)
   }
 

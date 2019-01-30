@@ -3,7 +3,9 @@ const sinon = require('sinon')
 const sinonChai = require('sinon-chai')
 const chaiAsPromised = require('chai-as-promised')
 const utils = require('plasma-utils')
-const plasmaChainCompiled = require('plasma-contracts').plasmaChainCompiled
+const compiledContracts = require('plasma-contracts')
+const serializerCompiled = compiledContracts.serializerCompiled
+const plasmaChainCompiled = compiledContracts.plasmaChainCompiled
 
 chai.should()
 chai.use(chaiAsPromised)
@@ -17,6 +19,18 @@ const app = require('../../../mock-app')
 const ETH = 0
 const ZERO_HASH = '0x0000000000000000000000000000000000000000000000000000000000000000'
 
+const initSerializer = async (web3, operator) => {
+  const serializer = new web3.eth.Contract(serializerCompiled.abi)
+  const deployed = await serializer.deploy({
+    data: plasmaChainCompiled.bytecode
+  }).send({
+    from: operator,
+    gas: 7000000,
+    gasPrice: '1'
+  })
+  return deployed.options.address
+}
+
 describe('Contract Interactions', () => {
   let contract
   let operator
@@ -29,6 +43,8 @@ describe('Contract Interactions', () => {
 
     // Pick an account to be the operator.
     operator = (await app.services.web3.eth.getAccounts())[0]
+
+    const serializer = await initSerializer(app.services.web3, operator)
 
     contract = new HttpContractProvider({ app: app })
     watcher = new EventWatcherService({ app: app, finalityDepth: 0 })
@@ -44,7 +60,7 @@ describe('Contract Interactions', () => {
       gasPrice: '1'
     })
     contract.contract.options.address = deployed.options.address
-    await contract.contract.methods.setup(operator, 0).send({
+    await contract.contract.methods.setup(operator, 0, serializer).send({
       from: operator,
       gas: 7000000
     })
@@ -96,10 +112,10 @@ describe('Contract Interactions', () => {
         })
       })
       await contract.deposit(ETH, 100, operator)
-      const expected = { owner: operator, start: '0', end: '100', token: '0' }
+      const expected = { owner: operator, start: '100', end: '200', token: '0' }
 
       // Wait so the event can be detected.
-      await utils.utils.sleep(100)
+      await utils.utils.sleep(200)
 
       fake.should.be.calledWith(expected)
     })
@@ -117,7 +133,7 @@ describe('Contract Interactions', () => {
       const expected = { block: currentBlock.toString(), hash: ZERO_HASH }
 
       // Wait so the event can be detected.
-      await utils.utils.sleep(100)
+      await utils.utils.sleep(200)
 
       fake.should.be.calledWith(expected)
     })

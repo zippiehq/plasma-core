@@ -8,11 +8,12 @@ const erc20Compiled = compiledContracts.erc20Compiled
 class HttpContractProvider extends BaseContractProvider {
   async start () {
     this.started = true
-    this.web3 = this.services.web3
     this.initContract()
-    this.services.eventWatcher.subscribe('DepositEvent', (event) => {
-      this.emitContractEvent('Deposit', this._castDepositEvent(event))
-    })
+
+    this.services.eventWatcher.subscribe(
+      'DepositEvent',
+      this._onDeposit.bind(this)
+    )
   }
 
   async stop () {
@@ -22,6 +23,10 @@ class HttpContractProvider extends BaseContractProvider {
 
   get address () {
     return this.contract.options.address
+  }
+
+  get web3 () {
+    return this.services.web3
   }
 
   initContract () {
@@ -46,7 +51,7 @@ class HttpContractProvider extends BaseContractProvider {
 
   async deposit (token, amount, owner) {
     if (!this.hasAddress()) {
-      throw new Error('Plasma Chain contract has not been connected')
+      throw new Error('Plasma chain contract address has not yet been set.')
     }
 
     amount = new BigNum(amount, 'hex')
@@ -67,8 +72,13 @@ class HttpContractProvider extends BaseContractProvider {
 
   async depositERC20 (token, amount, owner) {
     const tokenAddress = await this.getTokenAddress(token)
-    const tokenContract = new this.web3.eth.Contract(erc20Compiled.abi, tokenAddress)
-    await tokenContract.methods.approve(this.address, amount).send({ from: owner })
+    const tokenContract = new this.web3.eth.Contract(
+      erc20Compiled.abi,
+      tokenAddress
+    )
+    await tokenContract.methods
+      .approve(this.address, amount)
+      .send({ from: owner })
     return this.contract.methods.depositERC20(tokenAddress, amount).send({
       from: owner,
       gas: 6000000 // TODO: Figure out how much this should be.
@@ -79,7 +89,9 @@ class HttpContractProvider extends BaseContractProvider {
     if (this.web3.utils.isAddress(token)) {
       return token
     }
-    return this.contract.methods['listings__contractAddress'](token.toString()).call()
+    return this.contract.methods['listings__contractAddress'](
+      token.toString()
+    ).call()
   }
 
   // TODO: Rewrite when we add generic signature support.
@@ -113,9 +125,7 @@ class HttpContractProvider extends BaseContractProvider {
   }
 
   async getNextBlock () {
-    return this.contract.methods
-      .nextPlasmaBlockNumber()
-      .call()
+    return this.contract.methods.nextPlasmaBlockNumber().call()
   }
 
   async getCurrentBlock () {
@@ -140,6 +150,17 @@ class HttpContractProvider extends BaseContractProvider {
       end: new BigNum(values.untypedEnd, 10),
       token: new BigNum(values.tokenType, 10)
     }
+  }
+
+  _onDeposit (event) {
+    const deposit = this._castDepositEvent(event)
+    const amount = deposit.end.sub(deposit.start).toString()
+    this.logger(
+      `Importing new deposit of ${amount} [${deposit.token}] for ${
+        deposit.owner
+      }.`
+    )
+    this.emitContractEvent('Deposit', deposit)
   }
 }
 

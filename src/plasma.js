@@ -1,5 +1,6 @@
 const utils = require('plasma-utils')
 const services = require('./services/index')
+const debug = require('debug')
 
 const DefaultDBProvider = services.DBProviders.DefaultDBProvider
 const DefaultOperatorProvider =
@@ -33,7 +34,19 @@ class Plasma {
     this.logger = this.options.logger
 
     this.services = {}
+    this._loggers = {}
     this._registerServices()
+  }
+
+  get loggers () {
+    return new Proxy(this._loggers, {
+      get: (obj, prop) => {
+        if (!(prop in obj)) {
+          obj[prop] = debug(prop)
+        }
+        return obj[prop]
+      }
+    })
   }
 
   /**
@@ -87,7 +100,7 @@ class Plasma {
     service
       .start()
       .then(() => {
-        this.logger.log(`${service.name}: STARTED`)
+        this.loggers['core:bootstrap'](`${service.name}: STARTED`)
       })
       .catch((err) => {
         console.log(err)
@@ -103,7 +116,7 @@ class Plasma {
     service
       .stop()
       .then(() => {
-        this.logger.log(`${service.name}: STOPPED`)
+        this.loggers['core:bootstrap'](`${service.name}: STOPPED`)
       })
       .catch((err) => {
         console.log(err)

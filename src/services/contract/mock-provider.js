@@ -1,6 +1,5 @@
 const BigNum = require('bn.js')
 const BaseContractProvider = require('./base-provider')
-const _ = require('lodash')
 
 class MockContractProvider extends BaseContractProvider {
   constructor () {
@@ -43,7 +42,7 @@ class MockContractProvider extends BaseContractProvider {
 
   async depositValid (deposit) {
     return this.deposits.some((d) => {
-      return _.isEqual(d, deposit)
+      return this._depositsEqual(deposit, d)
     })
   }
 
@@ -68,6 +67,28 @@ class MockContractProvider extends BaseContractProvider {
 
   async getCurrentBlock () {
     return this.nextBlock - 1
+  }
+
+  _castDeposit (deposit) {
+    return {
+      token: new BigNum(deposit.token, 'hex'),
+      start: new BigNum(deposit.start, 'hex'),
+      end: new BigNum(deposit.end, 'hex'),
+      owner: deposit.owner,
+      block: deposit.block
+    }
+  }
+
+  _depositsEqual (a, b) {
+    a = this._castDeposit(a)
+    b = this._castDeposit(b)
+    return (
+      a.token.eq(b.token) &&
+      a.start.eq(b.start) &&
+      a.end.eq(b.end) &&
+      a.owner === b.owner &&
+      a.block === b.block
+    )
   }
 }
 

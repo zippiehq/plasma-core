@@ -71,7 +71,10 @@ class SnapshotManager {
       overlapping.forEach((snapshot) => {
         if (
           !(transfer.implicit || snapshot.owner === transfer.sender) ||
-          !(transaction.isEmptyBlockTransaction || snapshot.token.eq(transfer.token)) ||
+          !(
+            transaction.isEmptyBlockTransaction ||
+            snapshot.token.eq(transfer.token)
+          ) ||
           !snapshot.block
             .add(new BigNum(1))
             .eq(new BigNum(transaction.block, 'hex'))
@@ -114,13 +117,16 @@ class SnapshotManager {
   static verifyTransaction (transaction, snapshots) {
     const snapshotManager = new SnapshotManager(_.cloneDeep(snapshots))
     return transaction.transfers.every((transfer) => {
-      return snapshotManager._hasSnapshot({
-        token: transfer.token,
-        start: transfer.start,
-        end: transfer.end,
-        block: transaction.block,
-        owner: transfer.recipient
-      })
+      return (
+        snapshotManager._hasSnapshot({
+          token: transfer.token,
+          start: transfer.start,
+          end: transfer.end,
+          block: transaction.block,
+          owner: transfer.recipient
+        }) &&
+        snapshotManager._validSnapshot(snapshotManager._castTransfer(transfer))
+      )
     })
   }
 
