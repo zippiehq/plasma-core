@@ -62,7 +62,8 @@ class EventWatcher extends BaseService {
   // TODO: Remove any events that have already been seen.
   async _checkEvents () {
     const block = await this.services.web3.eth.getBlockNumber()
-    const lastFinalBlock = block - this.options.finalityDepth
+    let lastFinalBlock = block - this.options.finalityDepth
+    lastFinalBlock = lastFinalBlock < 0 ? 0 : lastFinalBlock
 
     for (let eventName in this.events) {
       if (!this.events[eventName].active) {

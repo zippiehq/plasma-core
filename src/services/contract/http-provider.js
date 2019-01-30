@@ -14,6 +14,9 @@ class HttpContractProvider extends BaseContractProvider {
       'DepositEvent',
       this._onDeposit.bind(this)
     )
+
+    const ethInfo = await this.services.operator.getEthInfo()
+    this.contract.options.address = ethInfo.plasmaChainAddress
   }
 
   async stop () {

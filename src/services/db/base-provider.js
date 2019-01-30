@@ -43,6 +43,20 @@ class BaseDBProvider extends BaseService {
   async exists (key) {
     return new Error('Classes that extend BaseDB must implement this method')
   }
+
+  /**
+   * Checks if a thing is a valid JSON string.
+   * @param {*} str Thing to check.
+   * @return {boolean} `true` if it's a JSON string, `false` otherwise.
+   */
+  _isJson (str) {
+    try {
+      JSON.parse(str)
+    } catch (err) {
+      return false
+    }
+    return true
+  }
 }
 
 module.exports = BaseDBProvider

@@ -11,6 +11,10 @@ class OperatorSubdispatcher extends BaseSubdispatcher {
   async submitBlock () {
     return this.app.services.operator.submitBlock()
   }
+
+  async getEthInfo () {
+    return this.app.services.operator.getEthInfo()
+  }
 }
 
 module.exports = OperatorSubdispatcher

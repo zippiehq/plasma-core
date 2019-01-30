@@ -1,3 +1,4 @@
+const AsyncLock = require('async-lock')
 const BigNum = require('bn.js')
 
 const BaseService = require('../base-service')
@@ -75,6 +76,11 @@ function createRange (token, start, end) {
  * Service that manages the user's ranges automatically.
  */
 class RangeManagerService extends BaseService {
+  constructor (options) {
+    super(options)
+    this.lock = new AsyncLock()
+  }
+
   get name () {
     return 'rangeManager'
   }
@@ -198,6 +204,12 @@ class RangeManagerService extends BaseService {
    * @param {*} ranges Ranges to add.
    */
   async addRanges (address, ranges) {
+    return this.lock.acquire('ranges', () => {
+      return this._addRanges(address, ranges)
+    })
+  }
+
+  async _addRanges (address, ranges) {
     ranges = this._castRanges(ranges)
 
     // Throw if provided range is invalid
@@ -248,6 +260,12 @@ class RangeManagerService extends BaseService {
    * @param {*} ranges An array of ranges to remove.
    */
   async removeRanges (address, ranges) {
+    return this.lock.acquire('ranges', () => {
+      return this._removeRanges(address, ranges)
+    })
+  }
+
+  async _removeRanges (address, ranges) {
     ranges = this._castRanges(ranges)
 
     const ownedRanges = await this.getOwnedRanges(address)

@@ -10,7 +10,7 @@ const TransferProof = models.TransferProof
 const BaseOperatorProvider = require('./base-provider')
 
 const defaultOptions = {
-  url: 'http://localhost:9898'
+  operatorEndpoint: 'http://localhost:9898'
 }
 
 /**
@@ -20,8 +20,12 @@ class HttpOperatorProvider extends BaseOperatorProvider {
   constructor (options) {
     super(options, defaultOptions)
     this.http = axios.create({
-      baseURL: options.url
+      baseURL: options.operatorEndpoint
     })
+  }
+
+  async getEthInfo () {
+    return this._handle('getEthInfo')
   }
 
   async getTransactions (address, start, end) {
