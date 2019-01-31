@@ -65,7 +65,7 @@ class SyncService extends BaseService {
     const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
     const firstUnsyncedBlock = lastSyncedBlock + 1
     // TODO: Should this be determined locally? Also, should we store blocks locally?
-    const currentBlock = await this.services.contract.getCurrentBlock()
+    const currentBlock = await this.services.chain.getLatestBlock()
     if (firstUnsyncedBlock > currentBlock) return
     this.logger(
       `Checking for new transactions between blocks ${firstUnsyncedBlock} and ${currentBlock}`
@@ -132,14 +132,24 @@ class SyncService extends BaseService {
     // TODO: Where should address filtering be done?
     // Probably wherever events are originally watched to reduce total events pulled.
     await this.services.chain.addDeposit(event)
+    await this.services.chain.addExitableEnd(event.token, event.end)
   }
 
   async _onBlockSubmitted (event) {
-    await this.services.chain.addBlockHeader(event.block, event.hash)
+    await this.services.chain.addBlockHeader(event.number, event.hash)
   }
 
   async _onExitFinalized (event) {
-    await this.services.chain.addExitableEnd(event.start)
+    await this.services.chain.removeExit(event)
+    await this.services.chain.addExitableEnd(event.token, event.start)
+  }
+
+  async _onExitStarted (event) {
+    try {
+      await this.services.rangeManager.removeRanges(event.exiter, event)
+    } finally {
+      await this.services.chain.addExit(event)
+    }
   }
 }
 

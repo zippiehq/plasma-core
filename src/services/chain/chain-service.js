@@ -1,4 +1,5 @@
 const BigNum = require('bn.js')
+const util = require('util')
 const utils = require('plasma-utils')
 const models = utils.serialization.models
 const SignedTransaction = models.SignedTransaction
@@ -45,6 +46,16 @@ class ChainService extends BaseService {
     return this.services.db.get(`transaction:${hash}`, null)
   }
 
+  async getLatestBlock () {
+    return this.services.db.get('latestblock', -1)
+  }
+
+  async setLatestBlock (block) {
+    const latest = await this.getLatestBlock()
+    if (block <= latest) return
+    return this.services.db.set('latestblock', block)
+  }
+
   /**
    * Queries a block header by number.
    * @param {number} block Number of the block to query.
@@ -69,8 +80,7 @@ class ChainService extends BaseService {
    * @param {string} header Header of the given block.
    */
   async addBlockHeader (block, header) {
-    // TODO: This should probably check that the block header is correct.
-    // Or does that matter?
+    await this.setLatestBlock(block)
     return this.services.db.set(`header:${block}`, header)
   }
 
@@ -86,6 +96,7 @@ class ChainService extends BaseService {
     // TODO: Really we should also be checking that the transaction is actually relevant to the user.
     // We can do this by checking that the recipient of some xfer belongs to some account.
 
+    this.logger(`Verifying transaction proof for: ${tx.hash}...`)
     if (!(await this.services.proof.checkProof(tx, deposits, proof))) {
       throw new Error('Invalid transaction proof')
     }
@@ -94,10 +105,16 @@ class ChainService extends BaseService {
     // TODO: Ideally we don't want to be modifying ranges like this.
     // Instead, we should just be storing the transactions and calculating ranges automatically.
     for (let transfer of tx.transfers) {
+      const exited = await this.checkExited(transfer)
+      if (exited) {
+        this.logger(`Skipping adding range that has already been exited`)
+        continue
+      }
       await this.services.rangeManager.addRange(transfer.recipient, {
         token: transfer.token,
         start: transfer.start,
-        end: transfer.end
+        end: transfer.end,
+        block: tx.block
       })
     }
 
@@ -108,6 +125,72 @@ class ChainService extends BaseService {
 
   async pickRanges (address, token, amount) {
     return this.services.rangeManager.pickRanges(address, token, amount)
+  }
+
+  async pickTransfers (address, token, amount) {
+    return this.services.rangeManager.pickTransfers(address, token, amount)
+  }
+
+  async removeTransfers (address, transfers) {
+    return this.services.rangeManager.removeTransfers(address, transfers)
+  }
+
+  async markExited (range) {
+    return this.services.db.set(`exited:${range.token}:${range.start}:${range.end}`, true)
+  }
+
+  async checkExited (range) {
+    return this.services.db.get(`exited:${range.token}:${range.start}:${range.end}`, false)
+  }
+
+  async addExit (exit) {
+    await this.services.rangeManager.addExits(exit.exiter, [exit])
+  }
+
+  async removeExit (exit) {
+    await this.services.rangeManager.removeExits(exit.exiter, [exit])
+  }
+
+  async startExit (address, token, amount) {
+    const transfers = await this.pickTransfers(address, token, amount)
+    let exited = []
+    let exitTxHashes = []
+    for (let transfer of transfers) {
+      try {
+        const exitTx = await this.services.contract.startExit(transfer.block, transfer.token, transfer.start, transfer.end, address)
+        exitTxHashes.push(exitTx.transactionHash)
+        exited.push(transfer)
+      } catch (err) {
+        this.logger(`ERROR: ${err}`)
+      }
+    }
+
+    await this.services.rangeManager.removeRanges(address, exited)
+    return exitTxHashes
+  }
+
+  async finalizeExits (address) {
+    const exits = await this.services.rangeManager.getExits(address)
+    const currentBlock = await this.services.web3.eth.getBlockNumber()
+    const challengePeriod = await this.services.contract.getChallengePeriod()
+    const completed = exits.filter((exit) => {
+      return exit.block.addn(challengePeriod).ltn(currentBlock)
+    })
+
+    let finalized = []
+    let finalizeTxHashes = []
+    for (let exit of completed) {
+      try {
+        const exitableEnd = await this.getExitableEnd(exit.token, exit.end)
+        const finalizeTx = await this.services.contract.finalizeExit(exit.id, exitableEnd, address)
+        finalizeTxHashes.push(finalizeTx.transactionHash)
+        finalized.push(exit)
+      } catch (err) {
+        this.logger(`ERROR: ${err}`)
+      }
+    }
+
+    return finalizeTxHashes
   }
 
   /**
@@ -143,24 +226,39 @@ class ChainService extends BaseService {
    * @param {*} deposit A Deposit object.
    */
   async addDeposit (deposit) {
+    const exited = await this.checkExited(deposit)
+    if (exited) {
+      this.logger(`Skipping adding deposit that has already been exited.`)
+    }
+
     // TODO: Add a serialization object for Deposits.
     await this.services.rangeManager.addRange(deposit.owner, {
       token: deposit.token,
       start: deposit.start,
-      end: deposit.end
+      end: deposit.end,
+      block: deposit.block
     })
-    this.logger(`Added deposit to database.`)
+    this.logger(`Added deposit to database`)
   }
 
-  async addExitableEnd (end) {
-    await this.services.db.set(`exitable:${end}`, end)
+  async addExitableEnd (token, end) {
+    const key = this._getTypedValue(token, end)
+    await this.services.db.set(`exitable:${key}`, end)
+    this.logger(`Added exitable end to database: ${token}:${end}`)
   }
 
-  async getExitableEnd (end) {
+  async getExitableEnd (token, end) {
+    const key = this._getTypedValue(token, end)
     const it = this.services.db.iterator({
-      gt: `exitable:${end}`
+      gt: `exitable:${key}`,
+      keyAsBuffer: false,
+      valueAsBuffer: false
     })
-    return it
+    return (await util.promisify(it.next)).value
+  }
+
+  _getTypedValue (token, value) {
+    return new BigNum(token.toString('hex', 8) + value.toString('hex', 24), 'hex')
   }
 }
 

@@ -31,6 +31,14 @@ class ChainSubdispatcher extends BaseSubdispatcher {
   async pickRanges (address, token, amount) {
     return this.app.services.chain.pickRanges(address, token, amount)
   }
+
+  async startExit (address, token, amount) {
+    return this.app.services.chain.startExit(address, token, amount)
+  }
+
+  async finalizeExits (address) {
+    return this.app.services.chain.finalizeExits(address)
+  }
 }
 
 module.exports = ChainSubdispatcher

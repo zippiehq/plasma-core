@@ -22,6 +22,10 @@ class HttpContractProvider extends BaseContractProvider {
       this._onBlockSubmitted.bind(this)
     )
     this.services.eventWatcher.subscribe(
+      'BeginExitEvent',
+      this._onExitStarted.bind(this)
+    )
+    this.services.eventWatcher.subscribe(
       'FinalizeExitEvent',
       this._onExitFinalized.bind(this)
     )
@@ -53,6 +57,7 @@ class HttpContractProvider extends BaseContractProvider {
       const ethInfo = await this.services.operator.getEthInfo()
       this.contract.options.address = ethInfo.plasmaChainAddress
     }
+    this.logger(`Contract address set: ${this.address}`)
   }
 
   hasAddress () {
@@ -73,6 +78,10 @@ class HttpContractProvider extends BaseContractProvider {
       from: operator,
       gas: 6000000 // TODO: How much should this be?
     })
+  }
+
+  async getChallengePeriod () {
+    return this.contract.methods.CHALLENGE_PERIOD().call()
   }
 
   async getTokenId (tokenAddress) {
@@ -197,15 +206,27 @@ class HttpContractProvider extends BaseContractProvider {
       owner: values.depositer,
       start: new BigNum(values.untypedStart, 10),
       end: new BigNum(values.untypedEnd, 10),
-      token: new BigNum(values.tokenType, 10)
+      token: new BigNum(values.tokenType, 10),
+      block: new BigNum(values.plasmaBlockNumber, 10)
     }
   }
 
   _castBlockSubmittedEvent (event) {
     const values = event.returnValues
     return {
-      number: new BigNum(values.blockNumber, 10),
+      number: new BigNum(values.blockNumber, 10).toNumber(),
       hash: values.submittedHash
+    }
+  }
+
+  _castExitStartedEvent (event) {
+    const values = event.returnValues
+    return {
+      token: new BigNum(values.token, 10),
+      start: new BigNum(values.untypedStart, 10),
+      end: new BigNum(values.untypedEnd, 10),
+      id: new BigNum(values.exitID, 10),
+      exiter: values.exiter
     }
   }
 
@@ -215,7 +236,7 @@ class HttpContractProvider extends BaseContractProvider {
       token: new BigNum(values.token, 10),
       start: new BigNum(values.untypedStart, 10),
       end: new BigNum(values.untypedEnd, 10),
-      id: new BigNum(values.exitId, 10)
+      id: new BigNum(values.exitID, 10)
     }
   }
 
@@ -234,6 +255,12 @@ class HttpContractProvider extends BaseContractProvider {
     const block = this._castBlockSubmittedEvent(event)
     this.logger(`Detected block #${block.number}: ${block.hash}`)
     this.emitContractEvent('BlockSubmitted', block)
+  }
+
+  _onExitStarted (event) {
+    const exit = this._castExitStartedEvent(event)
+    this.logger(`Detected new started exit: ${exit.id}`)
+    this.emitContractEvent('ExitStarted', exit)
   }
 
   _onExitFinalized (event) {

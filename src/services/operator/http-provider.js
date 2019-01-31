@@ -131,7 +131,7 @@ class HttpOperatorProvider extends BaseOperatorProvider {
       if (this.online) resolve()
       setInterval(() => {
         if (this.online) resolve()
-      }, this.options.operatorPingInterval)
+      }, this.options.operatorPingInterval / 10)
     })
   }
 
@@ -165,7 +165,7 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     try {
       await this.getEthInfo()
       if (!this.online) {
-        this.logger('Successfully connected to operator.')
+        this.logger('Successfully connected to operator')
       }
       this.online = true
     } catch (err) {

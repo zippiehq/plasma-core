@@ -94,6 +94,10 @@ class RangeManagerService extends BaseService {
     return this._getRanges(address)
   }
 
+  async getOwnedTransfers (address) {
+    return this._getTransfers(address)
+  }
+
   /**
    * Returns a list of ranges relevant to a transaction.
    * @param {*} transaction A Transaction object.
@@ -172,6 +176,45 @@ class RangeManagerService extends BaseService {
     return pickedRanges
   }
 
+  async pickTransfers (address, token, amount) {
+    token = new BigNum(token, 'hex')
+    amount = new BigNum(amount, 'hex')
+    const ownedTransfers = await this.getOwnedTransfers(address)
+    const transfers = ownedTransfers.filter((transfer) => {
+      return transfer.token.eq(token)
+    })
+    const picked = []
+
+    while (amount.gtn(0)) {
+      // throw if no ranges left
+      if (transfers.length === 0) {
+        throw new Error(
+          'Address does not have enough transfers to cover the exit.'
+        )
+      }
+
+      const transfer = transfers.pop()
+      const transferAmount = transfer.end.sub(transfer.start)
+
+      if (transferAmount.lte(amount)) {
+        picked.push(transfer)
+        amount = amount.sub(transferAmount)
+      } else {
+        // Pick a partial range
+        const partialRange = createRange(
+          transfer.token,
+          transfer.start,
+          transfer.start.add(amount)
+        )
+        picked.push(partialRange)
+        break
+      }
+    }
+
+    picked.sort((a, b) => a.start.sub(b.start))
+    return picked
+  }
+
   /**
    * Determines if an account can spend an amount of a token.
    * @param {*} address An address
@@ -209,7 +252,14 @@ class RangeManagerService extends BaseService {
     })
   }
 
+  async _addTransfers (address, transfers) {
+    let ownedTransfers = await this._getTransfers(address)
+    ownedTransfers = ownedTransfers.concat(transfers)
+    await this._setTransfers(address, ownedTransfers)
+  }
+
   async _addRanges (address, ranges) {
+    let transfers = ranges
     ranges = this._castRanges(ranges)
 
     // Throw if provided range is invalid
@@ -231,6 +281,7 @@ class RangeManagerService extends BaseService {
     })
 
     if (ownedRanges.length === 0) {
+      await this._addTransfers(address, transfers)
       return this._setRanges(address, ranges)
     }
 
@@ -242,6 +293,7 @@ class RangeManagerService extends BaseService {
       return nextRanges.concat(orderRanges(lastRange, newRange))
     }, [])
 
+    await this._addTransfers(address, transfers)
     return this._setRanges(address, nextRanges)
   }
 
@@ -265,7 +317,42 @@ class RangeManagerService extends BaseService {
     })
   }
 
+  async removeTransfers (address, transfers) {
+    transfers = transfers.sort((a, b) => {
+      return a.start.sub(b.start)
+    })
+    const ownedTransfers = await this._getTransfers(address)
+    let newOwnedRanges = []
+    ownedTransfers.forEach((owned, i) => {
+      let nothingOverlaps = true
+      transfers.forEach((transfer) => {
+        const overlaps = transfer.token.eq(owned.token) &&
+          (Math.max(transfer.start, owned.start) < Math.min(transfer.end, owned.end))
+        if (overlaps) {
+          nothingOverlaps = false
+          if (owned.start.lt(transfer.start)) {
+            newOwnedRanges.push({
+              ...owned,
+              ...{ end: transfer.start }
+            })
+          }
+          if (owned.end.gt(transfer.end)) {
+            newOwnedRanges.push({
+              ...owned,
+              ...{ start: transfer.end }
+            })
+          }
+        }
+      })
+      if (nothingOverlaps) {
+        newOwnedRanges.push(owned)
+      }
+    })
+    await this._setTransfers(address, newOwnedRanges)
+  }
+
   async _removeRanges (address, ranges) {
+    let transfers = ranges
     ranges = this._castRanges(ranges)
 
     const ownedRanges = await this.getOwnedRanges(address)
@@ -331,6 +418,7 @@ class RangeManagerService extends BaseService {
       return nextRanges
     }, [])
 
+    await this.removeTransfers(address, transfers)
     return this._setRanges(address, nextRanges)
   }
 
@@ -340,6 +428,58 @@ class RangeManagerService extends BaseService {
 
   async _getRanges (address) {
     return this._castRanges(await this.services.db.get(`ranges:${address}`, []))
+  }
+
+  async _setTransfers (address, transfers) {
+    transfers = transfers.sort((a, b) => {
+      if (a.token.lt(b.token)) {
+        return -1
+      }
+      return a.start.sub(b.start)
+    })
+    return this.services.db.set(`transfers:${address}`, transfers)
+  }
+
+  async _getTransfers (address) {
+    return this._castTransfers(await this.services.db.get(`transfers:${address}`, []))
+  }
+
+  async addExits (address, exits) {
+    let ownedExits = await this.getExits(address)
+    ownedExits = ownedExits.concat(exits)
+    await this.setExits(address, ownedExits)
+  }
+
+  async removeExits (address, exits) {
+    exits = this._castTransfers(exits)
+    let ownedExits = await this.getExits(address)
+    let newExits = []
+    for (let owned of ownedExits) {
+      let seen = false
+      for (let exit of exits) {
+        if (exit.id.eq(owned.id)) {
+          seen = true
+        }
+      }
+      if (!seen) {
+        newExits.push(owned)
+      }
+    }
+    await this.setExits(address, newExits)
+  }
+
+  async setExits (address, exits) {
+    exits = exits.sort((a, b) => {
+      if (a.token.lt(b.token)) {
+        return -1
+      }
+      return a.start.sub(b.start)
+    })
+    return this.services.db.set(`exits:${address}`, exits)
+  }
+
+  async getExits (address) {
+    return this._castTransfers(await this.services.db.get(`exits:${address}`, []))
   }
 
   _castRanges (ranges) {
@@ -352,6 +492,29 @@ class RangeManagerService extends BaseService {
       end: new BigNum(range.end, 'hex'),
       token: new BigNum(range.token, 'hex')
     }
+  }
+
+  _castTransfers (transfers) {
+    return transfers.map(this._castTransfer.bind(this))
+  }
+
+  _castTransfer (transfer) {
+    return {
+      start: new BigNum(transfer.start, 'hex'),
+      end: new BigNum(transfer.end, 'hex'),
+      token: new BigNum(transfer.token, 'hex'),
+      block: new BigNum(transfer.block, 'hex'),
+      id: new BigNum(transfer.id || 0, 'hex')
+    }
+  }
+
+  _transfersEqual (a, b) {
+    return (
+      a.start.eq(b.start) &&
+      a.end.eq(b.end) &&
+      a.token.eq(b.token) &&
+      a.block.eq(b.block)
+    )
   }
 }
 
