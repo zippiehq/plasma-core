@@ -1,85 +1,69 @@
 ============
-Transactions
+Transactions over ranges of coins
 ============
 
-Ranges
+Transfers
 ======
-Assets in Plasma Prime are represented as *ranges*. 
-You can think of ranges like pieces of a `number line`_.
-Each range has a `start` and an `end`, usually written as `(start, end`)
-Each range also has a `length`, which can be calculated as `end - start`.
-For further background on the research and motivations that led to this format, see `this ethresearch post`_.
-
-The `length` of a specific range represents the "value" of that range, depending on the token and base unit being used.
-For example, the range `(0, 100)` represents 100 "units" of some token.
-
-A user can own arbitrarily many ranges.
-However, as we'll discuss later, each additional range slightly increases the total data requirements for that user.
-For this reason, it's in the users' best interests to reduce the total number of ranges they own at any one point in time.
-
-Ranges can be split apart as much as a user wants.
-If a user owns `(0, 100)`, they can send `(0, 100)` or `(0, 50)` or `(25, 50)` or any other sub-range of `(0, 100)`.
-Ranges can also be merged together, but only if they're directly adjacent to one another.
-For example, `(0, 100)` and `(100, 200`) can be merged into `(0, 200)`, but `(0, 100)` and `(200, 300)` cannot be combined.
-
-TransferRecord Object
-==================
-A transaction contains a list of ``TransferRecord``\s which represent the ranges being transacted.
-The ``TransferRecord`` object takes the following format:
+A transaction consists of a specified ``block`` number and an array of ``Transfer`` objects, which describe the details of each range of the transaction. From the `schema` in ``plasma-utils`` (``lengths`` in bytes):
 
 .. code-block:: javascript
 
-    {
-        start: Number,
-        end: Number,
-        from: String,
-        to: String
-    }
+    ...
+    const TransferSchema = new Schema({
+     sender: {
+       type: Address,
+       required: true
+     },
+     recipient: {
+       type: Address,
+       required: true
+     },
+     token: {
+       type: Number,
+       length: 4,
+       required: true
+     },
+     start: {
+       type: Number,
+       length: 12,
+       required: true
+     },
+     end: {
+       type: Number,
+       length: 12,
+       required: true
+     }
+    ...
 
-``from`` and ``to`` must both be valid 20 byte Ethereum addresses_.
+We can see that each ``Transfer`` in a ``Transaction`` specifies a ``tokenType``, ``start``, ``end``, ``sender``, and ``recipient``.
 
-The ``start`` and ``end`` values are 16 bytes each.
-To allow the chain to support multiple ERC20s, this total "number line" of coins is split into 4 bytes' worth of "sections" for different tokens.
-Thus remaining 12 bytes' (=8*10^28) will be the chain's maximum capacity for each token.
-For example, if the chain has no deposits, users might recieve coins with a `start` of ``0x00000000000000000000000000000000`` when depositing ERC20 token A into the chain and ``0x00000001000000000000000000000000`` when depositing token B.
-The maximum deposits for token A and B would go up to ``0x00000000ffffffffffffffffffffffff`` and ``0x00000001ffffffffffffffffffffffff``, respectively.
+Typed and Untyped Bounds
+======
 
-Transaction Object
-==================
-All transactions must take the following format:
+One thing to note above is that the ``start`` and ``end`` values are not 16 bytes, as ``coinID``s are, but rather 12. This should make sense in the context of the above sections on deposits. To get the actual ``coinID``s described by the transfer, we concatenate the ``token`` field's 4 bytes to the left of ``start`` and ``end``. We generally refer to the 12-byte versions as a ``transfer``'s ``untypedStart`` and ``untypedEnd``, with the concatenated version being called ``typedStart`` and ``typedEnd``. These values are also `exposed by the serializer`.
+Another note: in any transfer the corresponding ``coinID``s are defined with ``start`` inclusive and ``end`` exclusive. That is, the exact ``coinID``s transferred are ``[typedStart, typedEnd)``. For example, the first 100 ETH coins can be sent with a ``Transfer`` with ``transfer.token = 0``, ``transfer.start = 0``, and ``transfer.end = 100``. The second 100 would have ``transfer.start = 100`` and ``transfer.end = 200``.
 
-.. code-block:: javascript
+Multisends and Transfer/Transaction Atomicity
+======
+The ``Transaction`` schema consists of a 4-byte ``block`` number (the transaction is only valid if included in that particular plasma block), and an array of ``Transfer`` objects. This means that a transaction can describe several transfers, which are either all atomically executed or not depending on the *entire transaction's* inclusion and validity. This will form the basis for both decentralized exchange and `defragmentation` in later releases.
 
-    {
-        block: Number
-        transfers: [
-            TransferRecord,
-            TransferRecord,
-            ...
-        ],
-        signatures: [
-            {
-                v: Number,
-                r: Number,
-                s: Number
-            },
-            {
-                v: Number,
-                r: Number,
-                s: Number
-            },
-            ...
-        ]
-    }
+Serialization
+======
 
-The block number must be specified and a transaction's validity is dependent on being included in the same plasma block as described.
-This is in accordance to the simplified Plasma Cash exit game as described in `this post`_.
-The ``signature`` s must be created over the hash of the list of encoded ``TransferRecord`` s.
-``plasma-core`` uses a `custom encoding scheme`_ to simplify the decoding process on Etheruem.
+As exemplified above, ``plasma-utils`` implements a custom serialization library for data structures. Both the JSON RPC and the smart contract use the byte arrays as encoded by the serializer.
 
-.. _number line: https://en.wikipedia.org/wiki/Number_line
-.. _this ethresearch post: https://ethresear.ch/t/plasma-cash-was-a-transaction-format/4261
-.. _proof specificaton: specs/proofs.html
-.. _addresses: https://en.wikipedia.org/wiki/Ethereum#Addresses
-.. _this post: TODO
-.. _custom encoding scheme: specs/encoding.html
+The encoding is quite simple, being the concatenation of each value fixed to the number of bytes defined by the schema.
+For encoding which involve variable-sized arrays, such as ``Transaction`` objects which contain 1 or more ``Transfer``s, a single byte precedes for the number of elements. Tests for the serialization library can be found `here.`
+Currently, we have schemas for the following objects:
+- ``Transfer``
+- ``UnsignedTransaction``
+- ``Signature``
+- ``SignedTransaction``
+- ``TransferProof``
+- ``TransactionProof``
+
+
+.. _schema: https://en.wikipedia.org/wiki/Number_line
+.. _`exposed by the serializer`: https://github.com/plasma-group/plasma-utils/blob/master/src/serialization/models/transfer.js
+.. _transaction: https://ethresear.ch/t/plasma-cash-defragmentation-take-3/3737
+.. _here: https://github.com/plasma-group/plasma-utils/blob/master/test/serialization/test-serialization.js
