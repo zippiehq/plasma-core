@@ -26,6 +26,8 @@ class SyncService extends BaseService {
     this.started = true
 
     this.services.contract.on('event:Deposit', this._onDeposit.bind(this))
+    this.services.contract.on('event:BlockSubmitted', this._onBlockSubmitted.bind(this))
+    this.services.contract.on('event:ExitFinalized', this._onExitFinalized.bind(this))
 
     this._pollPendingTransactions()
   }
@@ -55,6 +57,7 @@ class SyncService extends BaseService {
    */
   async _checkPendingTransactions () {
     if (
+      !this.services.operator.online ||
       !this.services.contract.contract ||
       !this.services.contract.contract.options.address
     ) { return }
@@ -86,7 +89,7 @@ class SyncService extends BaseService {
       try {
         await this.addTransaction(tx)
       } catch (err) {
-        this.failed.push(tx)
+        failed.push(tx)
         this.logger(`ERROR: ${err}`)
       }
     }
@@ -133,6 +136,10 @@ class SyncService extends BaseService {
 
   async _onBlockSubmitted (event) {
     await this.services.chain.addBlockHeader(event.block, event.hash)
+  }
+
+  async _onExitFinalized (event) {
+    await this.services.chain.addExitableEnd(event.start)
   }
 }
 

@@ -10,7 +10,8 @@ const TransferProof = models.TransferProof
 const BaseOperatorProvider = require('./base-provider')
 
 const defaultOptions = {
-  operatorEndpoint: 'http://localhost:9898'
+  operatorEndpoint: 'http://localhost:9898',
+  operatorPingInterval: 10000
 }
 
 /**
@@ -22,10 +23,8 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     this.http = axios.create({
       baseURL: options.operatorEndpoint
     })
-  }
-
-  async isOnline () {
-    return this._handle('')
+    this.online = false
+    this._pingInterval()
   }
 
   async getNextBlock () {
@@ -126,6 +125,16 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     return this._handle('newBlock')
   }
 
+  async waitForConnection () {
+    // Do this as a promise to avoid recursion limits.
+    return new Promise((resolve) => {
+      if (this.online) resolve()
+      setInterval(() => {
+        if (this.online) resolve()
+      }, this.options.operatorPingInterval)
+    })
+  }
+
   /**
    * Sends a JSON-RPC command as a HTTP POST request.
    * @param {string} method Name of the method to call.
@@ -133,17 +142,39 @@ class HttpOperatorProvider extends BaseOperatorProvider {
    * @return {*} The result of the operation or an error.
    */
   async _handle (method, params = []) {
-    const rawResponse = await this.http.post('/', {
-      jsonrpc: '2.0',
-      method: method,
-      params: params,
-      id: uuidv4()
-    })
-    const response = utils.utils.isString(rawResponse) ? JSON.parse(rawResponse.data) : rawResponse.data
-    if (response.error) {
-      throw response.error
+    let response
+    try {
+      response = await this.http.post('/', {
+        jsonrpc: '2.0',
+        method: method,
+        params: params,
+        id: uuidv4()
+      })
+    } catch (err) {
+      this.logger(`ERROR: ${err}`)
+      throw err
     }
-    return response.result
+    const data = utils.utils.isString(response) ? JSON.parse(response.data) : response.data
+    if (data.error) {
+      throw data.error
+    }
+    return data.result
+  }
+
+  async _pingInterval () {
+    try {
+      await this.getEthInfo()
+      if (!this.online) {
+        this.logger('Successfully connected to operator.')
+      }
+      this.online = true
+    } catch (err) {
+      this.online = false
+      this.logger('ERROR: Cannot connect to operator. Attempting to reconnect...')
+    } finally {
+      await utils.utils.sleep(this.options.operatorPingInterval)
+      this._pingInterval()
+    }
   }
 }
 

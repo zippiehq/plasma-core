@@ -1,4 +1,3 @@
-const utils = require('plasma-utils')
 const services = require('./services/index')
 const debug = require('debug')
 

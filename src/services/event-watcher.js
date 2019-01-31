@@ -68,7 +68,8 @@ class EventWatcher extends BaseService {
     lastFinalBlock = lastFinalBlock < 0 ? 0 : lastFinalBlock
 
     for (let eventName in this.events) {
-      if (!this.events[eventName].active) {
+      if (!this.events[eventName].active ||
+          !this.services.contract.hasAddress()) {
         continue
       }
 

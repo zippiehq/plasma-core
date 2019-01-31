@@ -9,7 +9,10 @@ class HttpContractProvider extends BaseContractProvider {
   async start () {
     this.started = true
     this.initContract()
+    this.initContractAddress()
 
+    // Subscribe to events.
+    // TODO: Rethink where event watching happens.
     this.services.eventWatcher.subscribe(
       'DepositEvent',
       this._onDeposit.bind(this)
@@ -18,13 +21,10 @@ class HttpContractProvider extends BaseContractProvider {
       'SubmitBlockEvent',
       this._onBlockSubmitted.bind(this)
     )
-
-    // TODO: Remove this because we should really be getting
-    // the address from the registry.
-    if (this.services.operator.getEthInfo) {
-      const ethInfo = await this.services.operator.getEthInfo()
-      this.contract.options.address = ethInfo.plasmaChainAddress
-    }
+    this.services.eventWatcher.subscribe(
+      'FinalizeExitEvent',
+      this._onExitFinalized.bind(this)
+    )
   }
 
   async stop () {
@@ -43,6 +43,16 @@ class HttpContractProvider extends BaseContractProvider {
   initContract () {
     if (this.contract) return
     this.contract = new this.web3.eth.Contract(plasmaChainCompiled.abi)
+  }
+
+  async initContractAddress () {
+    // TODO: Replace this because we should really be getting
+    // the address from the registry.
+    if (this.services.operator.getEthInfo) {
+      await this.services.operator.waitForConnection()
+      const ethInfo = await this.services.operator.getEthInfo()
+      this.contract.options.address = ethInfo.plasmaChainAddress
+    }
   }
 
   hasAddress () {
@@ -103,6 +113,22 @@ class HttpContractProvider extends BaseContractProvider {
     return this.contract.methods.depositERC20(tokenAddress, amount).send({
       from: owner,
       gas: 6000000 // TODO: Figure out how much this should be.
+    })
+  }
+
+  async startExit (block, token, start, end, owner) {
+    await this.checkAccountUnlocked(owner)
+    return this.contract.methods.beginExit(token, block, start, end).send({
+      from: owner,
+      gas: 1000000
+    })
+  }
+
+  async finalizeExit (exitId, exitableEnd, owner) {
+    await this.checkAccountUnlocked(owner)
+    return this.contract.methods.finalizeExit(exitId, exitableEnd).send({
+      from: owner,
+      gas: 1000000
     })
   }
 
@@ -183,20 +209,37 @@ class HttpContractProvider extends BaseContractProvider {
     }
   }
 
+  _castFinalizeExitEvent (event) {
+    const values = event.returnValues
+    return {
+      token: new BigNum(values.token, 10),
+      start: new BigNum(values.untypedStart, 10),
+      end: new BigNum(values.untypedEnd, 10),
+      id: new BigNum(values.exitId, 10)
+    }
+  }
+
   _onDeposit (event) {
     const deposit = this._castDepositEvent(event)
     const amount = deposit.end.sub(deposit.start).toString()
     this.logger(
-      `Importing new deposit of ${amount} [${deposit.token}] for ${
+      `Detected new deposit of ${amount} [${deposit.token}] for ${
         deposit.owner
-      }.`
+      }`
     )
     this.emitContractEvent('Deposit', deposit)
   }
 
   _onBlockSubmitted (event) {
     const block = this._castBlockSubmittedEvent(event)
+    this.logger(`Detected block #${block.number}: ${block.hash}`)
     this.emitContractEvent('BlockSubmitted', block)
+  }
+
+  _onExitFinalized (event) {
+    const exit = this._castFinalizeExitEvent(event)
+    this.logger(`Detected new finalized exit: ${exit.id}`)
+    this.emitContractEvent('ExitFinalized', exit)
   }
 }
 

@@ -151,6 +151,17 @@ class ChainService extends BaseService {
     })
     this.logger(`Added deposit to database.`)
   }
+
+  async addExitableEnd (end) {
+    await this.services.db.set(`exitable:${end}`, end)
+  }
+
+  async getExitableEnd (end) {
+    const it = this.services.db.iterator({
+      gt: `exitable:${end}`
+    })
+    return it
+  }
 }
 
 module.exports = ChainService
