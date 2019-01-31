@@ -83,6 +83,21 @@ class ChainService extends BaseService {
     return this.services.db.set(`header:${block}`, header)
   }
 
+  async addBlockHeaders (blocks) {
+    const largest = blocks.reduce((a, b) => {
+      return a.number > b.number ? a : b
+    })
+    await this.setLatestBlock(largest.number)
+    const ops = blocks.map((block) => {
+      return {
+        type: 'put',
+        key: `header:${block.number}`,
+        value: block.hash
+      }
+    })
+    return this.services.db.db.batch(ops)
+  }
+
   /**
    * Adds a new transaction to a history if it's valid.
    * @param {*} transaction A Transaction object.
@@ -246,6 +261,8 @@ class ChainService extends BaseService {
       end: deposit.end,
       block: deposit.block
     })
+
+    await this.addExitableEnd(deposit.token, deposit.end)
     this.logger(`Added deposit to database`)
   }
 

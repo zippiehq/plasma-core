@@ -242,33 +242,41 @@ class HttpContractProvider extends BaseContractProvider {
     }
   }
 
-  _onDeposit (event) {
-    const deposit = this._castDepositEvent(event)
-    const amount = deposit.end.sub(deposit.start).toString()
-    this.logger(
-      `Detected new deposit of ${amount} [${deposit.token}] for ${
-        deposit.owner
-      }`
-    )
-    this.emitContractEvent('Deposit', deposit)
+  _onDeposit (events) {
+    const deposits = events.map(this._castDepositEvent)
+    deposits.forEach((deposit) => {
+      const amount = deposit.end.sub(deposit.start).toString()
+      this.logger(
+        `Detected new deposit of ${amount} [${deposit.token}] for ${
+          deposit.owner
+        }`
+      )
+    })
+    this.emitContractEvent('Deposit', deposits)
   }
 
-  _onBlockSubmitted (event) {
-    const block = this._castBlockSubmittedEvent(event)
-    this.logger(`Detected block #${block.number}: ${block.hash}`)
-    this.emitContractEvent('BlockSubmitted', block)
+  _onBlockSubmitted (events) {
+    const blocks = events.map(this._castBlockSubmittedEvent)
+    blocks.forEach((block) => {
+      this.logger(`Detected block #${block.number}: ${block.hash}`)
+    })
+    this.emitContractEvent('BlockSubmitted', blocks)
   }
 
-  _onExitStarted (event) {
-    const exit = this._castExitStartedEvent(event)
-    this.logger(`Detected new started exit: ${exit.id}`)
-    this.emitContractEvent('ExitStarted', exit)
+  _onExitStarted (events) {
+    const exits = events.map(this._castExitStartedEvent)
+    exits.forEach((exit) => {
+      this.logger(`Detected new started exit: ${exit.id}`)
+    })
+    this.emitContractEvent('ExitStarted', exits)
   }
 
-  _onExitFinalized (event) {
-    const exit = this._castFinalizeExitEvent(event)
-    this.logger(`Detected new finalized exit: ${exit.id}`)
-    this.emitContractEvent('ExitFinalized', exit)
+  _onExitFinalized (events) {
+    const exits = events.map(this._castFinalizeExitEvent)
+    exits.forEach((exit) => {
+      this.logger(`Detected new finalized exit: ${exit.id}`)
+    })
+    this.emitContractEvent('ExitFinalized', exits)
   }
 }
 

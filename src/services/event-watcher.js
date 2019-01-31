@@ -91,10 +91,10 @@ class EventWatcher extends BaseService {
         }
       )
 
-      for (let event of events) {
+      if (events.length > 0) {
         for (let listener of this.subscriptions[eventName]) {
           try {
-            listener(event)
+            listener(events)
           } catch (err) {
             console.log(err) // TODO: Handle this.
           }

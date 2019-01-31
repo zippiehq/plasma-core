@@ -84,18 +84,21 @@ class SyncService extends BaseService {
       )
     }
 
-    let failed = []
+    let failed = await this.services.db.get(`sync:failed`, [])
     for (let i = 0; i < this.pending.length; i++) {
-      const tx = this.pending[i]
+      const encoded = this.pending[i]
+      const tx = new SignedTransaction(encoded)
       try {
         await this.addTransaction(tx)
       } catch (err) {
-        failed.push(tx)
+        failed.push(encoded)
         this.logger(`ERROR: ${err}`)
+        this.logger(`Ran into an error while importing transaction: ${tx.hash}, trying again in a few seconds...`)
       }
     }
     this.pending = failed
 
+    await this.services.db.set(`sync:failed`, failed)
     await this.services.db.set(`sync:block`, currentBlock)
   }
 
@@ -103,9 +106,7 @@ class SyncService extends BaseService {
    * Tries to add any newly received transactions.
    * @param {*} encoded An encoded transaction.
    */
-  async addTransaction (encoded) {
-    const tx = new SignedTransaction(encoded)
-
+  async addTransaction (tx) {
     // TODO: The operator should really be avoiding this.
     if (tx.transfers[0].sender === NULL_ADDRESS) {
       return
@@ -115,6 +116,8 @@ class SyncService extends BaseService {
       return
     }
 
+    this.logger(`Detected new transaction: ${tx.hash}`)
+    this.logger(`Attemping to pull information for transaction: ${tx.hash}`)
     const {
       transaction,
       deposits,
@@ -125,32 +128,32 @@ class SyncService extends BaseService {
     this.logger(`Successfully imported transaction: ${tx.hash}`)
   }
 
-  /**
-   * Handles adding new deposits for the user.
-   * @param {*} event A Deposit event.
-   */
-  async _onDeposit (event) {
-    // TODO: Where should address filtering be done?
-    // Probably wherever events are originally watched to reduce total events pulled.
-    await this.services.chain.addDeposit(event)
-    await this.services.chain.addExitableEnd(event.token, event.end)
+  // TODO: What to do if any of these fail?
+  async _onDeposit (deposits) {
+    for (let deposit of deposits) {
+      await this.services.chain.addDeposit(deposit)
+    }
   }
 
-  async _onBlockSubmitted (event) {
-    await this.services.chain.addBlockHeader(event.number, event.hash)
+  async _onBlockSubmitted (blocks) {
+    await this.services.chain.addBlockHeaders(blocks)
   }
 
-  async _onExitFinalized (event) {
-    await this.services.chain.removeExit(event)
-    await this.services.chain.addExitableEnd(event.token, event.start)
+  async _onExitFinalized (exits) {
+    for (let exit of exits) {
+      await this.services.chain.removeExit(exit)
+      await this.services.chain.addExitableEnd(exit.token, exit.start)
+    }
   }
 
-  async _onExitStarted (event) {
-    try {
-      await this.services.rangeManager.removeRange(event.exiter, event)
-    } catch (err) {
-    } finally {
-      await this.services.chain.addExit(event)
+  async _onExitStarted (exits) {
+    for (let exit of exits) {
+      try {
+        await this.services.rangeManager.removeRange(exit.exiter, exit)
+      } catch (err) {
+      } finally {
+        await this.services.chain.addExit(exit)
+      }
     }
   }
 }

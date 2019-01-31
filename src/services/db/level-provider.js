@@ -67,6 +67,10 @@ class LevelDBProvider extends BaseDBProvider {
   get iterator () {
     return this.db.iterator
   }
+
+  get batch () {
+    return this.db.batch
+  }
 }
 
 module.exports = LevelDBProvider
