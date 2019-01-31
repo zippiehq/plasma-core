@@ -15,6 +15,7 @@ const defaultOptions = {
 class SyncService extends BaseService {
   constructor (options) {
     super(options, defaultOptions)
+    this.pending = []
   }
 
   get name () {
@@ -68,10 +69,9 @@ class SyncService extends BaseService {
     )
 
     // TODO: Figure out how handle operator errors.
-    let pending = []
     const addresses = await this.services.wallet.getAccounts()
     for (let address of addresses) {
-      pending = pending.concat(
+      this.pending = this.pending.concat(
         await this.services.operator.getTransactions(
           address,
           firstUnsyncedBlock,
@@ -80,13 +80,17 @@ class SyncService extends BaseService {
       )
     }
 
-    for (let encoded of pending) {
+    let failed = []
+    for (let i = 0; i < this.pending.length; i++) {
+      const tx = this.pending[i]
       try {
-        await this.addTransaction(encoded)
+        await this.addTransaction(tx)
       } catch (err) {
-        console.log(err)
+        this.failed.push(tx)
+        this.logger(`ERROR: ${err}`)
       }
     }
+    this.pending = failed
 
     await this.services.db.set(`sync:block`, currentBlock)
   }
@@ -114,6 +118,7 @@ class SyncService extends BaseService {
     } = await this.services.operator.getTransaction(tx.encoded)
     this.logger(`Importing new transaction: ${tx.hash}`)
     await this.services.chain.addTransaction(transaction, deposits, proof)
+    this.logger(`Successfully imported transaction: ${tx.hash}`)
   }
 
   /**

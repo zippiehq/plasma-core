@@ -17,7 +17,6 @@ const Web3Provider = services.Web3Provider
 const EventWatcherService = services.EventWatcherService
 
 const defaultOptions = {
-  logger: new utils.logging.DefaultLogger(),
   dbProvider: DefaultDBProvider,
   operatorProvider: DefaultOperatorProvider,
   walletProvider: DefaultWalletProvider,
@@ -31,7 +30,6 @@ const defaultOptions = {
 class Plasma {
   constructor (options = {}) {
     this.options = Object.assign({}, defaultOptions, options)
-    this.logger = this.options.logger
 
     this.services = {}
     this._loggers = {}
