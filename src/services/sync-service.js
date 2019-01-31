@@ -65,7 +65,6 @@ class SyncService extends BaseService {
 
     const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
     const firstUnsyncedBlock = lastSyncedBlock + 1
-    // TODO: Should this be determined locally? Also, should we store blocks locally?
     const currentBlock = await this.services.chain.getLatestBlock()
     if (firstUnsyncedBlock > currentBlock) return
     this.logger(
@@ -84,7 +83,15 @@ class SyncService extends BaseService {
       )
     }
 
-    let failed = await this.services.db.get(`sync:failed`, [])
+    // Add any previously failed transactions to try again.
+    const prevFailed = await this.services.db.get(`sync:failed`, [])
+    for (let tx of prevFailed) {
+      if (!this.pending.includes(tx)) {
+        this.pending.push(tx)
+      }
+    }
+
+    let failed = []
     for (let i = 0; i < this.pending.length; i++) {
       const encoded = this.pending[i]
       const tx = new SignedTransaction(encoded)
@@ -96,7 +103,6 @@ class SyncService extends BaseService {
         this.logger(`Ran into an error while importing transaction: ${tx.hash}, trying again in a few seconds...`)
       }
     }
-    this.pending = failed
 
     await this.services.db.set(`sync:failed`, failed)
     await this.services.db.set(`sync:block`, currentBlock)
