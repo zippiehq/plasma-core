@@ -40,8 +40,8 @@ We can see that each ``Transfer`` in a ``Transaction`` specifies a ``tokenType``
 Typed and Untyped Bounds
 ======
 
-One thing to note above is that the ``start`` and ``end`` values are not 16 bytes, as ``coinID``s are, but rather 12. This should make sense in the context of the above sections on deposits. To get the actual ``coinID``s described by the transfer, we concatenate the ``token`` field's 4 bytes to the left of ``start`` and ``end``. We generally refer to the 12-byte versions as a ``transfer``'s ``untypedStart`` and ``untypedEnd``, with the concatenated version being called ``typedStart`` and ``typedEnd``. These values are also `exposed by the serializer`.
-Another note: in any transfer the corresponding ``coinID``s are defined with ``start`` inclusive and ``end`` exclusive. That is, the exact ``coinID``s transferred are ``[typedStart, typedEnd)``. For example, the first 100 ETH coins can be sent with a ``Transfer`` with ``transfer.token = 0``, ``transfer.start = 0``, and ``transfer.end = 100``. The second 100 would have ``transfer.start = 100`` and ``transfer.end = 200``.
+One thing to note above is that the ``start`` and ``end`` values are not 16 bytes, as ``coinID`` s are, but rather 12. This should make sense in the context of the above sections on deposits. To get the actual ``coinID`` s described by the transfer, we concatenate the ``token`` field's 4 bytes to the left of ``start`` and ``end``. We generally refer to the 12-byte versions as a ``transfer`` 's ``untypedStart`` and ``untypedEnd``, with the concatenated version being called ``typedStart`` and ``typedEnd``. These values are also `exposed by the serializer`.
+Another note: in any transfer the corresponding ``coinID`` s are defined with ``start`` inclusive and ``end`` exclusive. That is, the exact ``coinID`` s transferred are ``[typedStart, typedEnd)`` . For example, the first 100 ETH coins can be sent with a ``Transfer`` with ``transfer.token = 0``, ``transfer.start = 0`` , and ``transfer.end = 100`` . The second 100 would have ``transfer.start = 100`` and ``transfer.end = 200`` .
 
 Multisends and Transfer/Transaction Atomicity
 ======
@@ -53,7 +53,7 @@ Serialization
 As exemplified above, ``plasma-utils`` implements a custom serialization library for data structures. Both the JSON RPC and the smart contract use the byte arrays as encoded by the serializer.
 
 The encoding is quite simple, being the concatenation of each value fixed to the number of bytes defined by the schema.
-For encoding which involve variable-sized arrays, such as ``Transaction`` objects which contain 1 or more ``Transfer``s, a single byte precedes for the number of elements. Tests for the serialization library can be found `here.`
+For encoding which involve variable-sized arrays, such as ``Transaction`` objects which contain 1 or more ``Transfer`` s, a single byte precedes for the number of elements. Tests for the serialization library can be found `here.`
 Currently, we have schemas for the following objects:
 - ``Transfer``
 - ``UnsignedTransaction``

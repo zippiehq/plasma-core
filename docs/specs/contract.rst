@@ -67,7 +67,7 @@ Per-coin transaction validity
 =====
 An unintuitive property of our exit games worth noting up front is that a certain transaction might be "valid" for some of the coins in its range, but not on others.
 
-For example, imagine that Alice sends ``(0, 100]`` to Bob, who in turn sends ``(50, 100]`` to Carol. Carol does not need to verify that Alice was the rightful owner of the full ``(0, 100]``. Carol only needs an assurance that Alice owned ``(50, 100]`` - the part of the custody chain which applies to her receipt. Though the transaction might in a sense be "invalid" if Alice didn't own ``(0, 50]``, the smart contract does not care about that for the purposes of disputes around exits for the coins ``(50, 100]``. So long as the received coins' ownership is verified, the rest of the transactions don't matter.
+For example, imagine that Alice sends ``(0, 100]`` to Bob, who in turn sends ``(50, 100]`` to Carol. Carol does not need to verify that Alice was the rightful owner of the full ``(0, 100]``. Carol only needs an assurance that Alice owned ``(50, 100]``  - the part of the custody chain which applies to her receipt. Though the transaction might in a sense be "invalid" if Alice didn't own ``(0, 50]``, the smart contract does not care about that for the purposes of disputes around exits for the coins ``(50, 100]``. So long as the received coins' ownership is verified, the rest of the transactions don't matter.
 
 This is a very important requirement to preserve the size of light client proofs. If Carol had to check the full ``(0, 100]``, she might also have to check an overlapping parent of ``(0, 10000]``, and then all of its parents, and so on. This "cascading" effect could massively increase the size of proofs if transactions were very interdependent.
 
@@ -91,7 +91,7 @@ Note that, to be used in exit games at all, ``Transaction``s must pass the ``Tra
    uint256 # transaction plasmaBlockNumber
  ):``
  
- An important note here is the ``transferIndex`` argument. Remember, a transaction may contain multiple transfers, and must be included once in the tree for each transfer. However, since challenges refer to a specific ``coinID``, only a single transfer will be relevant. So, challengers and responders gives a ``transferIndex`` - whichever of the transfers relates to the coin being disputed. The check decodes and checks all the ``TransferProof``s in the ``TransactionProof``, and then checks inclusion for each with the function
+ An important note here is the ``transferIndex`` argument. Remember, a transaction may contain multiple transfers, and must be included once in the tree for each transfer. However, since challenges refer to a specific ``coinID``, only a single transfer will be relevant. So, challengers and responders gives a ``transferIndex``  - whichever of the transfers relates to the coin being disputed. The check decodes and checks all the ``TransferProof``s in the ``TransactionProof``, and then checks inclusion for each with the function
  
  ``def checkTransferProofAndGetTypedBounds(
  leafHash: bytes32,
