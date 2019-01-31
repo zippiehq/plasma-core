@@ -30,6 +30,10 @@ class Plasma {
   constructor (options = {}) {
     this.options = Object.assign({}, defaultOptions, options)
 
+    if (this.options.debug) {
+      debug.enable(this.options.debug)
+    }
+
     this.services = {}
     this._loggers = {}
     this._registerServices()
