@@ -98,8 +98,8 @@ class JSONRPCService extends BaseService {
       result = await this.callMethod(request.method, request.params)
     } catch (err) {
       // TODO: How should we handle these errors?
-      console.log(err)
-      return this._buildError('INTERNAL_ERROR', request.id)
+      this.logger(`ERROR: ${err}`)
+      return this._buildError('INTERNAL_ERROR', request.id, err)
     }
 
     return JSON.stringify({
@@ -115,10 +115,11 @@ class JSONRPCService extends BaseService {
    * @param {*} id RPC command ID.
    * @return {Object} A stringified JSON-RPC error response.
    */
-  _buildError (type, id) {
+  _buildError (type, id, err) {
     return JSON.stringify({
       jsonrpc: '2.0',
       error: JSONRPC_ERRORS[type],
+      message: err,
       id: id
     })
   }
