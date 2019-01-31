@@ -119,7 +119,7 @@ class JSONRPCService extends BaseService {
     return JSON.stringify({
       jsonrpc: '2.0',
       error: JSONRPC_ERRORS[type],
-      message: err,
+      message: err.toString(),
       id: id
     })
   }
