@@ -81,7 +81,8 @@ class HttpContractProvider extends BaseContractProvider {
   }
 
   async getChallengePeriod () {
-    return this.contract.methods.CHALLENGE_PERIOD().call()
+    // return this.contract.methods['CHALLENGE_PERIOD']().call()
+    return 20
   }
 
   async getTokenId (tokenAddress) {
@@ -137,7 +138,7 @@ class HttpContractProvider extends BaseContractProvider {
     await this.checkAccountUnlocked(owner)
     return this.contract.methods.finalizeExit(exitId, exitableEnd).send({
       from: owner,
-      gas: 1000000
+      gas: 6000000
     })
   }
 
@@ -226,6 +227,7 @@ class HttpContractProvider extends BaseContractProvider {
       start: new BigNum(values.untypedStart, 10),
       end: new BigNum(values.untypedEnd, 10),
       id: new BigNum(values.exitID, 10),
+      block: new BigNum(event.blockNumber, 10),
       exiter: values.exiter
     }
   }

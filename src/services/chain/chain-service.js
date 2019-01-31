@@ -1,5 +1,4 @@
 const BigNum = require('bn.js')
-const util = require('util')
 const utils = require('plasma-utils')
 const models = utils.serialization.models
 const SignedTransaction = models.SignedTransaction
@@ -96,7 +95,7 @@ class ChainService extends BaseService {
     // TODO: Really we should also be checking that the transaction is actually relevant to the user.
     // We can do this by checking that the recipient of some xfer belongs to some account.
 
-    this.logger(`Verifying transaction proof for: ${tx.hash}...`)
+    this.logger(`Verifying transaction proof for: ${tx.hash}`)
     if (!(await this.services.proof.checkProof(tx, deposits, proof))) {
       throw new Error('Invalid transaction proof')
     }
@@ -144,6 +143,7 @@ class ChainService extends BaseService {
   }
 
   async addExit (exit) {
+    await this.markExited(exit)
     await this.services.rangeManager.addExits(exit.exiter, [exit])
   }
 
@@ -169,12 +169,20 @@ class ChainService extends BaseService {
     return exitTxHashes
   }
 
-  async finalizeExits (address) {
+  async getExits (address) {
     const exits = await this.services.rangeManager.getExits(address)
     const currentBlock = await this.services.web3.eth.getBlockNumber()
     const challengePeriod = await this.services.contract.getChallengePeriod()
+    exits.forEach((exit) => {
+      exit.completed = (exit.block.addn(challengePeriod)).ltn(currentBlock)
+    })
+    return exits
+  }
+
+  async finalizeExits (address) {
+    const exits = await this.getExits(address)
     const completed = exits.filter((exit) => {
-      return exit.block.addn(challengePeriod).ltn(currentBlock)
+      return exit.completed
     })
 
     let finalized = []
@@ -243,18 +251,34 @@ class ChainService extends BaseService {
 
   async addExitableEnd (token, end) {
     const key = this._getTypedValue(token, end)
-    await this.services.db.set(`exitable:${key}`, end)
+    await this.services.db.set(`exitable:${key}`, end.toString('hex'))
     this.logger(`Added exitable end to database: ${token}:${end}`)
   }
 
   async getExitableEnd (token, end) {
-    const key = this._getTypedValue(token, end)
+    const startKey = this._getTypedValue(token, end)
     const it = this.services.db.iterator({
-      gt: `exitable:${key}`,
+      gte: `exitable:${startKey}`,
       keyAsBuffer: false,
       valueAsBuffer: false
     })
-    return (await util.promisify(it.next)).value
+
+    let result = await this.itNext(it)
+    while (!result.key.startsWith('exitable')) {
+      result = await this.itNext(it)
+    }
+    return new BigNum(result.value, 'hex')
+  }
+
+  async itNext (it) {
+    return new Promise((resolve, reject) => {
+      it.next((err, key, value) => {
+        if (err) {
+          reject(err)
+        }
+        resolve({ key, value })
+      })
+    })
   }
 
   _getTypedValue (token, value) {

@@ -27,6 +27,7 @@ class SyncService extends BaseService {
 
     this.services.contract.on('event:Deposit', this._onDeposit.bind(this))
     this.services.contract.on('event:BlockSubmitted', this._onBlockSubmitted.bind(this))
+    this.services.contract.on('event:ExitStarted', this._onExitStarted.bind(this))
     this.services.contract.on('event:ExitFinalized', this._onExitFinalized.bind(this))
 
     this._pollPendingTransactions()
@@ -146,7 +147,8 @@ class SyncService extends BaseService {
 
   async _onExitStarted (event) {
     try {
-      await this.services.rangeManager.removeRanges(event.exiter, event)
+      await this.services.rangeManager.removeRange(event.exiter, event)
+    } catch (err) {
     } finally {
       await this.services.chain.addExit(event)
     }

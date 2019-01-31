@@ -39,6 +39,10 @@ class ChainSubdispatcher extends BaseSubdispatcher {
   async finalizeExits (address) {
     return this.app.services.chain.finalizeExits(address)
   }
+
+  async getExits (address) {
+    return this.app.services.chain.getExits(address)
+  }
 }
 
 module.exports = ChainSubdispatcher
