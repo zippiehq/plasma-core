@@ -72,7 +72,7 @@
     "leveldown": "^4.0.1",
     "levelup": "^4.0.0",
     "lodash": "^4.17.11",
-    "plasma-contracts": "^0.0.4-beta.0",
+    "plasma-contracts": "^0.0.4-beta.1",
     "plasma-utils": "^0.0.4-beta.0",
     "uuid": "^3.3.2",
     "web3": "1.0.0-beta.33",

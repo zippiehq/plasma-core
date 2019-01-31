@@ -81,8 +81,7 @@ class HttpContractProvider extends BaseContractProvider {
   }
 
   async getChallengePeriod () {
-    // return this.contract.methods['CHALLENGE_PERIOD']().call()
-    return 20
+    return this.contract.methods['CHALLENGE_PERIOD']().call()
   }
 
   async getTokenId (tokenAddress) {

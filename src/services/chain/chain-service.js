@@ -107,9 +107,6 @@ class ChainService extends BaseService {
   async addTransaction (transaction, deposits, proof) {
     const tx = new SignedTransaction(transaction)
 
-    // TODO: Really we should also be checking that the transaction is actually relevant to the user.
-    // We can do this by checking that the recipient of some xfer belongs to some account.
-
     this.logger(`Verifying transaction proof for: ${tx.hash}`)
     if (!(await this.services.proof.checkProof(tx, deposits, proof))) {
       throw new Error('Invalid transaction proof')
