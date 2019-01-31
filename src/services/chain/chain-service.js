@@ -184,7 +184,8 @@ class ChainService extends BaseService {
   async getExits (address) {
     const exits = await this.services.rangeManager.getExits(address)
     const currentBlock = await this.services.web3.eth.getBlockNumber()
-    const challengePeriod = await this.services.contract.getChallengePeriod()
+    // const challengePeriod = await this.services.contract.getChallengePeriod()
+    const challengePeriod = 20
     exits.forEach((exit) => {
       exit.completed = (exit.block.addn(challengePeriod)).ltn(currentBlock)
     })

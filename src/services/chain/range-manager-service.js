@@ -201,11 +201,10 @@ class RangeManagerService extends BaseService {
         amount = amount.sub(transferAmount)
       } else {
         // Pick a partial range
-        const partialRange = createRange(
-          transfer.token,
-          transfer.start,
-          transfer.start.add(amount)
-        )
+        const partialRange = {
+          ...transfer,
+          ...{ end: transfer.start.add(amount) }
+        }
         picked.push(partialRange)
         break
       }
