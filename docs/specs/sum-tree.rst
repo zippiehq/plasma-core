@@ -46,11 +46,9 @@ Where ``Sha3`` is the hash function and ``concat`` appends the two values togeth
 
 For example, we might have
 
-.. code-block:: javascript
-
-parent(0xabc…0001, 0xdef…0002) ===
+``parent(0xabc…0001, 0xdef…0002) ===
 hash(0xabc…0001.concat(0xdef…0002)).concat(0001 + 0002) ===
-0x123…0003
+0x123…0003``
 
 Note that the ``parent.hash`` is a commitment to each ``sibling.sum`` as well as the hashes: we hash the full 96 bytes of both.
 
@@ -79,12 +77,10 @@ This is how we get light clients. We call the branch range bounds the ``implicit
 
 .. code-block:: javascript
 
-...
 let leftSum = new BigNum(0)
 let rightSum = new BigNum(0)
 for (let i = 0; i < inclusionProof.length; i++) {
   let encodedSibling = inclusionProof[i]
-  ...
   if (path[i] === '0') {
     computedNode = PlasmaMerkleSumTree.parent(computedNode, sibling)
     rightSum = rightSum.add(sibling.sum)
@@ -93,7 +89,6 @@ for (let i = 0; i < inclusionProof.length; i++) {
     leftSum = leftSum.add(sibling.sum)
   }
 }
-...
 
 as well as in Vyper for the smart contract via ``checkTransferProofAndGetTypedBounds`` in ``PlasmaChain.vy``
 
