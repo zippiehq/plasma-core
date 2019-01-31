@@ -1,5 +1,7 @@
 const BigNum = require('bn.js')
-const _ = require('lodash')
+const utils = require('plasma-utils')
+const models = utils.serialization.models
+const Transfer = models.Transfer
 
 /**
  * Subcomponent of ProofService.
@@ -7,7 +9,9 @@ const _ = require('lodash')
  */
 class SnapshotManager {
   constructor (snapshots = []) {
-    this.snapshots = snapshots
+    this.snapshots = snapshots.map((snapshot) => {
+      return this._castSnapshot(snapshot)
+    })
   }
 
   /**
@@ -45,7 +49,11 @@ class SnapshotManager {
       if (!transfer.end.eq(transfer.implicitEnd)) {
         curr.push({
           ...transfer,
-          ...{ start: transfer.end, end: transfer.implicitEnd, implicit: true }
+          ...{
+            start: transfer.end,
+            end: transfer.implicitEnd,
+            implicit: true
+          }
         })
       }
       // TODO: This is kinda hacky for now, but it works.
@@ -63,18 +71,12 @@ class SnapshotManager {
 
     transfers.forEach((transfer) => {
       const overlapping = this.snapshots.filter((snapshot) => {
-        return (
-          Math.max(snapshot.start, transfer.start) <
-          Math.min(snapshot.end, transfer.end)
-        )
+        return Math.max(snapshot.start, transfer.start) < Math.min(snapshot.end, transfer.end)
       })
+
       overlapping.forEach((snapshot) => {
         if (
           !(transfer.implicit || snapshot.owner === transfer.sender) ||
-          !(
-            transaction.isEmptyBlockTransaction ||
-            snapshot.token.eq(transfer.token)
-          ) ||
           !snapshot.block
             .add(new BigNum(1))
             .eq(new BigNum(transaction.block, 'hex'))
@@ -99,7 +101,6 @@ class SnapshotManager {
           })
         }
         this._insertSnapshot({
-          token: snapshot.token,
           start: Math.max(snapshot.start, transfer.start),
           end: Math.min(snapshot.end, transfer.end),
           block: transaction.block,
@@ -114,18 +115,17 @@ class SnapshotManager {
    * @param {*} transaction A Transaction object.
    * @return {boolean} `true` if the transaction is valid, `false` otherwise.
    */
-  static verifyTransaction (transaction, snapshots) {
-    const snapshotManager = new SnapshotManager(_.cloneDeep(snapshots))
+  verifyTransaction (transaction) {
     return transaction.transfers.every((transfer) => {
+      const casted = this._castTransfer(transfer)
       return (
-        snapshotManager._hasSnapshot({
-          token: transfer.token,
-          start: transfer.start,
-          end: transfer.end,
+        this._hasSnapshot({
+          start: casted.start,
+          end: casted.end,
           block: transaction.block,
-          owner: transfer.recipient
+          owner: casted.recipient
         }) &&
-        snapshotManager._validSnapshot(snapshotManager._castTransfer(transfer))
+        this._validSnapshot(casted)
       )
     })
   }
@@ -138,21 +138,23 @@ class SnapshotManager {
   _hasSnapshot (snapshot) {
     snapshot = this._castSnapshot(snapshot)
     return this.snapshots.some((s) => {
-      return (
-        s.token.eq(snapshot.token) &&
-        s.start.lte(snapshot.start) &&
-        s.end.gte(snapshot.end) &&
-        s.block.eq(snapshot.block) &&
-        s.owner === snapshot.owner
-      )
+      return this._snapshotContains(s, snapshot)
     })
   }
 
   _snapshotEquals (a, b) {
     return (
-      a.token.eq(b.token) &&
       a.start.eq(b.start) &&
       a.end.eq(b.end) &&
+      a.block.eq(b.block) &&
+      a.owner === b.owner
+    )
+  }
+
+  _snapshotContains (a, b) {
+    return (
+      a.start.lte(b.start) &&
+      a.end.gte(b.end) &&
       a.block.eq(b.block) &&
       a.owner === b.owner
     )
@@ -175,7 +177,6 @@ class SnapshotManager {
    */
   _castSnapshot (snapshot) {
     return {
-      token: new BigNum(snapshot.token, 'hex'),
       start: new BigNum(snapshot.start, 'hex'),
       end: new BigNum(snapshot.end, 'hex'),
       block: new BigNum(snapshot.block, 'hex'),
@@ -189,17 +190,20 @@ class SnapshotManager {
    * @return A Transfer object.
    */
   _castTransfer (transfer) {
-    // TODO: Get rid of this.
+    const serialized = new Transfer(transfer)
+
+    // If there's no implicit bounds, set them to be the actual bounds.
+    // TODO: Get rid of this by changing utils.
     transfer.implicitStart =
       transfer.implicitStart === undefined
-        ? transfer.start
+        ? serialized.typedStart
         : transfer.implicitStart
     transfer.implicitEnd =
-      transfer.implicitEnd === undefined ? transfer.end : transfer.implicitEnd
+      transfer.implicitEnd === undefined ? serialized.typedEnd : transfer.implicitEnd
+
     return {
-      token: new BigNum(transfer.token, 'hex'),
-      start: new BigNum(transfer.start, 'hex'),
-      end: new BigNum(transfer.end, 'hex'),
+      start: new BigNum(serialized.typedStart, 'hex'),
+      end: new BigNum(serialized.typedEnd, 'hex'),
       implicitStart: new BigNum(transfer.implicitStart, 'hex'),
       implicitEnd: new BigNum(transfer.implicitEnd, 'hex'),
       sender: transfer.sender,
@@ -246,8 +250,7 @@ class SnapshotManager {
       merged.forEach((s, i) => {
         if (
           !s.block.eq(snapshot.block) ||
-          s.owner !== snapshot.owner ||
-          !s.token.eq(snapshot.token)
+          s.owner !== snapshot.owner
         ) {
           return
         }
@@ -272,6 +275,16 @@ class SnapshotManager {
     })
 
     return merged
+  }
+
+  _equals (snapshots) {
+    for (let i = 0; i < snapshots.length; i++) {
+      let snapshot = this._castSnapshot(snapshots[i])
+      if (!this._snapshotEquals(this.snapshots[i], snapshot)) {
+        return false
+      }
+    }
+    return true
   }
 }
 

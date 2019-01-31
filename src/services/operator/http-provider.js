@@ -24,6 +24,14 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     })
   }
 
+  async isOnline () {
+    return this._handle('')
+  }
+
+  async getNextBlock () {
+    return parseInt(await this._handle('getBlockNumber'))
+  }
+
   async getEthInfo () {
     return this._handle('getEthInfo')
   }

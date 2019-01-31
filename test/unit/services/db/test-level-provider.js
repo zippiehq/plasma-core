@@ -13,7 +13,7 @@ describe('LevelDBProvider', async () => {
   beforeEach(async () => {
     // Kill and reset the database.
     rimraf.sync(TEST_DB_PATH)
-    db = new LevelDBProvider({ path: TEST_DB_PATH })
+    db = new LevelDBProvider({ dbPath: TEST_DB_PATH })
   })
 
   afterEach(async () => {

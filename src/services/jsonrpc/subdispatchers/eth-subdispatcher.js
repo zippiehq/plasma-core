@@ -19,10 +19,6 @@ class ETHSubdispatcher extends BaseSubdispatcher {
   async deposit (token, amount, owner) {
     return this.app.services.contract.deposit(token, amount, owner)
   }
-
-  async getNextBlock () {
-    return this.app.services.contract.getNextBlock()
-  }
 }
 
 module.exports = ETHSubdispatcher

@@ -14,9 +14,17 @@ class HttpContractProvider extends BaseContractProvider {
       'DepositEvent',
       this._onDeposit.bind(this)
     )
+    this.services.eventWatcher.subscribe(
+      'SubmitBlockEvent',
+      this._onBlockSubmitted.bind(this)
+    )
 
-    const ethInfo = await this.services.operator.getEthInfo()
-    this.contract.options.address = ethInfo.plasmaChainAddress
+    // TODO: Remove this because we should really be getting
+    // the address from the registry.
+    if (this.services.operator.getEthInfo) {
+      const ethInfo = await this.services.operator.getEthInfo()
+      this.contract.options.address = ethInfo.plasmaChainAddress
+    }
   }
 
   async stop () {
@@ -41,9 +49,18 @@ class HttpContractProvider extends BaseContractProvider {
     return this.contract && this.address
   }
 
+  async checkAccountUnlocked (address) {
+    if (this.services.wallet.addAccountToWallet) {
+      await this.services.wallet.addAccountToWallet(address)
+    }
+  }
+
   async listToken (tokenAddress) {
+    const operator = await this.getOperator()
+    await this.checkAccountUnlocked(operator)
+
     return this.contract.methods.listToken(tokenAddress, 0).send({
-      from: await this.getOperator(),
+      from: operator,
       gas: 6000000 // TODO: How much should this be?
     })
   }
@@ -56,16 +73,17 @@ class HttpContractProvider extends BaseContractProvider {
     if (!this.hasAddress()) {
       throw new Error('Plasma chain contract address has not yet been set.')
     }
+    await this.checkAccountUnlocked(owner)
 
     amount = new BigNum(amount, 'hex')
     if (token.toString() === '0') {
-      return this.depositETH(amount, owner)
+      return this._depositETH(amount, owner)
     } else {
-      return this.depositERC20(token, amount, owner)
+      return this._depositERC20(token, amount, owner)
     }
   }
 
-  async depositETH (amount, owner) {
+  async _depositETH (amount, owner) {
     return this.contract.methods.depositETH().send({
       from: owner,
       value: amount,
@@ -73,7 +91,7 @@ class HttpContractProvider extends BaseContractProvider {
     })
   }
 
-  async depositERC20 (token, amount, owner) {
+  async _depositERC20 (token, amount, owner) {
     const tokenAddress = await this.getTokenAddress(token)
     const tokenContract = new this.web3.eth.Contract(
       erc20Compiled.abi,
@@ -99,8 +117,10 @@ class HttpContractProvider extends BaseContractProvider {
 
   // TODO: Rewrite when we add generic signature support.
   async submitBlock (hash) {
+    const operator = await this.getOperator()
+    await this.checkAccountUnlocked(operator)
     return this.contract.methods.submitBlock(hash).send({
-      from: await this.getOperator()
+      from: operator
     })
   }
 
@@ -155,6 +175,14 @@ class HttpContractProvider extends BaseContractProvider {
     }
   }
 
+  _castBlockSubmittedEvent (event) {
+    const values = event.returnValues
+    return {
+      number: new BigNum(values.blockNumber, 10),
+      hash: values.submittedHash
+    }
+  }
+
   _onDeposit (event) {
     const deposit = this._castDepositEvent(event)
     const amount = deposit.end.sub(deposit.start).toString()
@@ -164,6 +192,11 @@ class HttpContractProvider extends BaseContractProvider {
       }.`
     )
     this.emitContractEvent('Deposit', deposit)
+  }
+
+  _onBlockSubmitted (event) {
+    const block = this._castBlockSubmittedEvent(event)
+    this.emitContractEvent('BlockSubmitted', block)
   }
 }
 

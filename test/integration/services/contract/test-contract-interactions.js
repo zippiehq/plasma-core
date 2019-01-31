@@ -31,23 +31,59 @@ const initSerializer = async (web3, operator) => {
   return deployed.options.address
 }
 
+const getCurrentChainSnapshot = async (web3) => {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send({
+      jsonrpc: '2.0',
+      method: 'evm_snapshot',
+      id: new Date().getTime()
+    }, (err, result) => {
+      if (err) {
+        reject(err)
+      }
+      resolve(result)
+    })
+  })
+}
+
+const revertToChainSnapshot = async (web3, snapshot) => {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send({
+      jsonrpc: '2.0',
+      method: 'evm_revert',
+      id: new Date().getTime(),
+      params: [snapshot.result],
+      external: true
+    }, (err, result) => {
+      if (err) {
+        reject(err)
+      }
+      resolve(result)
+    })
+  })
+}
+
 describe('Contract Interactions', () => {
   let contract
   let operator
   let watcher
+  let web3
+  let initialSnapshot
 
   before(async () => {
     // Reset and start Ethereum.
     await app.startEth()
     await app.reset()
 
-    // Pick an account to be the operator.
-    operator = (await app.services.web3.eth.getAccounts())[0]
+    web3 = app.services.web3
 
-    const serializer = await initSerializer(app.services.web3, operator)
+    // Pick an account to be the operator.
+    operator = (await web3.eth.getAccounts())[0]
+
+    const serializer = await initSerializer(web3, operator)
 
     contract = new HttpContractProvider({ app: app })
-    watcher = new EventWatcherService({ app: app, finalityDepth: 0 })
+    watcher = new EventWatcherService({ app: app, finalityDepth: 0, eventPollInterval: 100 })
     app.services.contract = contract
     contract.initContract()
 
@@ -64,6 +100,8 @@ describe('Contract Interactions', () => {
       from: operator,
       gas: 7000000
     })
+
+    initialSnapshot = await getCurrentChainSnapshot(web3)
 
     await contract.start()
     await watcher.start()
@@ -102,6 +140,9 @@ describe('Contract Interactions', () => {
 
   describe('EventWatcherService', async () => {
     it('should detect a new deposit', async () => {
+      // Revert to the initial snapshot.
+      await revertToChainSnapshot(web3, initialSnapshot)
+
       let fake = sinon.fake()
       watcher.subscribe('DepositEvent', (event) => {
         fake({

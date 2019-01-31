@@ -15,6 +15,10 @@ class WalletSubdispatcher extends BaseSubdispatcher {
   async sign (address, data) {
     return this.app.services.wallet.sign(address, data)
   }
+
+  async createAccount () {
+    return this.app.services.wallet.createAccount()
+  }
 }
 
 module.exports = WalletSubdispatcher

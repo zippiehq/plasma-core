@@ -5,13 +5,16 @@ const SignedTransaction = utils.serialization.models.SignedTransaction
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 
+const defaultOptions = {
+  transactionPollInterval: 15000
+}
+
 /**
  * Handles automatically synchronizing latest history proofs.
  */
 class SyncService extends BaseService {
   constructor (options) {
-    super(options)
-    this.pollInterval = 100 // TODO: Fix this so it's dependent on config.
+    super(options, defaultOptions)
   }
 
   get name () {
@@ -78,7 +81,11 @@ class SyncService extends BaseService {
     }
 
     for (let encoded of pending) {
-      await this.addTransaction(encoded)
+      try {
+        await this.addTransaction(encoded)
+      } catch (err) {
+        console.log(err)
+      }
     }
 
     await this.services.db.set(`sync:block`, currentBlock)
@@ -117,6 +124,10 @@ class SyncService extends BaseService {
     // TODO: Where should address filtering be done?
     // Probably wherever events are originally watched to reduce total events pulled.
     await this.services.chain.addDeposit(event)
+  }
+
+  async _onBlockSubmitted (event) {
+    await this.services.chain.addBlockHeader(event.block, event.hash)
   }
 }
 

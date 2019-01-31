@@ -2,12 +2,14 @@ const utils = require('plasma-utils')
 const BaseService = require('./base-service')
 
 const defaultOptions = {
-  finalityDepth: 12
+  finalityDepth: 12,
+  eventPollInterval: 15000
 }
 
 class EventWatcher extends BaseService {
   constructor (options) {
     super(options, defaultOptions)
+
     this.events = {}
     this.subscriptions = {}
     this.watching = false
@@ -54,7 +56,7 @@ class EventWatcher extends BaseService {
     try {
       await this._checkEvents()
     } finally {
-      await utils.utils.sleep(100)
+      await utils.utils.sleep(this.options.eventPollInterval)
       this._pollEvents()
     }
   }

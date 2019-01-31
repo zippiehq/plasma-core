@@ -22,9 +22,17 @@ class ProofSerivce extends BaseService {
    * @return {boolean} `true` if the transaction is valid.
    */
   async checkProof (transaction, deposits, proof) {
-    // TODO: Maybe deposits should just be a special case of proof element?
-    // Could be something like a single transfer transaction where sender is 0x0.
     const snapshotManager = new SnapshotManager()
+
+    // TODO: Fix utils so we don't need to do this.
+    transaction.signatures = transaction.signatures.map((signature) => {
+      return utils.utils.stringToSignature(signature)
+    })
+    transaction = new SignedTransaction(transaction)
+
+    if (!transaction.checkSigs()) {
+      throw new Error('Invalid transaction signatures')
+    }
 
     // Apply all of the deposits.
     for (let deposit of deposits) {
@@ -42,34 +50,11 @@ class ProofSerivce extends BaseService {
       snapshotManager.applyTransaction(element.transaction)
     }
 
-    // Apply the transaction itself and check that the transfers are valid.
-    if (
-      !(await this.checkTransaction(transaction, snapshotManager.snapshots))
-    ) {
+    if (!(snapshotManager.verifyTransaction(transaction))) {
       throw new Error('Invalid state transition')
     }
 
     return true
-  }
-
-  /**
-   * Checks that an individual transaction is valid given a set of snapshots.
-   * @param {SignedTransaction} transaction A SignedTransaction object.
-   * @param {*} snapshots A set of validated snapshots.
-   * @return {boolean} `true` if the transaction is valid, `false` otherwise.
-   */
-  async checkTransaction (transaction, snapshots) {
-    // TODO: Fix utils so we don't need to do this.
-    transaction.signatures = transaction.signatures.map((signature) => {
-      return utils.utils.stringToSignature(signature)
-    })
-    const serializedTx = new SignedTransaction(transaction)
-
-    const validTransition = SnapshotManager.verifyTransaction(
-      transaction,
-      snapshots
-    )
-    return validTransition && serializedTx.checkSigs()
   }
 
   /**
@@ -97,7 +82,11 @@ class ProofSerivce extends BaseService {
       transferProofs: proof
     })
 
-    let root = await this.services.contract.getBlock(transaction.block)
+    let root = await this.services.chain.getBlockHeader(transaction.block)
+    if (root === null) {
+      root = await this.services.contract.getBlock(transaction.block)
+      await this.services.chain.addBlockHeader(transaction.block, root)
+    }
 
     // If the root is zero, then this block was empty so insert a fake transfer.
     // TODO: There's probably a cleaner way to do this but it works for now.
