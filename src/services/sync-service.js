@@ -85,11 +85,10 @@ class SyncService extends BaseService {
 
     // Add any previously failed transactions to try again.
     const prevFailed = await this.services.db.get(`sync:failed`, [])
-    for (let tx of prevFailed) {
-      if (!this.pending.includes(tx)) {
-        this.pending.push(tx)
-      }
-    }
+    this.pending = this.pending.concat(prevFailed)
+
+    // Remove any duplicates
+    this.pending =  [...new Set(this.pending)]
 
     let failed = []
     for (let i = 0; i < this.pending.length; i++) {
@@ -124,13 +123,15 @@ class SyncService extends BaseService {
 
     this.logger(`Detected new transaction: ${tx.hash}`)
     this.logger(`Attemping to pull information for transaction: ${tx.hash}`)
-    const {
-      transaction,
-      deposits,
-      proof
-    } = await this.services.operator.getTransaction(tx.encoded)
+    let txInfo
+    try {
+      txInfo = await this.services.operator.getTransaction(tx.encoded)
+    } catch (err) {
+      this.logger(`ERROR: Operator failed to return information for transaction: ${tx.hash}`)
+    }
+
     this.logger(`Importing new transaction: ${tx.hash}`)
-    await this.services.chain.addTransaction(transaction, deposits, proof)
+    await this.services.chain.addTransaction(txInfo.transaction, txInfo.deposits, txInfo.proof)
     this.logger(`Successfully imported transaction: ${tx.hash}`)
   }
 
