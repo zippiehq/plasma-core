@@ -7,15 +7,12 @@ chai.use(chaiAsPromised)
 
 describe('Plasma Core', () => {
   const core = new Plasma({
-    logger: {
-      log: () => {
-        return true
-      }
-    }
+    eventPollInterval: 100,
+    transactionPollInterval: 100
   })
 
-  afterEach(() => {
-    core.stop()
+  afterEach(async () => {
+    await core.stop()
   })
 
   it('should run', async () => {

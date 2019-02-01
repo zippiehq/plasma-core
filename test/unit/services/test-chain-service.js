@@ -31,7 +31,7 @@ describe('ChainService', () => {
   })
 
   it('should allow deposits', async () => {
-    const expected = { token: '0x0', start: 0, end: 100 }
+    const expected = { token: '0x0', start: 0, end: 100, block: undefined }
     const deposit = { ...expected, owner: accounts[0] }
     app.services.rangeManager.addRange = sinon.fake()
     await chain.addDeposit(deposit)

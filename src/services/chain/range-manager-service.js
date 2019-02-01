@@ -252,6 +252,7 @@ class RangeManagerService extends BaseService {
   }
 
   async _addTransfers (address, transfers) {
+    transfers = this._castTransfers(transfers)
     let ownedTransfers = await this._getTransfers(address)
     ownedTransfers = ownedTransfers.concat(transfers)
     await this._setTransfers(address, ownedTransfers)
@@ -317,6 +318,7 @@ class RangeManagerService extends BaseService {
   }
 
   async removeTransfers (address, transfers) {
+    transfers = this._castTransfers(transfers)
     transfers = transfers.sort((a, b) => {
       return a.start.sub(b.start)
     })

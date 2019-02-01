@@ -48,7 +48,7 @@ class SyncService extends BaseService {
     try {
       await this._checkPendingTransactions()
     } finally {
-      await utils.utils.sleep(100)
+      await utils.utils.sleep(this.options.transactionPollInterval)
       this._pollPendingTransactions()
     }
   }
@@ -88,7 +88,7 @@ class SyncService extends BaseService {
     this.pending = this.pending.concat(prevFailed)
 
     // Remove any duplicates
-    this.pending =  [...new Set(this.pending)]
+    this.pending = [...new Set(this.pending)]
 
     let failed = []
     for (let i = 0; i < this.pending.length; i++) {

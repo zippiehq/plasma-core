@@ -265,6 +265,11 @@ class ChainService extends BaseService {
   }
 
   async addExitableEnd (token, end) {
+    // TODO: Casting like this all over the place is bad practice.
+    // Instead, we should force things to be casted already.
+    token = new BigNum(token, 'hex')
+    end = new BigNum(end, 'hex')
+
     const key = this._getTypedValue(token, end)
     await this.services.db.set(`exitable:${key}`, end.toString('hex'))
     this.logger(`Added exitable end to database: ${token}:${end}`)

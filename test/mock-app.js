@@ -24,7 +24,9 @@ const options = {
   logger: {
     log: () => { return true }
   },
-  finalityDepth: 0
+  finalityDepth: 0,
+  eventPollInterval: 100,
+  transactionPollInterval: 100
 }
 
 let core = new PlasmaCore(options)
