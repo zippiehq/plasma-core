@@ -128,6 +128,7 @@ class SyncService extends BaseService {
       txInfo = await this.services.operator.getTransaction(tx.encoded)
     } catch (err) {
       this.logger(`ERROR: Operator failed to return information for transaction: ${tx.hash}`)
+      throw err
     }
 
     this.logger(`Importing new transaction: ${tx.hash}`)
