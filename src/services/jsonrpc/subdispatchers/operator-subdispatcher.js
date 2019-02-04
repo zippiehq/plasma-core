@@ -8,16 +8,13 @@ class OperatorSubdispatcher extends BaseSubdispatcher {
     return 'pg_'
   }
 
-  async submitBlock () {
-    return this.app.services.operator.submitBlock()
-  }
-
-  async getEthInfo () {
-    return this.app.services.operator.getEthInfo()
-  }
-
-  async getNextBlock () {
-    return this.app.services.operator.getNextBlock()
+  get methods () {
+    const operator = this.app.services.operator
+    return {
+      submitBlock: operator.submitBlock.bind(operator),
+      getEthInfo: operator.getEthInfo.bind(operator),
+      getNextBlock: operator.getNextBlock.bind(operator)
+    }
   }
 }
 

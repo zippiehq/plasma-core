@@ -8,16 +8,13 @@ class WalletSubdispatcher extends BaseSubdispatcher {
     return 'pg_'
   }
 
-  async getAccounts () {
-    return this.app.services.wallet.getAccounts()
-  }
-
-  async sign (address, data) {
-    return this.app.services.wallet.sign(address, data)
-  }
-
-  async createAccount () {
-    return this.app.services.wallet.createAccount()
+  get methods () {
+    const wallet = this.app.services.wallet
+    return {
+      getAccounts: wallet.getAccounts.bind(wallet),
+      sign: wallet.sign.bind(wallet),
+      createAccount: wallet.createAccount.bind(wallet)
+    }
   }
 }
 

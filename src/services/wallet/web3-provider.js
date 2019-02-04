@@ -16,6 +16,11 @@ class Web3WalletProvider extends BaseWalletProvider {
       ...{ signature: signature }
     }
   }
+
+  async createAccount () {
+    const account = this.services.web3.eth.accounts.create()
+    return this.services.web3.eth.accounts.wallet.add(account)
+  }
 }
 
 module.exports = Web3WalletProvider

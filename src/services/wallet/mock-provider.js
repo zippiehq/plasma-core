@@ -10,7 +10,9 @@ class MockWalletProvider extends BaseWalletProvider {
   }
 
   async getAccounts () {
-    return this.addresses
+    return this.accounts.map((account) => {
+      return account.address
+    })
   }
 
   async sign (address, data) {
@@ -23,6 +25,11 @@ class MockWalletProvider extends BaseWalletProvider {
       r: signature.r.slice(2),
       s: signature.s.slice(2)
     }
+  }
+
+  async createAccount () {
+    const account = this.services.web3.eth.accounts.create()
+    this.accounts.push(account)
   }
 
   /**
@@ -48,9 +55,6 @@ class MockWalletProvider extends BaseWalletProvider {
   _initAccounts () {
     this.accounts = Array.from({ length: 10 }, () => {
       return this.services.web3.eth.accounts.create()
-    })
-    this.addresses = this.accounts.map((account) => {
-      return account.address
     })
   }
 }
