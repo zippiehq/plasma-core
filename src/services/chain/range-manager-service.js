@@ -3,12 +3,11 @@ const BigNum = require('bn.js')
 
 const BaseService = require('../base-service')
 
-// TODO: Maybe make these functions into static methods?
 /**
  * Validates a range.
  * - Range start should be >= 0
  * - Range start should be < range end
- * @param {*} range A range object.
+ * @param {Range} range A range object.
  * @return {boolean} `true` if the range is valid, `false` otherwise.
  */
 function isValidRange (range) {
@@ -18,9 +17,9 @@ function isValidRange (range) {
 
 /**
  * Orders the provided ranges, collapsing them if possible
- * @param {*} rangeA A range object.
- * @param {*} rangeB A range object.
- * @return {array} array of ordered ranges
+ * @param {Range} rangeA A range object.
+ * @param {Range} rangeB A range object.
+ * @return {Array<Range>} array of ordered ranges
  */
 function orderRanges (rangeA, rangeB) {
   // No curRange and new range comes before current range
@@ -43,8 +42,8 @@ function orderRanges (rangeA, rangeB) {
 
 /**
  * Checks is an array of ranges contains another range
- * @param {array} ranges An array of ranges to check.
- * @param {*} range A range object.
+ * @param {Array<Range>} ranges An array of ranges to check.
+ * @param {Range} range A range object.
  * @return {boolean} `true` if the user owns the range, `false` otherwise.
  */
 function containsRange (ranges, range) {
@@ -59,9 +58,9 @@ function containsRange (ranges, range) {
 
 /**
  * Creates a range object
- * @param {String} token Tokens address.
- * @param {Number} start Range start.
- * @param {Number} end Range end.
+ * @param {string} token Tokens address.
+ * @param {number} start Range start.
+ * @param {number} end Range end.
  * @return {Range} Range object
  */
 function createRange (token, start, end) {
@@ -88,7 +87,7 @@ class RangeManagerService extends BaseService {
   /**
    * Returns the list of ranges owned by an address.
    * @param {string} address An address.
-   * @return {Array} List of owned ranges.
+   * @return {Array<Range>} List of owned ranges.
    */
   async getOwnedRanges (address) {
     return this._getRanges(address)
@@ -116,7 +115,7 @@ class RangeManagerService extends BaseService {
    * i.e. if a user owns range [0, 100] and this method is
    * called with [10, 30], it will return true.
    * @param {string} address An address.
-   * @param {*} range A range object.
+   * @param {Range} range A range object.
    * @return {boolean} `true` if the user owns the range, `false` otherwise.
    */
   async ownsRange (address, range) {
@@ -131,7 +130,7 @@ class RangeManagerService extends BaseService {
    * @param {string} address An address.
    * @param {string} token A tokens address.
    * @param {number} amount Number of tokens being sent.
-   * @return {*} List of ranges to use for the transaction.
+   * @return {Array<Range>} List of ranges to use for the transaction.
    */
   async pickRanges (address, token, amount) {
     token = new BigNum(token, 'hex')

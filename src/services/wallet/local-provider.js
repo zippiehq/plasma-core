@@ -28,8 +28,8 @@ class LocalWalletProvider extends BaseWalletProvider {
     return account.sign(data)
   }
 
-  // TODO: Support encrypted accounts.
   async createAccount () {
+    // TODO: Support encrypted accounts.
     const account = this.services.web3.eth.accounts.create()
 
     const keystorePath = path.join(this.options.keystoreDir, account.address)
@@ -38,6 +38,11 @@ class LocalWalletProvider extends BaseWalletProvider {
     return account.address
   }
 
+  /**
+   * Adds an account to the web3 wallet so that it can send contract transactions directly.
+   * See https://bit.ly/2MPAbRd for more information.
+   * @param {string} address Address of the account to add to wallet.
+   */
   async addAccountToWallet (address) {
     const accounts = await this.services.web3.eth.accounts.wallet
     if (address in accounts) return
@@ -46,6 +51,11 @@ class LocalWalletProvider extends BaseWalletProvider {
     await this.services.web3.eth.accounts.wallet.add(account.privateKey)
   }
 
+  /**
+   * Returns an account object for a given address.
+   * @param {string} address Adress of the account.
+   * @return {*} A Web3 account object.
+   */
   _getAccount (address) {
     const keystorePath = path.join(this.options.keystoreDir, address)
     const keystore = JSON.parse(fs.readFileSync(keystorePath))
