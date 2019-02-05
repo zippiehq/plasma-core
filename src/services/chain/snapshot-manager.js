@@ -95,21 +95,6 @@ class Snapshot {
       }
     })
   }
-
-  /**
-   * Creates a Snapshot from an Exit.
-   * @param {Exit} exit An Exit object.
-   * @return {Snapshot} The snapshot object.
-   */
-  static fromExit (exit) {
-    return Snapshot.fromTransfer({
-      ...exit,
-      ...{
-        sender: exit.exiter,
-        recipient: NULL_ADDRESS
-      }
-    })
-  }
 }
 
 class UntypedSnapshot {
@@ -126,7 +111,7 @@ class UntypedSnapshot {
    * @param {Snapshot} snapshot A Snapshot object.
    * @return {UntypedSnapshot} The UntypedSnapshot object.
    */
-  fromSnapshot (snapshot) {
+  static fromSnapshot (snapshot) {
     return new UntypedSnapshot({
       ...snapshot,
       ...{
@@ -154,7 +139,7 @@ class Range {
    * @param {Snapshot} snapshot A Snapshot object.
    * @return {Range} The range object.
    */
-  fromSnapshot (snapshot) {
+  static fromSnapshot (snapshot) {
     const untyped = UntypedSnapshot.fromSnapshot(snapshot)
     return new Range(untyped)
   }
@@ -181,15 +166,34 @@ class TransferComponent {
    */
   static fromExit (exit) {
     const serialized = new Transfer({
-      sender: exit.exiter,
-      recipient: NULL_ADDRESS
+      ...exit,
+      ...{
+        sender: exit.exiter,
+        recipient: NULL_ADDRESS
+      }
     })
 
     return new TransferComponent({
       ...serialized,
       ...{
+        block: exit.block,
         start: serialized.typedStart,
         end: serialized.typedEnd,
+        special: true
+      }
+    })
+  }
+
+  /**
+   * Creates a TransferComponent from a Snapshot.
+   * @param {Snapshot} snapshot A Snapshot object.
+   * @return {TransferComponent} The component object.
+   */
+  static fromSnapshot (snapshot) {
+    return new TransferComponent({
+      ...snapshot,
+      ...{
+        recipient: snapshot.owner,
         special: true
       }
     })
@@ -223,6 +227,17 @@ class SnapshotManager {
       return Range.fromSnapshot(snapshot)
     })
     return this._mergeRanges(ranges)
+  }
+
+  /**
+   * Merges the state of another SnapshotManager into this one.
+   * @param {SnapshotManager} other Other manager.
+   */
+  merge (other) {
+    for (const snapshot in other.snapshots) {
+      const component = TransferComponent.fromSnapshot(snapshot)
+      this._applyTransferComponent(component)
+    }
   }
 
   /**
@@ -304,6 +319,40 @@ class SnapshotManager {
   applyExit (exit) {
     const component = TransferComponent.fromExit(exit)
     this._applyTransferComponent(component)
+  }
+
+  /**
+   * Applies a sent transaction to the local state.
+   * This is a special case because we don't actually care
+   * if the state transition is valid when sending transactions.
+   * @param {Transaction} transaction Transaction to apply.
+   */
+  applySentTransaction (transaction) {
+    const components = transaction.transfers.map((transfer) => {
+      return new TransferComponent({
+        ...transfer,
+        ...{
+          block: transaction.block,
+          special: true
+        }
+      })
+    })
+
+    for (const component of components) {
+      this._applyTransferComponent(component)
+    }
+  }
+
+  /**
+   * Applies an empty block.
+   * @param {number} block The block number.
+   */
+  applyEmptyBlock (block) {
+    for (let snapshot of this.snapshots) {
+      if (snapshot.block.addn(1).eq(block)) {
+        snapshot.block = snapshot.block.addn(1)
+      }
+    }
   }
 
   /**
@@ -442,7 +491,8 @@ class SnapshotManager {
    */
   _mergeRanges (ranges) {
     const orderRanges = (rangeA, rangeB) => {
-      if (rangeA.end.lt(rangeB.start)) {
+      if (rangeA.owner !== rangeB.owner ||
+          rangeA.end.lt(rangeB.start)) {
         return [rangeA, rangeB]
       } else if (rangeA.start.eq(rangeB.end)) {
         rangeB.end = rangeA.end
@@ -455,14 +505,18 @@ class SnapshotManager {
       }
     }
 
-    // Sort by start.
+    // Sort by address and then by start.
     ranges.sort((a, b) => {
-      return a.start.sub(b.start)
+      if (a.owner !== b.owner) {
+        return a.owner - b.owner
+      } else {
+        return a.start.sub(b.start)
+      }
     })
 
     return ranges.reduce((merged, range) => {
       if (merged.length === 0) return [range]
-      const lastRange = ranges.pop()
+      const lastRange = merged.pop()
       return merged.concat(orderRanges(lastRange, range))
     }, [])
   }
@@ -485,8 +539,8 @@ class SnapshotManager {
    * @return {boolean} `true` if the transition is valid, `false` otherwise.
    */
   _validStateTransition (snapshot, transfer) {
-    const specialCase = transfer.special
-    const validSender = (transfer.implicit || snapshot.owner === transfer.sender)
+    const specialCase = transfer.special && snapshot.block.lt(transfer.block)
+    const validSender = transfer.implicit || snapshot.owner === transfer.sender
     const validBlock = snapshot.block.addn(1).eq(transfer.block)
     return specialCase || (validSender && validBlock)
   }

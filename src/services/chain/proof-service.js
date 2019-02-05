@@ -4,7 +4,6 @@ const utils = require('plasma-utils')
 const models = utils.serialization.models
 const SignedTransaction = models.SignedTransaction
 const TransactionProof = models.TransactionProof
-const Transfer = models.Transfer
 
 /**
  * Service that handles checking history proofs.
@@ -16,14 +15,12 @@ class ProofSerivce extends BaseService {
 
   /**
    * Checks a transaction proof.
-   * @param {*} transaction A Transaction object.
-   * @param {Array} deposits A list of deposits.
-   * @param {Array} proof A Proof object.
+   * @param {Transaction} transaction A Transaction object.
+   * @param {Array<Deposit>} deposits A list of deposits.
+   * @param {Proof} proof A Proof object.
    * @return {boolean} `true` if the transaction is valid.
    */
   async checkProof (transaction, deposits, proof) {
-    const snapshotManager = new SnapshotManager()
-
     // TODO: Fix utils so we don't need to do this.
     transaction.signatures = transaction.signatures.map((signature) => {
       return utils.utils.stringToSignature(signature)
@@ -34,27 +31,46 @@ class ProofSerivce extends BaseService {
       throw new Error('Invalid transaction signatures')
     }
 
-    // Apply all of the deposits.
-    for (let deposit of deposits) {
+    for (const deposit of deposits) {
       if (!(await this._depositValid(deposit))) {
         throw new Error('Invalid deposit')
       }
-      snapshotManager.applyDeposit(deposit)
     }
 
-    // Apply each element of the proof.
-    for (let element of proof) {
+    for (const element of proof) {
       if (!(await this._transactionValid(element.transaction, element.proof))) {
         throw new Error('Invalid transaction')
       }
-      snapshotManager.applyTransaction(element.transaction)
     }
 
-    if (!(snapshotManager.verifyTransaction(transaction))) {
+    const snapshotManager = new SnapshotManager()
+    this.applyProof(snapshotManager, deposits, proof)
+    if (!(snapshotManager.validateTransaction(transaction))) {
       throw new Error('Invalid state transition')
     }
 
     return true
+  }
+
+  /**
+   * Applies a transaction proof to a SnapshotManager.
+   * @param {SnapshotManager} snapshotManager SnapshotManger to apply to.
+   * @param {Array<Deposit>} deposits Deposits to apply.
+   * @param {Proof} proof Proof to apply.
+   */
+  applyProof (snapshotManager, deposits, proof) {
+    for (const deposit of deposits) {
+      snapshotManager.applyDeposit(deposit)
+    }
+
+    for (const element of proof) {
+      const tx = element.transaction
+      if (tx.isEmptyBlockTransaction) {
+        snapshotManager.applyEmptyBlock(tx.block)
+      } else {
+        snapshotManager.applyTransaction(element.transaction)
+      }
+    }
   }
 
   /**
@@ -92,16 +108,6 @@ class ProofSerivce extends BaseService {
     // TODO: There's probably a cleaner way to do this but it works for now.
     if (root === '0x0000000000000000000000000000000000000000000000000000000000000000') {
       transaction.isEmptyBlockTransaction = true
-      transaction.transfers = [
-        new Transfer({
-          sender: '0x0000000000000000000000000000000000000000',
-          recipient: '0x0000000000000000000000000000000000000000',
-          start: 0,
-          implicitStart: 0,
-          end: 'ffffffffffffffffffffffff',
-          implicitEnd: 'ffffffffffffffffffffffff'
-        })
-      ]
       return true
     }
 

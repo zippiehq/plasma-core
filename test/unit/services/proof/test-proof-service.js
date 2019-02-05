@@ -8,7 +8,7 @@ const web3 = new Web3()
 const UnsignedTransaction = utils.serialization.models.UnsignedTransaction
 chai.should()
 
-const ProofService = require('../../../../src/services/proof/proof-service')
+const ProofService = require('../../../../src/services/chain/proof-service')
 const MockContractProvider = require('../../../../src/services/contract/mock-provider')
 
 const app = require('../../../mock-app')

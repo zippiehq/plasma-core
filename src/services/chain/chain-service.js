@@ -5,7 +5,6 @@ const models = utils.serialization.models
 const SignedTransaction = models.SignedTransaction
 
 const BaseService = require('../base-service')
-const TransferManager = require('./transfer-manager')
 const SnapshotManager = require('./snapshot-manager')
 
 /**
@@ -27,8 +26,8 @@ class ChainService extends BaseService {
    * @return {*} A list of tokens and balances.
    */
   async getBalances (address) {
-    const transferManager = await this._getTransferMananger(address)
-    const ranges = transferManager.getOwnedRanges(address)
+    const stateManager = await this.loadState()
+    const ranges = stateManager.getOwnedRanges(address)
 
     let balances = {}
     for (let range of ranges) {
@@ -237,25 +236,25 @@ class ChainService extends BaseService {
 
     this.logger(`Verifying transaction proof for: ${tx.hash}`)
     if (!(await this.services.proof.checkProof(tx, deposits, proof))) {
+      this.logger(`ERROR: Rejecting transaction proof for: ${tx.hash}`)
       throw new Error('Invalid transaction proof')
     }
     this.logger(`Verified transaction proof for: ${tx.hash}`)
 
-    // Add a pointer to this transaction for each recipient.
-    const recipients = tx.transfers.reduce((recipients, transfer) => {
-      if (!recipients.includes(transfer.recipient)) {
-        recipients.push(transfer.recipient)
-      }
-      return recipients
-    }, [])
-    for (let recipient of recipients) {
-      await this._dbArrayPush(`received:${recipient}`, tx.hash)
-    }
+    this.logger(`Adding transaction to database: ${tx.hash}`)
+    // Calculate the new state.
+    const tempManager = new SnapshotManager()
+    this.services.proof.applyProof(tempManager, deposits, proof)
 
+    // Merge and save the new head state.
+    await this.lock.acquire('state', async () => {
+      const stateManager = await this.loadState()
+      stateManager.merge(tempManager)
+      this.saveState(stateManager)
+    })
     // Store the transaction and proof information.
     await this.services.db.set(`transaction:${tx.hash}`, tx.encoded)
     await this.services.db.set(`proof:${tx.hash}`, proof)
-
     this.logger(`Added transaction to database: ${tx.hash}`)
   }
 
@@ -269,25 +268,18 @@ class ChainService extends BaseService {
     // This relies on the revamp of internal storage, not really important for now.
 
     // TODO: Check that the transaction receipt is valid.
+    this.logger(`Sending transaction to operator: ${tx.hash}.`)
     const receipt = await this.services.operator.sendTransaction(tx)
     this.logger(`Sent transaction to operator: ${tx.hash}.`)
 
-    // TODO: Temporary.
-    // Should be removed once operator exposes a way to get sent transactions for a user.
-    // Add a pointer to this transaction for each sender.
-    const senders = tx.transfers.reduce((senders, transfer) => {
-      if (!senders.includes(transfer.sender)) {
-        senders.push(transfer.sender)
-      }
-      return senders
-    }, [])
-    for (let sender of senders) {
-      await this._dbArrayPush(`sent:${sender}`, tx.hash)
-    }
-
-    // TODO: Temporary.
-    // Should be removed once operator exposes a way to get sent transactions for a user.
+    this.logger(`Adding transaction to database: ${tx.hash}`)
+    await this.lock.acquire('state', async () => {
+      const stateManager = await this.loadState()
+      stateManager.applySentTransaction(tx)
+      this.saveState(stateManager)
+    })
     await this.services.db.set(`transactions:${tx.hash}`, tx.encoded)
+    this.logger(`Added transaction to database: ${tx.hash}.`)
 
     return receipt
   }
@@ -312,8 +304,6 @@ class ChainService extends BaseService {
       this.logger(`Skipping adding deposit that has already been exited.`)
     }
 
-    await this._dbArrayPush(`deposits:${deposit.owner}`, deposit)
-
     // Add the deposit to head state.
     await this.lock.acquire('state', async () => {
       const stateManager = await this.loadState()
@@ -333,8 +323,6 @@ class ChainService extends BaseService {
   }
 
   async addExitableEnd (token, end) {
-    // TODO: Casting like this all over the place is bad practice.
-    // Instead, we should force things to be casted already.
     token = new BigNum(token, 'hex')
     end = new BigNum(end, 'hex')
 
