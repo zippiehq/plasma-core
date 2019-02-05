@@ -10,12 +10,17 @@ class Web3Provider extends BaseService {
     super(options, defaultOptions)
   }
 
+  get name () {
+    return 'web3'
+  }
+
   async start () {
     this.started = true
     this.web3 = new Web3(
       new Web3.providers.HttpProvider(this.options.ethereumEndpoint)
     )
-    Object.assign(this, this.web3) // A bit of a hack, maybe there's a nicer way to expose this?
+    // A bit of a hack, maybe there's a nicer way to expose this?
+    Object.assign(this, this.web3)
   }
 
   async stop () {
@@ -25,8 +30,12 @@ class Web3Provider extends BaseService {
     }
   }
 
-  get name () {
-    return 'web3'
+  /**
+   * Whether or not the provider is connected.
+   * @return {boolean} `true` if connected, `false` otherwise.
+   */
+  get connected () {
+    return this.web3.currentProvider.connected
   }
 }
 

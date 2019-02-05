@@ -8,6 +8,10 @@ class OperatorSubdispatcher extends BaseSubdispatcher {
     return 'pg_'
   }
 
+  get dependencies () {
+    return ['operator']
+  }
+
   get methods () {
     const operator = this.app.services.operator
     return {

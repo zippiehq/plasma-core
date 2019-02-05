@@ -16,6 +16,10 @@ class LocalWalletProvider extends BaseWalletProvider {
     }
   }
 
+  get dependencies () {
+    return ['web3']
+  }
+
   async getAccounts () {
     // TODO: Should probably actually read the files instead
     // of just looking at the file names.
@@ -59,7 +63,9 @@ class LocalWalletProvider extends BaseWalletProvider {
   _getAccount (address) {
     const keystorePath = path.join(this.options.keystoreDir, address)
     const keystore = JSON.parse(fs.readFileSync(keystorePath))
-    return this.services.web3.eth.accounts.privateKeyToAccount(keystore.privateKey)
+    return this.services.web3.eth.accounts.privateKeyToAccount(
+      keystore.privateKey
+    )
   }
 }
 

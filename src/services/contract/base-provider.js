@@ -68,15 +68,6 @@ class BaseContractProvider extends BaseService {
       'Classes that extend BaseContractProvider must implement this method'
     )
   }
-
-  /**
-   * Emits a prefixed event.
-   * @param {string} name Name of the event.
-   * @param {*} event Event object.
-   */
-  emitContractEvent (name, event) {
-    this.emit(`event:${name}`, event)
-  }
 }
 
 module.exports = BaseContractProvider

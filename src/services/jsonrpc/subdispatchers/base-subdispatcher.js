@@ -8,15 +8,26 @@ class BaseSubdispatcher {
   }
 
   /**
+   * Returns the list of services this subdispatcher depends on.
+   * @return {Array<string>} List of depdendencies.
+   */
+  get dependencies () {
+    return []
+  }
+
+  /**
    * Returns the JSON-RPC prefix of this subdispatcher.
+   * @return {string} The prefix.
    */
   get prefix () {
     throw new Error(
       'Classes that extend Subdispatcher must implement this method'
     )
   }
+
   /**
    * Returns an object with pointers to methods.
+   * @return {*} Names and pointers to handlers.
    */
   get methods () {
     throw new Error(
@@ -26,6 +37,7 @@ class BaseSubdispatcher {
 
   /**
    * Returns all JSON-RPC methods of this subdispatcher.
+   * @return {*} Prefixed names and pointers to handlers.
    */
   getMethods () {
     let methods = {}

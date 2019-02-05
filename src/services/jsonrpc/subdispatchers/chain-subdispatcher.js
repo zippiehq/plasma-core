@@ -8,17 +8,22 @@ class ChainSubdispatcher extends BaseSubdispatcher {
     return 'pg_'
   }
 
+  get dependencies () {
+    return ['chain', 'chaindb']
+  }
+
   get methods () {
     const chain = this.app.services.chain
+    const chaindb = this.app.services.chaindb
     return {
-      getBalances: chain.getBalances.bind(chain),
-      getBlockHeader: chain.getBlockHeader.bind(chain),
-      getTransaction: chain.getTransaction.bind(chain),
+      getBlockHeader: chaindb.getBlockHeader.bind(chaindb),
+      getTransaction: chaindb.getTransaction.bind(chaindb),
       sendTransaction: chain.sendTransaction.bind(chain),
       pickRanges: chain.pickRanges.bind(chain),
       startExit: chain.startExit.bind(chain),
       finalizeExits: chain.finalizeExits.bind(chain),
-      getExits: chain.getExitsWithStatus.bind(chain)
+      getExits: chain.getExitsWithStatus.bind(chain),
+      getBalances: chain.getBalances.bind(chain)
     }
   }
 }

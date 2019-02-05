@@ -8,10 +8,13 @@ class GuardService extends BaseService {
     return 'guard'
   }
 
+  get dependencies () {
+    return ['eventHandler']
+  }
+
   async start () {
     this.started = true
-    // TODO: Figure out a better way to handle starting and stopping listeners.
-    this.services.contract.on(
+    this.services.eventHandler.on(
       'event:ExitStarted',
       this._onExitStarted.bind(this)
     )
@@ -22,8 +25,8 @@ class GuardService extends BaseService {
   }
 
   /**
-   * Handles an ExitStarted event and starts a challenge if the exit is invalid.
-   * @param {*} event ExitStarted event to be handled.
+   * Handles an ExitStartedEvent event and starts a challenge if the exit is invalid.
+   * @param {ExitStartedEvent} event ExitStartedEvent event to be handled.
    */
   _onExitStarted (event) {
     // TODO: Check if the token being exited belongs to the user.

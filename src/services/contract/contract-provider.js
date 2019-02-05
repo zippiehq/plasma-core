@@ -4,36 +4,15 @@ const compiledContracts = require('plasma-contracts')
 const plasmaChainCompiled = compiledContracts.plasmaChainCompiled
 const erc20Compiled = compiledContracts.erc20Compiled
 
-// TODO: Rename this.
-class HttpContractProvider extends BaseContractProvider {
+class ContractProvider extends BaseContractProvider {
+  get dependencies () {
+    return ['web3', 'operator', 'wallet']
+  }
+
   async start () {
     this.started = true
     this.initContract()
     this.initContractAddress()
-
-    // Subscribe to events.
-    // TODO: Rethink where event watching happens.
-    this.services.eventWatcher.subscribe(
-      'DepositEvent',
-      this._onDeposit.bind(this)
-    )
-    this.services.eventWatcher.subscribe(
-      'SubmitBlockEvent',
-      this._onBlockSubmitted.bind(this)
-    )
-    this.services.eventWatcher.subscribe(
-      'BeginExitEvent',
-      this._onExitStarted.bind(this)
-    )
-    this.services.eventWatcher.subscribe(
-      'FinalizeExitEvent',
-      this._onExitFinalized.bind(this)
-    )
-  }
-
-  async stop () {
-    this.started = false
-    this.removeAllListeners()
   }
 
   get address () {
@@ -42,6 +21,10 @@ class HttpContractProvider extends BaseContractProvider {
 
   get web3 () {
     return this.services.web3
+  }
+
+  get hasAddress () {
+    return this.contract && this.address
   }
 
   initContract () {
@@ -58,10 +41,6 @@ class HttpContractProvider extends BaseContractProvider {
       this.contract.options.address = ethInfo.plasmaChainAddress
     }
     this.logger(`Contract address set: ${this.address}`)
-  }
-
-  hasAddress () {
-    return this.contract && this.address
   }
 
   async checkAccountUnlocked (address) {
@@ -89,7 +68,7 @@ class HttpContractProvider extends BaseContractProvider {
   }
 
   async deposit (token, amount, owner) {
-    if (!this.hasAddress()) {
+    if (!this.hasAddress) {
       throw new Error('Plasma chain contract address has not yet been set.')
     }
     await this.checkAccountUnlocked(owner)
@@ -194,89 +173,6 @@ class HttpContractProvider extends BaseContractProvider {
   async getOperator () {
     return this.contract.methods.operator().call()
   }
-
-  /**
-   * Casts a DepositEvent to a Deposit.
-   * @param {*} depositEvent A DepositEvent.
-   * @return A Deposit object.
-   */
-  _castDepositEvent (depositEvent) {
-    const values = depositEvent.returnValues
-    return {
-      owner: values.depositer,
-      start: new BigNum(values.untypedStart, 10),
-      end: new BigNum(values.untypedEnd, 10),
-      token: new BigNum(values.tokenType, 10),
-      block: new BigNum(values.plasmaBlockNumber, 10)
-    }
-  }
-
-  _castBlockSubmittedEvent (event) {
-    const values = event.returnValues
-    return {
-      number: new BigNum(values.blockNumber, 10).toNumber(),
-      hash: values.submittedHash
-    }
-  }
-
-  _castExitStartedEvent (event) {
-    const values = event.returnValues
-    return {
-      token: new BigNum(values.token, 10),
-      start: new BigNum(values.untypedStart, 10),
-      end: new BigNum(values.untypedEnd, 10),
-      id: new BigNum(values.exitID, 10),
-      block: new BigNum(event.blockNumber, 10),
-      exiter: values.exiter
-    }
-  }
-
-  _castFinalizeExitEvent (event) {
-    const values = event.returnValues
-    return {
-      token: new BigNum(values.token, 10),
-      start: new BigNum(values.untypedStart, 10),
-      end: new BigNum(values.untypedEnd, 10),
-      id: new BigNum(values.exitID, 10)
-    }
-  }
-
-  _onDeposit (events) {
-    const deposits = events.map(this._castDepositEvent)
-    deposits.forEach((deposit) => {
-      const amount = deposit.end.sub(deposit.start).toString()
-      this.logger(
-        `Detected new deposit of ${amount} [${deposit.token}] for ${
-          deposit.owner
-        }`
-      )
-    })
-    this.emitContractEvent('Deposit', deposits)
-  }
-
-  _onBlockSubmitted (events) {
-    const blocks = events.map(this._castBlockSubmittedEvent)
-    blocks.forEach((block) => {
-      this.logger(`Detected block #${block.number}: ${block.hash}`)
-    })
-    this.emitContractEvent('BlockSubmitted', blocks)
-  }
-
-  _onExitStarted (events) {
-    const exits = events.map(this._castExitStartedEvent)
-    exits.forEach((exit) => {
-      this.logger(`Detected new started exit: ${exit.id}`)
-    })
-    this.emitContractEvent('ExitStarted', exits)
-  }
-
-  _onExitFinalized (events) {
-    const exits = events.map(this._castFinalizeExitEvent)
-    exits.forEach((exit) => {
-      this.logger(`Detected new finalized exit: ${exit.id}`)
-    })
-    this.emitContractEvent('ExitFinalized', exits)
-  }
 }
 
-module.exports = HttpContractProvider
+module.exports = ContractProvider

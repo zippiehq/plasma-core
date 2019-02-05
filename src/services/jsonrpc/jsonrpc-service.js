@@ -37,6 +37,12 @@ class JSONRPCService extends BaseService {
     }
   }
 
+  get dependencies () {
+    return this.subdispatchers.reduce((dependencies, subdispatcher) => {
+      return dependencies.concat(subdispatcher.dependencies)
+    }, [])
+  }
+
   get name () {
     return 'jsonrpc'
   }

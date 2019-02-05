@@ -31,7 +31,7 @@ describe('SyncService', async () => {
   it('should react to new deposits', () => {
     const deposit = { token: '0x0', start: 0, end: 100, owner: '0x123' }
     app.services.chain.addDeposit = sinon.fake()
-    app.services.contract.emit('event:Deposit', [deposit])
+    app.services.eventHandler.emit('event:Deposit', [deposit])
 
     app.services.chain.addDeposit.should.be.calledWith(deposit)
   })

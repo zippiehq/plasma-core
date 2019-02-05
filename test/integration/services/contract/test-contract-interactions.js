@@ -12,7 +12,7 @@ chai.use(chaiAsPromised)
 chai.use(sinonChai)
 
 const services = require('../../../../src/services')
-const HttpContractProvider = services.ContractProviders.HttpContractProvider
+const ContractProvider = services.ContractProviders.ContractProvider
 const app = require('../../../mock-app')
 
 const ETH = 0
@@ -41,15 +41,17 @@ describe('Contract Interactions', () => {
     await app.startEth()
     await app.reset()
 
+    watcher = app.services.eventWatcher
     web3 = app.services.web3
+
+    await watcher.stop()
 
     // Pick an account to be the operator.
     operator = (await web3.eth.getAccounts())[0]
 
     const serializer = await initSerializer(web3, operator)
 
-    contract = new HttpContractProvider({ app: app })
-    watcher = app.services.eventWatcher
+    contract = new ContractProvider({ app: app })
     app.services.contract = contract
     contract.initContract()
 
@@ -77,7 +79,7 @@ describe('Contract Interactions', () => {
     await app.stopEth()
   })
 
-  describe('HttpContractProvider', async () => {
+  describe('ContractProvider', async () => {
     it('should return the current block', async () => {
       const currentBlock = await contract.getCurrentBlock()
       currentBlock.should.equal(0)
@@ -126,7 +128,7 @@ describe('Contract Interactions', () => {
     it('should detect a new block', async () => {
       let fake = sinon.fake()
       watcher.subscribe('SubmitBlockEvent', (events) => {
-        const event = events[0]
+        const event = events[1]
         fake({
           block: event.returnValues.blockNumber,
           hash: event.returnValues.submittedHash

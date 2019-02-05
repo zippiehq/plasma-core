@@ -22,16 +22,9 @@ describe('ChainService', () => {
     await app.stop()
   })
 
-  it('should return the balances of an address', async () => {
-    const balances = await chain.getBalances(accounts[0])
-    balances.should.deep.equal({})
-  })
-
   it('should allow deposits', async () => {
     const expected = { token: '0x0', start: 0, end: 100 }
     const deposit = { ...expected, owner: accounts[0] }
     await chain.addDeposit(deposit)
-    // NOW: Fix this
-    await chain.getBalances()
   })
 })

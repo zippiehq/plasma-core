@@ -1,8 +1,8 @@
 const MockContractProvider = require('./mock-provider')
-const HttpContractProvider = require('./http-provider')
+const ContractProvider = require('./contract-provider')
 
 module.exports = {
   MockContractProvider,
-  HttpContractProvider,
+  ContractProvider,
   DefaultContractProvider: MockContractProvider
 }

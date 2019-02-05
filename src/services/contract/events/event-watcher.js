@@ -1,5 +1,5 @@
 const utils = require('plasma-utils')
-const BaseService = require('./base-service')
+const BaseService = require('../../base-service')
 
 const defaultOptions = {
   finalityDepth: 12,
@@ -9,22 +9,24 @@ const defaultOptions = {
 class EventWatcher extends BaseService {
   constructor (options) {
     super(options, defaultOptions)
-
-    this.events = {}
-    this.subscriptions = {}
-    this.watching = false
   }
 
   get name () {
     return 'eventWatcher'
   }
 
+  get dependencies () {
+    return ['contract', 'web3', 'db']
+  }
+
   async start () {
     this.started = true
+    this._reset()
   }
 
   async stop () {
     this.started = false
+    this._reset()
   }
 
   subscribe (event, listener) {
@@ -49,7 +51,7 @@ class EventWatcher extends BaseService {
   }
 
   async _pollEvents () {
-    if (!(this.started && this.app.services.web3.started)) {
+    if (!this.healthy) {
       return
     }
 
@@ -63,13 +65,19 @@ class EventWatcher extends BaseService {
 
   // TODO: Remove any events that have already been seen.
   async _checkEvents () {
+    if (!this.services.web3.connected) {
+      return
+    }
+
     const block = await this.services.web3.eth.getBlockNumber()
     let lastFinalBlock = block - this.options.finalityDepth
     lastFinalBlock = lastFinalBlock < 0 ? 0 : lastFinalBlock
 
     for (let eventName in this.events) {
-      if (!this.events[eventName].active ||
-          !this.services.contract.hasAddress()) {
+      if (
+        !this.events[eventName].active ||
+        !this.services.contract.hasAddress
+      ) {
         continue
       }
 
@@ -103,6 +111,12 @@ class EventWatcher extends BaseService {
 
       await this.services.db.set(`lastlogged:${eventName}`, lastFinalBlock)
     }
+  }
+
+  _reset () {
+    this.watching = false
+    this.subscriptions = {}
+    this.events = {}
   }
 }
 

@@ -1,25 +1,12 @@
 const services = require('./services/index')
 const debug = require('debug')
 
-const DefaultDBProvider = services.DBProviders.DefaultDBProvider
-const DefaultOperatorProvider =
-  services.OperatorProviders.DefaultOperatorProvider
-const DefaultWalletProvider = services.WalletProviders.DefaultWalletProvider
-const DefaultContractProvider =
-  services.ContractProviders.DefaultContractProvider
-const JSONRPCService = services.JSONRPCService
-const ChainService = services.ChainService
-const SyncService = services.SyncService
-const ProofService = services.ProofService
-const Web3Provider = services.Web3Provider
-const EventWatcherService = services.EventWatcherService
-
 const defaultOptions = {
-  dbProvider: DefaultDBProvider,
-  operatorProvider: DefaultOperatorProvider,
-  walletProvider: DefaultWalletProvider,
-  contractProvider: DefaultContractProvider,
-  web3Provider: Web3Provider
+  dbProvider: services.DBProviders.DefaultDBProvider,
+  operatorProvider: services.OperatorProviders.DefaultOperatorProvider,
+  walletProvider: services.WalletProviders.DefaultWalletProvider,
+  contractProvider: services.ContractProviders.DefaultContractProvider,
+  web3Provider: services.Web3Provider
 }
 
 /**
@@ -72,20 +59,23 @@ class Plasma {
    * Registers all services.
    */
   _registerServices () {
-    const services = [
+    const available = [
       this.options.web3Provider,
       this.options.dbProvider,
-      ChainService,
-      JSONRPCService,
-      this.options.operatorProvider,
+      services.ChainDB,
+      services.SyncDB,
       this.options.walletProvider,
-      EventWatcherService,
+      this.options.operatorProvider,
       this.options.contractProvider,
-      SyncService,
-      ProofService
+      services.ProofService,
+      services.ChainService,
+      services.JSONRPCService,
+      services.EventWatcher,
+      services.EventHandler,
+      services.SyncService
     ]
 
-    for (let service of services) {
+    for (let service of available) {
       this.registerService(service, this.options)
     }
   }
@@ -95,7 +85,20 @@ class Plasma {
    * @param {*} name Name of the service to start.
    */
   async startService (name) {
-    let service = this.services[name]
+    if (!(name in this.services)) {
+      throw new Error(`ERROR: Service does not exist: ${name}`)
+    }
+
+    const service = this.services[name]
+
+    for (let dependency of service.dependencies) {
+      if (!this.services[dependency] || !this.services[dependency].started) {
+        throw new Error(
+          `ERROR: Service ${name} is dependent on service that has not been started: ${dependency}`
+        )
+      }
+    }
+
     service
       .start()
       .then(() => {

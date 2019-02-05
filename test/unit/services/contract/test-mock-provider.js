@@ -48,7 +48,7 @@ describe('MockContractProvider', async () => {
     }
     await contract.deposit(deposit.token, deposit.amount, deposit.owner)
 
-    contract.emitContractEvent.should.be.calledWith('Deposit', expected)
+    contract.emitContractEvent.should.be.calledWith('Deposit', [expected])
     contract.deposits[0].should.deep.equal(expected)
   })
 
@@ -89,7 +89,7 @@ describe('MockContractProvider', async () => {
     await contract.submitBlock(hash)
     const currentBlock = await contract.getCurrentBlock()
 
-    contract.emitContractEvent.should.be.calledWith('BlockSubmitted', expected)
+    contract.emitContractEvent.should.be.calledWith('BlockSubmitted', [expected])
     currentBlock.should.equal(1)
   })
 

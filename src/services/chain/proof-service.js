@@ -13,6 +13,10 @@ class ProofSerivce extends BaseService {
     return 'proof'
   }
 
+  get dependencies () {
+    return ['contract', 'chaindb']
+  }
+
   /**
    * Checks a transaction proof.
    * @param {Transaction} transaction A Transaction object.
@@ -45,7 +49,7 @@ class ProofSerivce extends BaseService {
 
     const snapshotManager = new SnapshotManager()
     this.applyProof(snapshotManager, deposits, proof)
-    if (!(snapshotManager.validateTransaction(transaction))) {
+    if (!snapshotManager.validateTransaction(transaction)) {
       throw new Error('Invalid state transition')
     }
 
@@ -98,15 +102,18 @@ class ProofSerivce extends BaseService {
       transferProofs: proof
     })
 
-    let root = await this.services.chain.getBlockHeader(transaction.block)
+    let root = await this.services.chaindb.getBlockHeader(transaction.block)
     if (root === null) {
       root = await this.services.contract.getBlock(transaction.block)
-      await this.services.chain.addBlockHeader(transaction.block, root)
+      await this.services.chaindb.addBlockHeader(transaction.block, root)
     }
 
     // If the root is zero, then this block was empty so insert a fake transfer.
     // TODO: There's probably a cleaner way to do this but it works for now.
-    if (root === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+    if (
+      root ===
+      '0x0000000000000000000000000000000000000000000000000000000000000000'
+    ) {
       transaction.isEmptyBlockTransaction = true
       return true
     }

@@ -8,6 +8,10 @@ class ETHSubdispatcher extends BaseSubdispatcher {
     return 'pg_'
   }
 
+  get dependencies () {
+    return ['contract']
+  }
+
   get methods () {
     const contract = this.app.services.contract
     return {

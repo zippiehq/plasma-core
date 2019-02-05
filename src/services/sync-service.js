@@ -22,13 +22,34 @@ class SyncService extends BaseService {
     return 'sync'
   }
 
+  get dependencies () {
+    return [
+      'contract',
+      'chain',
+      'eventHandler',
+      'syncdb',
+      'chaindb',
+      'wallet',
+      'operator'
+    ]
+  }
+
   async start () {
     this.started = true
 
-    this.services.contract.on('event:Deposit', this._onDeposit.bind(this))
-    this.services.contract.on('event:BlockSubmitted', this._onBlockSubmitted.bind(this))
-    this.services.contract.on('event:ExitStarted', this._onExitStarted.bind(this))
-    this.services.contract.on('event:ExitFinalized', this._onExitFinalized.bind(this))
+    this.services.eventHandler.on('event:Deposit', this._onDeposit.bind(this))
+    this.services.eventHandler.on(
+      'event:BlockSubmitted',
+      this._onBlockSubmitted.bind(this)
+    )
+    this.services.eventHandler.on(
+      'event:ExitStarted',
+      this._onExitStarted.bind(this)
+    )
+    this.services.eventHandler.on(
+      'event:ExitFinalized',
+      this._onExitFinalized.bind(this)
+    )
 
     this._pollPendingTransactions()
   }
@@ -57,15 +78,13 @@ class SyncService extends BaseService {
    * Checks for any available pending transactions and emits an event for each.
    */
   async _checkPendingTransactions () {
-    if (
-      !this.services.operator.online ||
-      !this.services.contract.contract ||
-      !this.services.contract.contract.options.address
-    ) { return }
+    if (!this.services.operator.online || !this.services.contract.hasAddress) {
+      return
+    }
 
-    const lastSyncedBlock = await this.services.db.get(`sync:block`, -1)
+    const lastSyncedBlock = await this.services.syncdb.getLastSyncedBlock()
     const firstUnsyncedBlock = lastSyncedBlock + 1
-    const currentBlock = await this.services.chain.getLatestBlock()
+    const currentBlock = await this.services.chaindb.getLatestBlock()
     if (firstUnsyncedBlock > currentBlock) return
     this.logger(
       `Checking for new transactions between blocks ${firstUnsyncedBlock} and ${currentBlock}`
@@ -84,7 +103,7 @@ class SyncService extends BaseService {
     }
 
     // Add any previously failed transactions to try again.
-    const prevFailed = await this.services.db.get(`sync:failed`, [])
+    const prevFailed = await this.services.syncdb.getFailedTransactions()
     this.pending = this.pending.concat(prevFailed)
 
     // Remove any duplicates
@@ -99,12 +118,16 @@ class SyncService extends BaseService {
       } catch (err) {
         failed.push(encoded)
         this.logger(`ERROR: ${err}`)
-        this.logger(`Ran into an error while importing transaction: ${tx.hash}, trying again in a few seconds...`)
+        this.logger(
+          `Ran into an error while importing transaction: ${
+            tx.hash
+          }, trying again in a few seconds...`
+        )
       }
     }
 
-    await this.services.db.set(`sync:failed`, failed)
-    await this.services.db.set(`sync:block`, currentBlock)
+    await this.services.syncdb.setFailedTransactions(failed)
+    await this.services.syncdb.setLastSyncedBlock(currentBlock)
   }
 
   /**
@@ -117,7 +140,7 @@ class SyncService extends BaseService {
       return
     }
 
-    if (await this.services.chain.hasTransaction(tx.hash)) {
+    if (await this.services.chaindb.hasTransaction(tx.hash)) {
       return
     }
 
@@ -127,41 +150,59 @@ class SyncService extends BaseService {
     try {
       txInfo = await this.services.operator.getTransaction(tx.encoded)
     } catch (err) {
-      this.logger(`ERROR: Operator failed to return information for transaction: ${tx.hash}`)
+      this.logger(
+        `ERROR: Operator failed to return information for transaction: ${
+          tx.hash
+        }`
+      )
       throw err
     }
 
     this.logger(`Importing new transaction: ${tx.hash}`)
-    await this.services.chain.addTransaction(txInfo.transaction, txInfo.deposits, txInfo.proof)
+    await this.services.chain.addTransaction(
+      txInfo.transaction,
+      txInfo.deposits,
+      txInfo.proof
+    )
     this.logger(`Successfully imported transaction: ${tx.hash}`)
   }
 
-  // TODO: What to do if any of these fail?
+  /**
+   * Handles new deposit events.
+   * @param {Array<DepositEvent>} deposits Deposit events.
+   */
   async _onDeposit (deposits) {
     for (let deposit of deposits) {
       await this.services.chain.addDeposit(deposit)
     }
   }
 
+  /**
+   * Handles new block events.
+   * @param {Array<BlockSubmittedEvent>} blocks Block submission events.
+   */
   async _onBlockSubmitted (blocks) {
-    await this.services.chain.addBlockHeaders(blocks)
+    await this.services.chaindb.addBlockHeaders(blocks)
   }
 
-  async _onExitFinalized (exits) {
+  /**
+   * Handles new exit started events.
+   * @param {Array<ExitStartedEvent>} exits Exit started events.
+   */
+  async _onExitStarted (exits) {
     for (let exit of exits) {
-      await this.services.chain.markFinalized(exit)
-      await this.services.chain.addExitableEnd(exit.token, exit.start)
+      await this.services.chain.addExit(exit)
     }
   }
 
-  async _onExitStarted (exits) {
+  /**
+   * Handles new exit finalized events.
+   * @param {Array<ExitFinalizedEvent>} exits Exit finalized events.
+   */
+  async _onExitFinalized (exits) {
     for (let exit of exits) {
-      try {
-        await this.services.rangeManager.removeRange(exit.exiter, exit)
-      } catch (err) {
-      } finally {
-        await this.services.chain.addExit(exit)
-      }
+      await this.services.chaindb.markFinalized(exit)
+      await this.services.chaindb.addExitableEnd(exit.token, exit.start)
     }
   }
 }

@@ -2,7 +2,7 @@ const chai = require('chai')
 
 chai.should()
 
-const EphemDBProvider = require('../../../../src/services/db/ephem-provider')
+const EphemDBProvider = require('../../../../src/services/db/backends/ephem-provider')
 
 describe('EphemDBProvider', async () => {
   const db = new EphemDBProvider()

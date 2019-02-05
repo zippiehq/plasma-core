@@ -2,8 +2,8 @@ const BigNum = require('bn.js')
 const BaseContractProvider = require('./base-provider')
 
 class MockContractProvider extends BaseContractProvider {
-  constructor () {
-    super()
+  constructor (options) {
+    super(options)
 
     this.lastRanges = {}
     this.nextBlock = 1
@@ -35,7 +35,7 @@ class MockContractProvider extends BaseContractProvider {
     }
     this.deposits.push(deposit)
 
-    this.emitContractEvent('Deposit', deposit)
+    this.emitContractEvent('Deposit', [deposit])
 
     this.lastRanges[token] = end
   }
@@ -49,10 +49,12 @@ class MockContractProvider extends BaseContractProvider {
   async submitBlock (hash) {
     this.blocks[this.nextBlock] = hash
 
-    this.emitContractEvent('BlockSubmitted', {
-      number: this.nextBlock,
-      hash: hash
-    })
+    this.emitContractEvent('BlockSubmitted', [
+      {
+        number: this.nextBlock,
+        hash: hash
+      }
+    ])
 
     this.nextBlock++
   }
@@ -89,6 +91,10 @@ class MockContractProvider extends BaseContractProvider {
       a.owner === b.owner &&
       a.block === b.block
     )
+  }
+
+  emitContractEvent (name, event) {
+    this.services.eventHandler._emitContractEvent(name, event)
   }
 }
 

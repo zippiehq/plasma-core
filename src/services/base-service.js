@@ -53,6 +53,27 @@ class BaseService extends EventEmitter {
   }
 
   /**
+   * List of services this service depends on, identified by name.
+   * @return {Array<string>} List of dependencies.
+   */
+  get dependencies () {
+    return []
+  }
+
+  /**
+   * Checks whether the service and all of its dependencies are started.
+   * @return {boolean} `true` if all started, `false` otherwise.
+   */
+  get healthy () {
+    return (
+      this.started &&
+      this.dependencies.every((dependency) => {
+        return this.app.services[dependency].started
+      })
+    )
+  }
+
+  /**
    * Starts the service.
    */
   async start () {

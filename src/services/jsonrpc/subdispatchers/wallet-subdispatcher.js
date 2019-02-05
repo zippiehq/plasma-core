@@ -8,6 +8,10 @@ class WalletSubdispatcher extends BaseSubdispatcher {
     return 'pg_'
   }
 
+  get dependencies () {
+    return ['wallet']
+  }
+
   get methods () {
     const wallet = this.app.services.wallet
     return {

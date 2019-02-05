@@ -1,4 +1,4 @@
-const BaseService = require('../base-service')
+const BaseService = require('../../base-service')
 
 /**
  * Class that DB interfaces must implement.
