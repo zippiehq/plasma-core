@@ -4,7 +4,7 @@ const utils = require('plasma-utils')
 
 const should = chai.should()
 
-const SnapshotManager = require('../../../../src/services/proof/snapshot-manager')
+const SnapshotManager = require('../../../../src/services/chain/snapshot-manager')
 const constants = utils.constants
 const accounts = constants.ACCOUNTS
 

@@ -1,15 +1,22 @@
 const BigNum = require('bn.js')
+const AsyncLock = require('async-lock')
 const utils = require('plasma-utils')
 const models = utils.serialization.models
 const SignedTransaction = models.SignedTransaction
 
 const BaseService = require('../base-service')
 const TransferManager = require('./transfer-manager')
+const SnapshotManager = require('./snapshot-manager')
 
 /**
  * Manages the local blockchain.
  */
 class ChainService extends BaseService {
+  constructor (options) {
+    super(options)
+    this.lock = new AsyncLock()
+  }
+
   get name () {
     return 'chain'
   }
@@ -118,13 +125,13 @@ class ChainService extends BaseService {
   }
 
   async pickRanges (address, token, amount) {
-    const transferManager = await this._getTransferMananger(address)
-    return transferManager.pickRanges(address, token, amount)
+    const stateManager = await this.loadState()
+    return stateManager.pickRanges(address, token, amount)
   }
 
   async pickTransfers (address, token, amount) {
-    const transferManager = await this._getTransferMananger(address)
-    return transferManager.pickTransfers(address, token, amount)
+    const stateManager = await this.loadState()
+    return stateManager.pickSnapshots(address, token, amount)
   }
 
   async markExited (range) {
@@ -143,9 +150,16 @@ class ChainService extends BaseService {
     return this.services.db.get(`finalized:${exit.token}:${exit.start}:${exit.end}`, false)
   }
 
+  // NOW: Should only be called when finalized?
   async addExit (exit) {
     await this.markExited(exit)
     await this._dbArrayPush(`exits:${exit.exiter}`, exit)
+
+    await this.lock.acquire('state', async () => {
+      const stateManager = await this.loadState()
+      stateManager.applyExit(exit)
+      await this.saveState(stateManager)
+    })
   }
 
   async startExit (address, token, amount) {
@@ -278,6 +292,16 @@ class ChainService extends BaseService {
     return receipt
   }
 
+  async loadState () {
+    const state = await this.services.db.get(`state:latest`, [])
+    return new SnapshotManager(state)
+  }
+
+  async saveState (stateManager) {
+    const state = stateManager.state
+    await this.services.db.set(`state:latest`, state)
+  }
+
   /**
    * Adds a record of a deposit for a user.
    * @param {*} deposit A Deposit object.
@@ -289,6 +313,13 @@ class ChainService extends BaseService {
     }
 
     await this._dbArrayPush(`deposits:${deposit.owner}`, deposit)
+
+    // Add the deposit to head state.
+    await this.lock.acquire('state', async () => {
+      const stateManager = await this.loadState()
+      stateManager.applyDeposit(deposit)
+      await this.saveState(stateManager)
+    })
 
     // Weird quirk in how we handle exits.
     // TODO: Add link to something that explains this.
@@ -364,87 +395,6 @@ class ChainService extends BaseService {
     const current = await this.services.db.get(key, [])
     current.push(value)
     await this.services.db.set(key, current)
-  }
-
-  /**
-   * Returns a new TransferManager object for a given address.
-   * The TransferManager shows a list of available transfers.
-   * @param {string} address An Ethereum address.
-   * @return {TransferManager} Information about transfers to and from that address.
-   */
-  async _getTransferMananger (address) {
-    const transferManager = new TransferManager()
-
-    // Find transfers where address is recipient.
-    const receivedTxs = await this.services.db.get(`received:${address}`, [])
-    let receivedTransfers = []
-    for (const hash of receivedTxs) {
-      let tx = await this.services.db.get(`transaction:${hash}`)
-      tx = new SignedTransaction(tx)
-      for (const transfer of tx.transfers) {
-        if (transfer.recipient === address) {
-          receivedTransfers.push({
-            ...transfer,
-            ...{ block: tx.block }
-          })
-        }
-      }
-    }
-
-    // Find transfers where address is sender.
-    const sentTxs = await this.services.db.get(`sent:${address}`, [])
-    let sentTransfers = []
-    for (const hash of sentTxs) {
-      let tx = await this.services.db.get(`transaction:${hash}`)
-      tx = new SignedTransaction(tx)
-      for (const transfer of tx.transfers) {
-        if (transfer.sender === address) {
-          sentTransfers.push({
-            ...transfer,
-            ...{ block: tx.block }
-          })
-        }
-      }
-    }
-
-    // Add in deposits.
-    const deposits = await this.getDeposits(address)
-    receivedTransfers = receivedTransfers.concat(deposits)
-
-    // Add in exits.
-    const exits = await this.getExits(address)
-    sentTransfers = sentTransfers.concat(exits)
-
-    // Some light preprocessing before we apply each transfer.
-    receivedTransfers = transferManager._castTransfers(receivedTransfers)
-    sentTransfers = transferManager._castTransfers(sentTransfers)
-    for (let transfer of receivedTransfers) {
-      transfer.inbound = true
-    }
-    for (let transfer of sentTransfers) {
-      transfer.inbound = false
-    }
-
-    // Join and sort the two arrays by block number and by start.
-    let transfers = receivedTransfers.concat(sentTransfers)
-    transfers.sort((a, b) => {
-      if (!a.block.eq(b.block)) {
-        return a.block.sub(b.block)
-      } else {
-        return a.start.sub(b.start)
-      }
-    })
-
-    // Apply each transaction in block order.
-    for (let transfer of transfers) {
-      if (transfer.inbound) {
-        transferManager.addTransfer(address, transfer)
-      } else {
-        transferManager.removeTransfer(address, transfer)
-      }
-    }
-
-    return transferManager
   }
 }
 
