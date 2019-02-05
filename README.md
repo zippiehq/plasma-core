@@ -19,6 +19,19 @@ Detailed documentation for `plasma-core` is [available here](https://plasma-core
 If you'd like to contribute to the documentation, please edit the contents of the [/docs](/docs) folder and submit a [pull request](https://github.com/plasma-group/plasma-core/pulls)!
 
 ### Requirements and Setup
+#### Cloning the Repo
+Before you start working on `plasma-core`, you'll need to clone our GitHub repository:
+
+```
+git clone git@github.com:plasma-group/plasma-core.git
+```
+
+Now, enter the repository.
+
+```
+cd plasma-core
+```
+
 #### Node.js
 `plasma-core` is a [`Node.js`](https://nodejs.org/en/) application.
 You'll need to install `Node.js` (and its corresponding package manager, `npm`) for your system before continuing.
