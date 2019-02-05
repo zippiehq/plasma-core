@@ -6,12 +6,22 @@ const Transfer = models.Transfer
 
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 
+/**
+ * Pulls out the token from a typed value.
+ * @param {BigNum} typedValue A typed value.
+ * @return {BigNum} The token.
+ */
 const getTokenFromTyped = (typedValue) => {
   const typed = typedValue.toString('hex', '32')
   const token = new BigNum(typed.slice(0, 8), 'hex')
   return token
 }
 
+/**
+ * Pulls out the value from a typed value.
+ * @param {BigNum} typedValue A typed value.
+ * @return {BigNum} The value.
+ */
 const getValueFromTyped = (typedValue) => {
   const typed = typedValue.toString('hex', '32')
   const value = new BigNum(typed.slice(8, 32), 'hex')
@@ -97,6 +107,9 @@ class Snapshot {
   }
 }
 
+/**
+ * Version of Snapshot that uses untyped (token/value) values.
+ */
 class UntypedSnapshot {
   constructor (snapshot) {
     this.token = new BigNum(snapshot.token, 'hex')

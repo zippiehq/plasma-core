@@ -55,6 +55,15 @@ class ChainService extends BaseService {
   }
 
   /**
+   * Checks if the chain has stored a specific transaction already.
+   * @param {string} hash The transaction hash.
+   * @return {boolean} `true` if the chain has stored the transaction, `false` otherwise.
+   */
+  async hasTransaction (hash) {
+    return this.services.db.exists(`transaction:${hash}`)
+  }
+
+  /**
    * Returns the number of the last known block.
    * @return {number} Latest block.
    */
@@ -83,15 +92,6 @@ class ChainService extends BaseService {
   }
 
   /**
-   * Checks if the chain has stored a specific transaction already.
-   * @param {string} hash The transaction hash.
-   * @return {boolean} `true` if the chain has stored the transaction, `false` otherwise.
-   */
-  async hasTransaction (hash) {
-    return this.services.db.exists(`transaction:${hash}`)
-  }
-
-  /**
    * Adds a block header to the database.
    * @param {*} block Number of the block to add.
    * @param {string} hash Hash of the given block.
@@ -103,7 +103,7 @@ class ChainService extends BaseService {
 
   /**
    * Adds multiple block headers to the database.
-   * @param {Array} blocks An array of block objects.
+   * @param {Array<Block>} blocks An array of block objects.
    */
   async addBlockHeaders (blocks) {
     // Set the latest block.
@@ -123,66 +123,55 @@ class ChainService extends BaseService {
     await this.services.db.db.batch(ops)
   }
 
-  async pickRanges (address, token, amount) {
-    const stateManager = await this.loadState()
-    return stateManager.pickRanges(address, token, amount)
+  /**
+   * Returns a list of known deposits for an address.
+   * @param {string} address Address to query.
+   * @return {Array<Deposit>} List of known deposits.
+   */
+  async getDeposits (address) {
+    return this.services.db.get(`deposits:${address}`, [])
   }
 
-  async pickTransfers (address, token, amount) {
-    const stateManager = await this.loadState()
-    return stateManager.pickSnapshots(address, token, amount)
-  }
-
-  async markExited (range) {
-    await this.services.db.set(`exited:${range.token}:${range.start}:${range.end}`, true)
-  }
-
-  async checkExited (range) {
-    return this.services.db.get(`exited:${range.token}:${range.start}:${range.end}`, false)
-  }
-
-  async markFinalized (exit) {
-    await this.services.db.set(`finalized:${exit.token}:${exit.start}:${exit.end}`, true)
-  }
-
-  async checkFinalized (exit) {
-    return this.services.db.get(`finalized:${exit.token}:${exit.start}:${exit.end}`, false)
-  }
-
-  // NOW: Should only be called when finalized?
-  async addExit (exit) {
-    await this.markExited(exit)
-    await this._dbArrayPush(`exits:${exit.exiter}`, exit)
-
-    await this.lock.acquire('state', async () => {
-      const stateManager = await this.loadState()
-      stateManager.applyExit(exit)
-      await this.saveState(stateManager)
-    })
-  }
-
-  async startExit (address, token, amount) {
-    const transfers = await this.pickTransfers(address, token, amount)
-
-    let exited = []
-    let exitTxHashes = []
-    for (let transfer of transfers) {
-      try {
-        const exitTx = await this.services.contract.startExit(transfer.block, transfer.token, transfer.start, transfer.end, address)
-        exitTxHashes.push(exitTx.transactionHash)
-        exited.push(transfer)
-      } catch (err) {
-        this.logger(`ERROR: ${err}`)
-      }
+  /**
+   * Adds a record of a deposit for a user.
+   * @param {Deposit} deposit Deposit to add.
+   */
+  async addDeposit (deposit) {
+    const exited = await this.checkExited(deposit)
+    if (exited) {
+      this.logger(`Skipping adding deposit that has already been exited.`)
     }
 
-    return exitTxHashes
+    // Add the deposit to head state.
+    await this.lock.acquire('state', async () => {
+      const stateManager = await this.loadState()
+      stateManager.applyDeposit(deposit)
+      await this.saveState(stateManager)
+    })
+
+    // Weird quirk in how we handle exits.
+    // TODO: Add link to something that explains this.
+    await this.addExitableEnd(deposit.token, deposit.end)
+
+    this.logger(`Added deposit to database`)
   }
 
+  /**
+   * Returns the list of known exits for an address.
+   * @param {string} address Address to query.
+   * @return {Array<Exit>} List of known exits.
+   */
   async getExits (address) {
     return this.services.db.get(`exits:${address}`, [])
   }
 
+  /**
+   * Returns the list of known exits for an address
+   * along with its status (challenge period completed, exit finalized).
+   * This method makes contract calls and is therefore slower than `getExits`.
+   * @param {string} address Address to query.
+   * @return {Array<Exit>} List of known exits.
+   */
   async getExitsWithStatus (address) {
     const exits = await this.getExits(address)
 
@@ -203,6 +192,145 @@ class ChainService extends BaseService {
     return exits
   }
 
+  /**
+   * Adds an exit to the database.
+   * @param {Exit} exit Exit to add to database.
+   */
+  async addExit (exit) {
+    await this.markExited(exit)
+    await this._dbArrayPush(`exits:${exit.exiter}`, exit)
+
+    await this.lock.acquire('state', async () => {
+      const stateManager = await this.loadState()
+      stateManager.applyExit(exit)
+      await this.saveState(stateManager)
+    })
+  }
+
+  /**
+   * Adds an "exitable end" to the database.
+   * TODO: Add link that explains this.
+   * @param {BigNum} token Token of the range.
+   * @param {BigNum} end End of the range.
+   */
+  async addExitableEnd (token, end) {
+    token = new BigNum(token, 'hex')
+    end = new BigNum(end, 'hex')
+
+    const key = this._getTypedValue(token, end)
+    await this.services.db.set(`exitable:${key}`, end.toString('hex'))
+
+    this.logger(`Added exitable end to database: ${token}:${end}`)
+  }
+
+  /**
+   * Returns the correct exitable end for a range.
+   * @param {BigNum} token Token of the range.
+   * @param {BigNum} end End of the range.
+   * @return {BigNum} The exitable end.
+   */
+  async getExitableEnd (token, end) {
+    const startKey = this._getTypedValue(token, end)
+    const it = this.services.db.iterator({
+      gte: `exitable:${startKey}`,
+      keyAsBuffer: false,
+      valueAsBuffer: false
+    })
+
+    let result = await this._itNext(it)
+    while (!result.key.startsWith('exitable')) {
+      result = await this._itNext(it)
+    }
+
+    return new BigNum(result.value, 'hex')
+  }
+
+  /**
+   * Marks a range as exited.
+   * @param {Range} range Range to mark.
+   */
+  async markExited (range) {
+    await this.services.db.set(`exited:${range.token}:${range.start}:${range.end}`, true)
+  }
+
+  /**
+   * Checks if a range is marked as exited.
+   * @param {Range} range Range to check.
+   * @return {boolean} `true` if the range is exited, `false` otherwise.
+   */
+  async checkExited (range) {
+    return this.services.db.get(`exited:${range.token}:${range.start}:${range.end}`, false)
+  }
+
+  /**
+   * Marks an exit as finalized.
+   * @param {Exit} exit Exit to mark.
+   */
+  async markFinalized (exit) {
+    await this.services.db.set(`finalized:${exit.token}:${exit.start}:${exit.end}`, true)
+  }
+
+  /**
+   * Checks if an exit is marked as finalized.
+   * @param {Exit} exit Exit to check.
+   * @return {boolean} `true` if the exit is finalized, `false` otherwise.
+   */
+  async checkFinalized (exit) {
+    return this.services.db.get(`finalized:${exit.token}:${exit.start}:${exit.end}`, false)
+  }
+
+  /**
+   * Picks the best ranges to use for a transaction.
+   * @param {string} address Address sending the transaction.
+   * @param {BigNum} token Token being sent.
+   * @param {BigNum} amount Amount of the token being sent.
+   * @return {Array<Range>} Best ranges for the transaction.
+   */
+  async pickRanges (address, token, amount) {
+    const stateManager = await this.loadState()
+    return stateManager.pickRanges(address, token, amount)
+  }
+
+  /**
+   * Picks the best transfers for an exit.
+   * @param {string} address Address sending the transaction.
+   * @param {BigNum} token Token being exited.
+   * @param {BigNum} amount Amount of the token being exited.
+   * @return {Array<Exit>} Best transfers for the exit.
+   */
+  async pickTransfers (address, token, amount) {
+    const stateManager = await this.loadState()
+    return stateManager.pickSnapshots(address, token, amount)
+  }
+
+  /**
+   * Attempts to start exits for a user.
+   * @param {string} address Address starting the exit.
+   * @param {BigNum} token Token being exited.
+   * @param {BigNum} amount Amount of the token being exited.
+   */
+  async startExit (address, token, amount) {
+    const transfers = await this.pickTransfers(address, token, amount)
+
+    let exited = []
+    let exitTxHashes = []
+    for (let transfer of transfers) {
+      try {
+        const exitTx = await this.services.contract.startExit(transfer.block, transfer.token, transfer.start, transfer.end, address)
+        exitTxHashes.push(exitTx.transactionHash)
+        exited.push(transfer)
+      } catch (err) {
+        this.logger(`ERROR: ${err}`)
+      }
+    }
+
+    return exitTxHashes
+  }
+
+  /**
+   * Attempts to finalized exits for a user.
+   * @param {string} address Address to finalize exits for.
+   */
   async finalizeExits (address) {
     const exits = await this.getExitsWithStatus(address)
     const completed = exits.filter((exit) => {
@@ -284,68 +412,22 @@ class ChainService extends BaseService {
     return receipt
   }
 
+  /**
+   * Loads the current head state as a SnapshotManager.
+   * @return {SnapshotManager} Current head state.
+   */
   async loadState () {
     const state = await this.services.db.get(`state:latest`, [])
     return new SnapshotManager(state)
   }
 
+  /**
+   * Saves the current head state from a SnapshotManager.
+   * @param {SnapshotManager} stateManager A SnapshotManager.
+   */
   async saveState (stateManager) {
     const state = stateManager.state
     await this.services.db.set(`state:latest`, state)
-  }
-
-  /**
-   * Adds a record of a deposit for a user.
-   * @param {*} deposit A Deposit object.
-   */
-  async addDeposit (deposit) {
-    const exited = await this.checkExited(deposit)
-    if (exited) {
-      this.logger(`Skipping adding deposit that has already been exited.`)
-    }
-
-    // Add the deposit to head state.
-    await this.lock.acquire('state', async () => {
-      const stateManager = await this.loadState()
-      stateManager.applyDeposit(deposit)
-      await this.saveState(stateManager)
-    })
-
-    // Weird quirk in how we handle exits.
-    // TODO: Add link to something that explains this.
-    await this.addExitableEnd(deposit.token, deposit.end)
-
-    this.logger(`Added deposit to database`)
-  }
-
-  async getDeposits (address) {
-    return this.services.db.get(`deposits:${address}`, [])
-  }
-
-  async addExitableEnd (token, end) {
-    token = new BigNum(token, 'hex')
-    end = new BigNum(end, 'hex')
-
-    const key = this._getTypedValue(token, end)
-    await this.services.db.set(`exitable:${key}`, end.toString('hex'))
-
-    this.logger(`Added exitable end to database: ${token}:${end}`)
-  }
-
-  async getExitableEnd (token, end) {
-    const startKey = this._getTypedValue(token, end)
-    const it = this.services.db.iterator({
-      gte: `exitable:${startKey}`,
-      keyAsBuffer: false,
-      valueAsBuffer: false
-    })
-
-    let result = await this._itNext(it)
-    while (!result.key.startsWith('exitable')) {
-      result = await this._itNext(it)
-    }
-
-    return new BigNum(result.value, 'hex')
   }
 
   /**
@@ -365,16 +447,6 @@ class ChainService extends BaseService {
   }
 
   /**
-   * Returns the "typed" version of a start or end.
-   * @param {BigNum} token The token ID.
-   * @param {BigNum} value The value to type.
-   * @return {BigNum} The typed value.
-   */
-  _getTypedValue (token, value) {
-    return new BigNum(token.toString('hex', 8) + value.toString('hex', 24), 'hex')
-  }
-
-  /**
    * Helper function for pushing to an array stored at a key in the database.
    * @param {string} key The key at which the array is stored.
    * @param {*} value Value to add to the array.
@@ -383,6 +455,16 @@ class ChainService extends BaseService {
     const current = await this.services.db.get(key, [])
     current.push(value)
     await this.services.db.set(key, current)
+  }
+
+  /**
+   * Returns the "typed" version of a start or end.
+   * @param {BigNum} token The token ID.
+   * @param {BigNum} value The value to type.
+   * @return {BigNum} The typed value.
+   */
+  _getTypedValue (token, value) {
+    return new BigNum(token.toString('hex', 8) + value.toString('hex', 24), 'hex')
   }
 }
 
