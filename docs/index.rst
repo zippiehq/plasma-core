@@ -13,6 +13,7 @@ Documentation for ``plasma-extension`` is available at the `plasma-extension doc
    contributing
    architecture
    extending-plasma-core
+   reference
 
 .. toctree::
    :maxdepth: 2
