@@ -18,7 +18,7 @@ class ChainSubdispatcher extends BaseSubdispatcher {
       pickRanges: chain.pickRanges.bind(chain),
       startExit: chain.startExit.bind(chain),
       finalizeExits: chain.finalizeExits.bind(chain),
-      getExits: chain.getExits.bind(chain)
+      getExits: chain.getExitsWithStatus.bind(chain)
     }
   }
 }

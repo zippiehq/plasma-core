@@ -149,7 +149,7 @@ class SyncService extends BaseService {
 
   async _onExitFinalized (exits) {
     for (let exit of exits) {
-      await this.services.chain.removeExit(exit)
+      await this.services.chain.markFinalized(exit)
       await this.services.chain.addExitableEnd(exit.token, exit.start)
     }
   }

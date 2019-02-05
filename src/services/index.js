@@ -2,7 +2,6 @@ const BaseService = require('./base-service')
 const GuardService = require('./guard-service')
 const SyncService = require('./sync-service')
 const ChainService = require('./chain/chain-service')
-const RangeManagerService = require('./chain/range-manager-service')
 const DBProviders = require('./db/index')
 const ContractProviders = require('./contract/index')
 const JSONRPCService = require('./jsonrpc/jsonrpc-service')
@@ -17,7 +16,6 @@ module.exports = {
   GuardService,
   SyncService,
   ChainService,
-  RangeManagerService,
   DBProviders,
   ContractProviders,
   JSONRPCService,

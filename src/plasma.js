@@ -9,7 +9,6 @@ const DefaultContractProvider =
   services.ContractProviders.DefaultContractProvider
 const JSONRPCService = services.JSONRPCService
 const ChainService = services.ChainService
-const RangeManagerService = services.RangeManagerService
 const SyncService = services.SyncService
 const ProofService = services.ProofService
 const Web3Provider = services.Web3Provider
@@ -77,7 +76,6 @@ class Plasma {
       this.options.web3Provider,
       this.options.dbProvider,
       ChainService,
-      RangeManagerService,
       JSONRPCService,
       this.options.operatorProvider,
       this.options.walletProvider,
