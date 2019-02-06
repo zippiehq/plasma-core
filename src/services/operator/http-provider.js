@@ -30,22 +30,44 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     this._pingInterval()
   }
 
+  /**
+   * Returns the next plasma block, according the operator.
+   * @return {number} Next plasma block number.
+   */
   async getNextBlock () {
     return parseInt(await this._handle('getBlockNumber'))
   }
 
+  /**
+   * Returns information about the smart contract.
+   * @return {Object} Smart contract info.
+   */
   async getEthInfo () {
     return this._handle('getEthInfo')
   }
 
-  async getTransactions (address, start, end) {
-    const txs = await this._handle('getTransactions', [address, start, end])
+  /**
+   * Returns transaction received by a given address
+   * between two given blocks.
+   * @param {string} address Address to query.
+   * @param {number} startBlock Block to query from.
+   * @param {number} endBlock Block to query to.
+   * @return {Array<string>} List of encoded transactions.
+   */
+  async getTransactions (address, startBlock, endBlock) {
+    const txs = await this._handle('getTransactions', [address, startBlock, endBlock])
     return txs.map((tx) => {
       return Buffer.from(tx).toString('hex')
     })
   }
 
+  /**
+   * Gets a transaction proof for a transaction.
+   * @param {string} encoded The encoded transaction.
+   * @return {Object} Proof information for the transaction.
+   */
   async getTransaction (encoded) {
+    // TODO: Use the transaction hash instead of encoded.
     const tx = new SignedTransaction(encoded)
     const rawProof = await this._handle('getHistoryProof', [
       0,
@@ -134,15 +156,28 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     }
   }
 
+  /**
+   * Sends a signed transaction to the operator.
+   * @param {string} transaction The encoded transaction.
+   * @return {string} The transaction receipt.
+   */
   async sendTransaction (transaction) {
     const tx = new SignedTransaction(transaction)
     return this._handle('addTransaction', [tx.encoded])
   }
 
+  /**
+   * Attempts to have the operator submit a new block.
+   * Probably won't work if the operator is properly
+   * configured but used for testing.
+   */
   async submitBlock () {
     return this._handle('newBlock')
   }
 
+  /**
+   * Waits for a connection to the operator.
+   */
   async waitForConnection () {
     // Do this as a promise to avoid recursion limits.
     return new Promise((resolve) => {
@@ -181,6 +216,9 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     return data.result
   }
 
+  /**
+   * Regularly pings the operator to check if it's online.
+   */
   async _pingInterval () {
     try {
       await this.getEthInfo()
