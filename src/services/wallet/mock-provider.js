@@ -29,6 +29,7 @@ class MockWalletProvider extends BaseWalletProvider {
   async createAccount () {
     const account = this.services.web3.eth.accounts.create()
     this.accounts.push(account)
+    return account.address
   }
 
   /**

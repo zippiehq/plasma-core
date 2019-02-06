@@ -62,6 +62,10 @@ class LocalWalletProvider extends BaseWalletProvider {
    */
   _getAccount (address) {
     const keystorePath = path.join(this.options.keystoreDir, address)
+    if (!fs.existsSync(keystorePath)) {
+      throw new Error('Account not found')
+    }
+
     const keystore = JSON.parse(fs.readFileSync(keystorePath))
     return this.services.web3.eth.accounts.privateKeyToAccount(
       keystore.privateKey

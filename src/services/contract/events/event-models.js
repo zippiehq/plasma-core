@@ -27,16 +27,6 @@ class BaseEventModel {
     this.unparsed = Object.assign({}, event.returnValues)
     this.parsed = parseEvent(event)
   }
-
-  /**
-   * Returns the `original` name of this event.
-   * @return {string} Name of the event.
-   */
-  get name () {
-    throw new Error(
-      'Classes that extend BaseEventModel must implement this method'
-    )
-  }
 }
 
 class DepositEvent extends BaseEventModel {
@@ -49,10 +39,6 @@ class DepositEvent extends BaseEventModel {
     this.block = this.parsed.plasmaBlockNumber
     this.amount = this.end.sub(this.start)
   }
-
-  get name () {
-    return 'DepositEvent'
-  }
 }
 
 class BlockSubmittedEvent extends BaseEventModel {
@@ -60,10 +46,6 @@ class BlockSubmittedEvent extends BaseEventModel {
     super(event)
     this.number = this.parsed.blockNumber.toNumber()
     this.hash = this.unparsed.submittedHash
-  }
-
-  get name () {
-    return 'SubmitBlockEvent'
   }
 }
 
@@ -77,10 +59,6 @@ class ExitStartedEvent extends BaseEventModel {
     this.block = this.parsed.eventBlockNumber
     this.exiter = this.parsed.exiter
   }
-
-  get name () {
-    return 'BeginExitEvent'
-  }
 }
 
 class ExitFinalizedEvent extends BaseEventModel {
@@ -90,10 +68,6 @@ class ExitFinalizedEvent extends BaseEventModel {
     this.start = this.parsed.untypedStart
     this.end = this.parsed.untypedEnd
     this.id = this.parsed.exitID
-  }
-
-  get name () {
-    return 'FinalizeExitEvent'
   }
 }
 

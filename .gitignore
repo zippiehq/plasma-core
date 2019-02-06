@@ -5,6 +5,7 @@ node_modules/
 # Testing
 .nyc_output/
 .level_test/
+.db_tests/
 
 # Usage
 plasma-keystore

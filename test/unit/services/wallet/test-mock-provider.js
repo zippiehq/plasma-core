@@ -27,6 +27,14 @@ describe('MockWalletProvider', async () => {
     accounts.should.have.lengthOf(10)
   })
 
+  it('should allow creating new accounts', async () => {
+    const account = await wallet.createAccount()
+    const accounts = await wallet.getAccounts()
+
+    accounts.should.have.lengthOf(11)
+    accounts.should.include(account)
+  })
+
   it('should be able to sign some data', async () => {
     const signature = await wallet.sign(accounts[0], 'Hello!')
     const address = web3.eth.accounts.recover('Hello!', signature.signature)

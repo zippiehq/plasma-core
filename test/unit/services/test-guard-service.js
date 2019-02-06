@@ -24,4 +24,12 @@ describe('GuardService', async () => {
   it('should start correctly', () => {
     guard.started.should.be.true
   })
+
+  it('should have a name', () => {
+    guard.name.should.equal('guard')
+  })
+
+  it('should have dependencies', () => {
+    guard.dependencies.should.deep.equal(['eventHandler'])
+  })
 })

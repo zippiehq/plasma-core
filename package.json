@@ -25,7 +25,8 @@
   "nyc": {
     "exclude": [
       "**/base-service.js",
-      "**/base-provider.js"
+      "**/base-provider.js",
+      "**/mock-app.js"
     ]
   },
   "repository": {

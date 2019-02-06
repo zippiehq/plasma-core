@@ -22,9 +22,22 @@ describe('Web3WalletProvider', async () => {
     await app.stopEth()
   })
 
+  it('should return dependencies', async () => {
+    const dependencies = wallet.dependencies
+    dependencies.should.deep.equal(['web3'])
+  })
+
   it('should be able to get available accounts', async () => {
     const accounts = await wallet.getAccounts()
     accounts.should.have.lengthOf(10)
+  })
+
+  it('should be able to create an account', async () => {
+    const account = await wallet.createAccount('password')
+    const accounts = await wallet.getAccounts()
+
+    accounts.should.have.lengthOf(11)
+    accounts.should.include(account)
   })
 
   it('should be able to sign some data', async () => {

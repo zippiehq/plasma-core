@@ -21,9 +21,8 @@ class Web3WalletProvider extends BaseWalletProvider {
     }
   }
 
-  async createAccount () {
-    const account = this.services.web3.eth.accounts.create()
-    return this.services.web3.eth.accounts.wallet.add(account)
+  async createAccount (password) {
+    return this.services.web3.eth.personal.newAccount(password)
   }
 }
 
