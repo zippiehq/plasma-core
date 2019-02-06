@@ -30,6 +30,9 @@ class EventHandler extends BaseService {
     this.emit(`event:${name}`, event)
   }
 
+  /**
+   * Registers event handlers.
+   */
   _registerHandlers () {
     const handlers = {
       DepositEvent: this._onDeposit,
@@ -45,6 +48,10 @@ class EventHandler extends BaseService {
     }
   }
 
+  /**
+   * Handles Deposit events.
+   * @param {EthereumEvent} events Deposit events.
+   */
   _onDeposit (events) {
     const deposits = events.map((event) => {
       return new models.DepositEvent(event)
@@ -59,6 +66,10 @@ class EventHandler extends BaseService {
     this._emitContractEvent('Deposit', deposits)
   }
 
+  /**
+   * Handles BlockSubmitted events.
+   * @param {EthereumEvent} events BlockSubmitted events.
+   */
   _onBlockSubmitted (events) {
     const blocks = events.map((event) => {
       return new models.BlockSubmittedEvent(event)
@@ -69,6 +80,10 @@ class EventHandler extends BaseService {
     this._emitContractEvent('BlockSubmitted', blocks)
   }
 
+  /**
+   * Handles ExitStarted events.
+   * @param {EthereumEvent} events ExitStarted events.
+   */
   _onExitStarted (events) {
     const exits = events.map((event) => {
       return new models.ExitStartedEvent(event)
@@ -79,6 +94,10 @@ class EventHandler extends BaseService {
     this._emitContractEvent('ExitStarted', exits)
   }
 
+  /**
+   * Handles ExitFinalized events.
+   * @param {EthereumEvent} events ExitFinalized events.
+   */
   _onExitFinalized (events) {
     const exits = events.map((event) => {
       return new models.ExitFinalizedEvent(event)

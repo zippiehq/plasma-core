@@ -202,9 +202,9 @@ class ContractProvider extends BaseContractProvider {
 
     amount = new BigNum(amount, 'hex')
     if (token.toString() === '0') {
-      return this._depositETH(amount, owner)
+      return this.depositETH(amount, owner)
     } else {
-      return this._depositERC20(token, amount, owner)
+      return this.depositERC20(token, amount, owner)
     }
   }
 

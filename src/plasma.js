@@ -25,6 +25,11 @@ class Plasma {
     this._registerServices()
   }
 
+  /**
+   * Proxy object that creates a new logger if
+   * trying to access a logger that doesn't exist yet.
+   * @return {Object} Mapping of available loggers.
+   */
   get loggers () {
     return new Proxy(this._loggers, {
       get: (obj, prop) => {

@@ -6,6 +6,9 @@ const defaultOptions = {
   eventPollInterval: 15000
 }
 
+/**
+ * Service for watching Ethereum events.
+ */
 class EventWatcher extends BaseService {
   constructor (options) {
     super(options, defaultOptions)
@@ -27,8 +30,13 @@ class EventWatcher extends BaseService {
     this._reset()
   }
 
+  /**
+   * Subscribes to an event with a given callback.
+   * @param {string} event Name of the event to subscribe to.
+   * @param {Function} listener Function to be called when the event is triggered.
+   */
   subscribe (event, listener) {
-    this._startPolling()
+    this.startPolling()
     if (!(event in this.events)) {
       this.events[event] = { active: true }
       this.subscriptions[event] = []
@@ -36,6 +44,11 @@ class EventWatcher extends BaseService {
     this.subscriptions[event].push(listener)
   }
 
+  /**
+   * Unsubscribes from an event with a given callback.
+   * @param {string} event Name of the event to unsubscribe from.
+   * @param {Function} listener Function that was used to subscribe.
+   */
   unsubscribe (event, listener) {
     this.subscriptions[event] = this.subscriptions[event].filter((l) => {
       return l !== listener
@@ -45,14 +58,23 @@ class EventWatcher extends BaseService {
     }
   }
 
-  async _startPolling () {
+  /**
+   * Starts the polling loop.
+   * Can only be called once.
+   */
+  startPolling () {
     if (this.watching) return
     this.watching = true
     this._pollEvents()
   }
 
+  /**
+   * Polling loop.
+   * Checks events then sleeps before calling itself again.
+   * Stops polling if the service is stopped.
+   */
   async _pollEvents () {
-    if (!this.healthy) {
+    if (!this.started) {
       this.logger(`ERROR: Stopped watching for events`)
       return
     }
@@ -65,7 +87,10 @@ class EventWatcher extends BaseService {
     }
   }
 
-  // TODO: Remove any events that have already been seen.
+  /**
+   * Checks for new events and triggers any listeners on those events.
+   * Will only check for events that are currently being listened to.
+   */
   async _checkEvents () {
     const connected = await this.services.web3.connected()
     if (!connected) {
@@ -95,6 +120,7 @@ class EventWatcher extends BaseService {
         `Checking for new ${eventName} events between blocks ${firstUnsyncedBlock} and ${lastFinalBlock}`
       )
 
+      // TODO: Remove any events that have already been seen.
       let events = await this.services.contract.contract.getPastEvents(
         eventName,
         {
@@ -117,6 +143,9 @@ class EventWatcher extends BaseService {
     }
   }
 
+  /**
+   * Resets the watcher.
+   */
   _reset () {
     this.watching = false
     this.subscriptions = {}
