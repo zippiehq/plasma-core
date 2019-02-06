@@ -12,16 +12,11 @@ class GuardService extends BaseService {
     return ['eventHandler']
   }
 
-  async start () {
-    this.started = true
+  async _onStart () {
     this.services.eventHandler.on(
       'event:ExitStarted',
       this._onExitStarted.bind(this)
     )
-  }
-
-  async stop () {
-    this.started = false
   }
 
   /**

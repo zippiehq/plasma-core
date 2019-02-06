@@ -13,13 +13,11 @@ class EventHandler extends BaseService {
     return ['eventWatcher']
   }
 
-  async start () {
-    this.started = true
+  async _onStart () {
     this._registerHandlers()
   }
 
-  async stop () {
-    this.started = false
+  async _onStop () {
     this.removeAllListeners()
   }
 

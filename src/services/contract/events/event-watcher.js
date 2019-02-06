@@ -19,13 +19,11 @@ class EventWatcher extends BaseService {
     return ['contract', 'web3', 'db']
   }
 
-  async start () {
-    this.started = true
+  async _onStart () {
     this._reset()
   }
 
-  async stop () {
-    this.started = false
+  async _onStop () {
     this._reset()
   }
 

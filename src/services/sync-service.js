@@ -34,9 +34,7 @@ class SyncService extends BaseService {
     ]
   }
 
-  async start () {
-    this.started = true
-
+  async _onStart () {
     this.services.eventHandler.on('event:Deposit', this._onDeposit.bind(this))
     this.services.eventHandler.on(
       'event:BlockSubmitted',
@@ -54,9 +52,7 @@ class SyncService extends BaseService {
     this._pollPendingTransactions()
   }
 
-  async stop () {
-    this.started = false
-
+  async _onStop () {
     this.removeAllListeners()
   }
 

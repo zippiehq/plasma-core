@@ -14,8 +14,7 @@ class Web3Provider extends BaseService {
     return 'web3'
   }
 
-  async start () {
-    this.started = true
+  async _onStart () {
     this.web3 = new Web3(
       new Web3.providers.HttpProvider(this.options.ethereumEndpoint)
     )
@@ -23,8 +22,7 @@ class Web3Provider extends BaseService {
     Object.assign(this, this.web3)
   }
 
-  async stop () {
-    this.started = false
+  async _onStop () {
     if (this.provider) {
       this.provider.removeAllListeners()
     }

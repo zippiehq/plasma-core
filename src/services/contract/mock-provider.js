@@ -1,6 +1,9 @@
 const BigNum = require('bn.js')
 const BaseContractProvider = require('./base-provider')
 
+/**
+ * Mock contract provider for use in tests.
+ */
 class MockContractProvider extends BaseContractProvider {
   constructor (options) {
     super(options)
@@ -11,8 +14,7 @@ class MockContractProvider extends BaseContractProvider {
     this.deposits = []
   }
 
-  async stop () {
-    this.started = false
+  async _onStop () {
     this.removeAllListeners()
   }
 

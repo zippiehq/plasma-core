@@ -26,8 +26,7 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     this.online = false
   }
 
-  async start () {
-    this.started = true
+  async _onStart () {
     this._pingInterval()
   }
 
@@ -122,7 +121,9 @@ class HttpOperatorProvider extends BaseOperatorProvider {
         if (
           a.length === 0 ||
           a.slice(-1)[0].transaction.hash !== b.transaction.hash
-        ) { a.push(b) }
+        ) {
+          a.push(b)
+        }
         return a
       }, [])
 

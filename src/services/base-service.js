@@ -78,6 +78,14 @@ class BaseService extends EventEmitter {
    */
   async start () {
     this.started = true
+    await this._onStart()
+  }
+
+  /**
+   * Called once the service has been started.
+   */
+  async _onStart () {
+    return true
   }
 
   /**
@@ -85,6 +93,14 @@ class BaseService extends EventEmitter {
    */
   async stop () {
     this.started = false
+    await this._onStop()
+  }
+
+  /**
+   * Called once the service has been stopped.
+   */
+  async _onStop () {
+    return true
   }
 }
 

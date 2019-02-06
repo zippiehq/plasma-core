@@ -4,8 +4,7 @@ const BaseWalletProvider = require('./base-provider')
  * Provider that mocks a wallet and shouldn't be used in production.
  */
 class MockWalletProvider extends BaseWalletProvider {
-  async start () {
-    this.started = true
+  async _onStart () {
     this._initAccounts()
   }
 
