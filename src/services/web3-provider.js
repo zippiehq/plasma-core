@@ -34,8 +34,13 @@ class Web3Provider extends BaseService {
    * Whether or not the provider is connected.
    * @return {boolean} `true` if connected, `false` otherwise.
    */
-  get connected () {
-    return this.web3.currentProvider.connected
+  async connected () {
+    try {
+      await this.web3.eth.net.isListening()
+      return true
+    } catch (e) {
+      return false
+    }
   }
 }
 

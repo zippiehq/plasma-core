@@ -3,6 +3,8 @@ const BaseContractProvider = require('./base-provider')
 const compiledContracts = require('plasma-contracts')
 const plasmaChainCompiled = compiledContracts.plasmaChainCompiled
 const erc20Compiled = compiledContracts.erc20Compiled
+const eventModels = require('./events/event-models')
+const DepositEvent = eventModels.DepositEvent
 
 class ContractProvider extends BaseContractProvider {
   get dependencies () {
@@ -147,7 +149,7 @@ class ContractProvider extends BaseContractProvider {
       fromBlock: 0
     })
     return depositEvents.some((event) => {
-      const casted = this._castDepositEvent(event)
+      const casted = new DepositEvent(event)
       return (
         casted.owner === deposit.owner &&
         casted.start.eq(deposit.start) &&

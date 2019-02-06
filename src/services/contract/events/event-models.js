@@ -24,7 +24,8 @@ const parseEvent = (event) => {
  */
 class BaseEventModel {
   constructor (event) {
-    this.event = parseEvent(event)
+    this.unparsed = Object.assign({}, event.returnValues)
+    this.parsed = parseEvent(event)
   }
 
   /**
@@ -41,11 +42,11 @@ class BaseEventModel {
 class DepositEvent extends BaseEventModel {
   constructor (event) {
     super(event)
-    this.owner = this.event.depositer
-    this.start = this.event.untypedStart
-    this.end = this.event.untypedEnd
-    this.token = this.event.tokenType
-    this.block = this.event.plasmaBlockNumber
+    this.owner = this.parsed.depositer
+    this.start = this.parsed.untypedStart
+    this.end = this.parsed.untypedEnd
+    this.token = this.parsed.tokenType
+    this.block = this.parsed.plasmaBlockNumber
     this.amount = this.end.sub(this.start)
   }
 
@@ -57,8 +58,8 @@ class DepositEvent extends BaseEventModel {
 class BlockSubmittedEvent extends BaseEventModel {
   constructor (event) {
     super(event)
-    this.number = this.event.blockNumber.toNumber()
-    this.hash = this.event.submittedHash
+    this.number = this.parsed.blockNumber.toNumber()
+    this.hash = this.unparsed.submittedHash
   }
 
   get name () {
@@ -69,12 +70,12 @@ class BlockSubmittedEvent extends BaseEventModel {
 class ExitStartedEvent extends BaseEventModel {
   constructor (event) {
     super(event)
-    this.token = this.event.tokenType
-    this.start = this.event.untypedStart
-    this.end = this.event.untypedEnd
-    this.id = this.event.exitID
-    this.block = this.event.eventBlockNumber
-    this.exiter = this.event.exiter
+    this.token = this.parsed.tokenType
+    this.start = this.parsed.untypedStart
+    this.end = this.parsed.untypedEnd
+    this.id = this.parsed.exitID
+    this.block = this.parsed.eventBlockNumber
+    this.exiter = this.parsed.exiter
   }
 
   get name () {
@@ -85,10 +86,10 @@ class ExitStartedEvent extends BaseEventModel {
 class ExitFinalizedEvent extends BaseEventModel {
   constructor (event) {
     super(event)
-    this.token = this.event.tokenType
-    this.start = this.event.untypedStart
-    this.end = this.event.untypedEnd
-    this.id = this.event.exitID
+    this.token = this.parsed.tokenType
+    this.start = this.parsed.untypedStart
+    this.end = this.parsed.untypedEnd
+    this.id = this.parsed.exitID
   }
 
   get name () {

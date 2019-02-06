@@ -30,10 +30,7 @@ class EventWatcher extends BaseService {
   }
 
   subscribe (event, listener) {
-    if (!this.watching) {
-      this.watching = true
-      this._pollEvents()
-    }
+    this._startPolling()
     if (!(event in this.events)) {
       this.events[event] = { active: true }
       this.subscriptions[event] = []
@@ -50,8 +47,15 @@ class EventWatcher extends BaseService {
     }
   }
 
+  async _startPolling () {
+    if (this.watching) return
+    this.watching = true
+    this._pollEvents()
+  }
+
   async _pollEvents () {
     if (!this.healthy) {
+      this.logger(`ERROR: Stopped watching for events`)
       return
     }
 
@@ -65,7 +69,9 @@ class EventWatcher extends BaseService {
 
   // TODO: Remove any events that have already been seen.
   async _checkEvents () {
-    if (!this.services.web3.connected) {
+    const connected = await this.services.web3.connected()
+    if (!connected) {
+      this.logger(`ERROR: Could not connect to Ethereum`)
       return
     }
 
