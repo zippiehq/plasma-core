@@ -8,66 +8,61 @@ const utils = require('plasma-utils')
  * @return {*} A parsed event.
  */
 const parseEvent = (event) => {
-  const values = event.returnValues
-  for (const key in values) {
-    const value = values[key]
+  const parsed = event.returnValues
+  for (const key in parsed) {
+    const value = parsed[key]
     if (!isNaN(value) && !utils.utils.web3Utils.isAddress(value)) {
-      values[key] = new BigNum(value, 10)
+      parsed[key] = new BigNum(value, 10)
     }
   }
-  values.eventBlockNumber = new BigNum(event.blockNumber, 10)
-  return values
+  parsed.eventBlockNumber = new BigNum(event.blockNumber, 10)
+  return parsed
 }
 
-/**
- * Base class that event models extend.
- */
-class BaseEventModel {
+class DepositEvent {
   constructor (event) {
-    this.unparsed = Object.assign({}, event.returnValues)
-    this.parsed = parseEvent(event)
-  }
-}
+    const parsed = parseEvent(event)
 
-class DepositEvent extends BaseEventModel {
-  constructor (event) {
-    super(event)
-    this.owner = this.parsed.depositer
-    this.start = this.parsed.untypedStart
-    this.end = this.parsed.untypedEnd
-    this.token = this.parsed.tokenType
-    this.block = this.parsed.plasmaBlockNumber
+    this.owner = parsed.depositer
+    this.start = parsed.untypedStart
+    this.end = parsed.untypedEnd
+    this.token = parsed.tokenType
+    this.block = parsed.plasmaBlockNumber
     this.amount = this.end.sub(this.start)
   }
 }
 
-class BlockSubmittedEvent extends BaseEventModel {
+class BlockSubmittedEvent {
   constructor (event) {
-    super(event)
-    this.number = this.parsed.blockNumber.toNumber()
-    this.hash = this.unparsed.submittedHash
+    const unparsed = Object.assign({}, event.returnValues)
+    const parsed = parseEvent(event)
+
+    this.number = parsed.blockNumber.toNumber()
+    this.hash = unparsed.submittedHash
   }
 }
 
-class ExitStartedEvent extends BaseEventModel {
+class ExitStartedEvent {
   constructor (event) {
-    super(event)
-    this.token = this.parsed.tokenType
-    this.start = this.parsed.untypedStart
-    this.end = this.parsed.untypedEnd
-    this.id = this.parsed.exitID
-    this.block = this.parsed.eventBlockNumber
-    this.exiter = this.parsed.exiter
+    const parsed = parseEvent(event)
+
+    this.token = parsed.tokenType
+    this.start = parsed.untypedStart
+    this.end = parsed.untypedEnd
+    this.id = parsed.exitID
+    this.block = parsed.eventBlockNumber
+    this.exiter = parsed.exiter
   }
 }
 
-class ExitFinalizedEvent extends BaseEventModel {
+class ExitFinalizedEvent {
   constructor (event) {
-    super(event)
-    this.token = this.parsed.tokenType
-    this.start = this.parsed.untypedStart
-    this.end = this.parsed.untypedEnd
-    this.id = this.parsed.exitID
+    const parsed = parseEvent(event)
+
+    this.token = parsed.tokenType
+    this.start = parsed.untypedStart
+    this.end = parsed.untypedEnd
+    this.id = parsed.exitID
   }
 }
 

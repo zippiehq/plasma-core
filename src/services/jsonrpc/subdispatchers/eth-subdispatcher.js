@@ -17,7 +17,8 @@ class ETHSubdispatcher extends BaseSubdispatcher {
     return {
       listToken: contract.listToken.bind(contract),
       getTokenId: contract.getTokenId.bind(contract),
-      deposit: contract.deposit.bind(contract)
+      deposit: contract.deposit.bind(contract),
+      getCurrentBlock: contract.getCurrentBlock.bind(contract)
     }
   }
 }

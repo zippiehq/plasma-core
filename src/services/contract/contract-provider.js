@@ -129,11 +129,13 @@ class ContractProvider extends BaseContractProvider {
    * @return {EthereumTransaction} The Ethereum transaction result.
    */
   async listToken (tokenAddress) {
-    const operator = await this.getOperator()
-    await this.checkAccountUnlocked(operator)
+    // TODO: Add support for different senders.
+    const accounts = await this.services.wallet.getAccounts()
+    const sender = accounts[0]
+    await this.checkAccountUnlocked(sender)
 
     return this.contract.methods.listToken(tokenAddress, 0).send({
-      from: operator,
+      from: sender,
       gas: 6000000 // TODO: How much should this be?
     })
   }
@@ -234,9 +236,10 @@ class ContractProvider extends BaseContractProvider {
       erc20Compiled.abi,
       tokenAddress
     )
-    await tokenContract.methods
-      .approve(this.address, amount)
-      .send({ from: owner })
+    await tokenContract.methods.approve(this.address, amount).send({
+      from: owner,
+      gas: 6000000 // TODO: Figure out how much this should be.
+    })
     return this.contract.methods.depositERC20(tokenAddress, amount).send({
       from: owner,
       gas: 6000000 // TODO: Figure out how much this should be.
@@ -252,6 +255,7 @@ class ContractProvider extends BaseContractProvider {
    * @param {BigNum} token Token to be exited.
    * @param {BigNum} start Start of the range received in the transfer.
    * @param {BigNum} end End of the range received in the transfer.
+   * @param {string} owner Adress to exit from.
    * @return {EthereumTransaction} Exit transaction receipt.
    */
   async startExit (block, token, start, end, owner) {

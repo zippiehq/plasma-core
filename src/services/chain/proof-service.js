@@ -31,22 +31,26 @@ class ProofSerivce extends BaseService {
     })
     transaction = new SignedTransaction(transaction)
 
+    this.logger(`Checking signatures for: ${transaction.hash}`)
     if (!transaction.checkSigs()) {
       throw new Error('Invalid transaction signatures')
     }
 
+    this.logger(`Checking validity of deposits for: ${transaction.hash}`)
     for (const deposit of deposits) {
       if (!(await this._depositValid(deposit))) {
         throw new Error('Invalid deposit')
       }
     }
 
+    this.logger(`Checking validity of proof elements for: ${transaction.hash}`)
     for (const element of proof) {
       if (!(await this._transactionValid(element.transaction, element.proof))) {
         throw new Error('Invalid transaction')
       }
     }
 
+    this.logger(`Applying proof elements for: ${transaction.hash}`)
     const snapshotManager = new SnapshotManager()
     this.applyProof(snapshotManager, deposits, proof)
     if (!snapshotManager.validateTransaction(transaction)) {
@@ -102,6 +106,7 @@ class ProofSerivce extends BaseService {
       transferProofs: proof
     })
 
+    // TODO: Fix problem when latest operator block is > latest plasma block.
     let root = await this.services.chaindb.getBlockHeader(transaction.block)
     if (root === null) {
       root = await this.services.contract.getBlock(transaction.block)
