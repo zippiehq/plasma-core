@@ -15,8 +15,10 @@ class Web3Provider extends BaseService {
   }
 
   async _onStart () {
+    const isWebsocket = this.options.ethereumEndpoint.startsWith('ws:') || this.options.ethereumEndpoint.startsWith('wss://')
     this.web3 = new Web3(
-      new Web3.providers.HttpProvider(this.options.ethereumEndpoint)
+      isWebsocket ? new Web3.providers.WebsocketProvider(this.options.ethereumEndpoint)  
+      : new Web3.providers.HttpProvider(this.options.ethereumEndpoint)
     )
     // A bit of a hack, maybe there's a nicer way to expose this?
     Object.assign(this, this.web3)
