@@ -1,6 +1,7 @@
 const _ = require('lodash')
 const BigNum = require('bn.js')
 const utils = require('plasma-utils')
+const debug = require('debug')
 const models = utils.serialization.models
 const Transfer = models.Transfer
 
@@ -29,10 +30,35 @@ const getValueFromTyped = (typedValue) => {
 }
 
 /**
+ * Base class that allows for printing objects in a prettified manner.
+ */
+class PrettyPrint {
+  /**
+   * Returns the object as a pretty JSON string.
+   * Converts BigNums to decimal strings.
+   * @return {string} JSON string.
+   */
+  toJSON () {
+    const parsed = {}
+    Object.keys(this).forEach((key) => {
+      const value = this[key]
+      if (BigNum.isBN(value)) {
+        parsed[key] = value.toString(10)
+      } else {
+        parsed[key] = value
+      }
+    })
+    return JSON.stringify(parsed, null, 2)
+  }
+}
+
+/**
  * Represents a single state component ("snapshot").
  */
-class Snapshot {
+class Snapshot extends PrettyPrint {
   constructor (snapshot) {
+    super()
+
     this.start = new BigNum(snapshot.start, 'hex')
     this.end = new BigNum(snapshot.end, 'hex')
     this.block = new BigNum(snapshot.block, 'hex')
@@ -110,8 +136,10 @@ class Snapshot {
 /**
  * Version of Snapshot that uses untyped (token/value) values.
  */
-class UntypedSnapshot {
+class UntypedSnapshot extends PrettyPrint {
   constructor (snapshot) {
+    super()
+
     this.token = new BigNum(snapshot.token, 'hex')
     this.start = new BigNum(snapshot.start, 'hex')
     this.end = new BigNum(snapshot.end, 'hex')
@@ -139,8 +167,10 @@ class UntypedSnapshot {
 /**
  * Represents a simplified state component ("range").
  */
-class Range {
+class Range extends PrettyPrint {
   constructor (range) {
+    super()
+
     this.token = new BigNum(range.token, 'hex')
     this.start = new BigNum(range.start, 'hex')
     this.end = new BigNum(range.end, 'hex')
@@ -161,8 +191,10 @@ class Range {
 /**
  * Represents an implicit or explicit piece of a transfer.
  */
-class TransferComponent {
+class TransferComponent extends PrettyPrint {
   constructor (transfer) {
+    super()
+
     this.start = new BigNum(transfer.start, 'hex')
     this.end = new BigNum(transfer.end, 'hex')
     this.block = new BigNum(transfer.block, 'hex')
@@ -221,6 +253,7 @@ class SnapshotManager {
     this.snapshots = snapshots.map((snapshot) => {
       return new Snapshot(snapshot)
     })
+    this.debug = debug('debug:snapshots')
   }
 
   /**
@@ -247,9 +280,13 @@ class SnapshotManager {
    * @param {SnapshotManager} other Other manager.
    */
   merge (other) {
-    for (const snapshot in other.snapshots) {
+    for (const snapshot of other.state) {
       const component = TransferComponent.fromSnapshot(snapshot)
-      this._applyTransferComponent(component)
+      try {
+        this._applyTransferComponent(component)
+      } catch (err) {
+        // TODO: Handle errors here? They don't really break anything.
+      }
     }
   }
 
@@ -270,11 +307,13 @@ class SnapshotManager {
    * @return {Array<UntypedSnapshot>} List of owned snapshots.
    */
   getOwnedSnapshots (address) {
-    return this.snapshots.map((snapshot) => {
-      return UntypedSnapshot.fromSnapshot(snapshot)
-    }).filter((snapshot) => {
-      return snapshot.owner === address
-    })
+    return this.snapshots
+      .map((snapshot) => {
+        return UntypedSnapshot.fromSnapshot(snapshot)
+      })
+      .filter((snapshot) => {
+        return snapshot.owner === address
+      })
   }
 
   /**
@@ -312,7 +351,7 @@ class SnapshotManager {
         ...transfer,
         ...{ block: transaction.block }
       })
-      return (this._hasSnapshot(snapshot) && snapshot.valid)
+      return this._hasSnapshot(snapshot) && snapshot.valid
     })
   }
 
@@ -375,10 +414,12 @@ class SnapshotManager {
   applyTransaction (transaction) {
     // Pull out all of the transfer components (implicit and explicit).
     const components = transaction.transfers.reduce((components, transfer) => {
-      return components.concat(this._getTransferComponents({
-        ...transfer,
-        ...{ block: transaction.block }
-      }))
+      return components.concat(
+        this._getTransferComponents({
+          ...transfer,
+          ...{ block: transaction.block }
+        })
+      )
     }, [])
 
     for (const component of components) {
@@ -391,14 +432,22 @@ class SnapshotManager {
    * @param {TransferComponent} component Component to apply.
    */
   _applyTransferComponent (component) {
+    this.debug(`Applying transaction component: ${component.toJSON()}`)
+
     // Determine which snapshots overlap with this component.
     const overlapping = this.snapshots.filter((snapshot) => {
-      return Math.max(snapshot.start, component.start) < Math.min(snapshot.end, component.end)
+      return (
+        Math.max(snapshot.start, component.start) <
+        Math.min(snapshot.end, component.end)
+      )
     })
 
     // Apply this component to each snapshot that it overlaps.
     for (const snapshot of overlapping) {
       if (!this._validStateTransition(snapshot, component)) {
+        this.debug(
+          `ERROR: Failed when applying component to snapshot: ${snapshot.toJSON()}`
+        )
         throw new Error('Invalid state transition')
       }
 
@@ -407,23 +456,29 @@ class SnapshotManager {
 
       // Insert any newly created snapshots.
       if (snapshot.start.lt(component.start)) {
-        this._addSnapshot(new Snapshot({
-          ...snapshot,
-          ...{ end: component.start }
-        }))
+        this._addSnapshot(
+          new Snapshot({
+            ...snapshot,
+            ...{ end: component.start }
+          })
+        )
       }
       if (snapshot.end.gt(component.end)) {
-        this._addSnapshot(new Snapshot({
-          ...snapshot,
-          ...{ start: component.end }
-        }))
+        this._addSnapshot(
+          new Snapshot({
+            ...snapshot,
+            ...{ start: component.end }
+          })
+        )
       }
-      this._addSnapshot(new Snapshot({
-        start: Math.max(snapshot.start, component.start),
-        end: Math.min(snapshot.end, component.end),
-        block: component.block,
-        owner: component.implicit ? snapshot.owner : component.recipient
-      }))
+      this._addSnapshot(
+        new Snapshot({
+          start: Math.max(snapshot.start, component.start),
+          end: Math.min(snapshot.end, component.end),
+          block: component.block,
+          owner: component.implicit ? snapshot.owner : component.recipient
+        })
+      )
     }
   }
 
@@ -466,10 +521,7 @@ class SnapshotManager {
     snapshots.forEach((snapshot) => {
       let left, right
       merged.forEach((s, i) => {
-        if (
-          !s.block.eq(snapshot.block) ||
-          s.owner !== snapshot.owner
-        ) {
+        if (!s.block.eq(snapshot.block) || s.owner !== snapshot.owner) {
           return
         }
 
@@ -504,8 +556,7 @@ class SnapshotManager {
    */
   _mergeRanges (ranges) {
     const orderRanges = (rangeA, rangeB) => {
-      if (rangeA.owner !== rangeB.owner ||
-          rangeA.end.lt(rangeB.start)) {
+      if (rangeA.owner !== rangeB.owner || rangeA.end.lt(rangeB.start)) {
         return [rangeA, rangeB]
       } else if (rangeA.start.eq(rangeB.end)) {
         rangeB.end = rangeA.end
@@ -579,26 +630,30 @@ class SnapshotManager {
 
     // Left implicit component.
     if (!serialized.start.eq(serialized.implicitStart)) {
-      components.push(new TransferComponent({
-        ...serialized,
-        ...{
-          start: serialized.implicitStart,
-          end: serialized.start,
-          implicit: true
-        }
-      }))
+      components.push(
+        new TransferComponent({
+          ...serialized,
+          ...{
+            start: serialized.implicitStart,
+            end: serialized.start,
+            implicit: true
+          }
+        })
+      )
     }
 
     // Right implicit component.
     if (!serialized.end.eq(serialized.implicitEnd)) {
-      components.push(new TransferComponent({
-        ...serialized,
-        ...{
-          start: serialized.end,
-          end: serialized.implicitEnd,
-          implicit: true
-        }
-      }))
+      components.push(
+        new TransferComponent({
+          ...serialized,
+          ...{
+            start: serialized.end,
+            end: serialized.implicitEnd,
+            implicit: true
+          }
+        })
+      )
     }
 
     // Transfer (non-implicit) component.
@@ -618,11 +673,13 @@ class SnapshotManager {
     token = new BigNum(token, 'hex')
     amount = new BigNum(amount, 'hex')
 
-    const available = arr.filter((item) => {
-      return item.token.eq(token)
-    }).sort((a, b) => {
-      return b.end.sub(b.start).sub(a.end.sub(a.start))
-    })
+    const available = arr
+      .filter((item) => {
+        return item.token.eq(token)
+      })
+      .sort((a, b) => {
+        return b.end.sub(b.start).sub(a.end.sub(a.start))
+      })
     const picked = []
 
     while (amount.gtn(0)) {

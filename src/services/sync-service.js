@@ -89,13 +89,12 @@ class SyncService extends BaseService {
     // TODO: Figure out how handle operator errors.
     const addresses = await this.services.wallet.getAccounts()
     for (let address of addresses) {
-      this.pending = this.pending.concat(
-        await this.services.operator.getTransactions(
-          address,
-          firstUnsyncedBlock,
-          currentBlock
-        )
+      const received = await this.services.operator.getTransactions(
+        address,
+        firstUnsyncedBlock,
+        currentBlock
       )
+      this.pending = this.pending.concat(received)
     }
 
     // Add any previously failed transactions to try again.
