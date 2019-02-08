@@ -221,7 +221,7 @@ class ContractProvider extends BaseContractProvider {
     return this.contract.methods.depositETH().send({
       from: owner,
       value: amount,
-      gas: 6000000 // TODO: Figure out how much this should be.
+      gas: 150000 // TODO: Figure out how much this should be.
     })
   }
 
@@ -263,7 +263,7 @@ class ContractProvider extends BaseContractProvider {
     await this.checkAccountUnlocked(owner)
     return this.contract.methods.beginExit(token, block, start, end).send({
       from: owner,
-      gas: 1000000
+      gas: 200000
     })
   }
 
@@ -278,7 +278,7 @@ class ContractProvider extends BaseContractProvider {
     await this.checkAccountUnlocked(owner)
     return this.contract.methods.finalizeExit(exitId, exitableEnd).send({
       from: owner,
-      gas: 6000000
+      gas: 100000
     })
   }
 

@@ -373,6 +373,7 @@ class SnapshotManager {
    * @param {number} block The block number.
    */
   applyEmptyBlock (block) {
+    this.debug(`Applying empty block: ${block.toString(10)}`)
     for (let snapshot of this.snapshots) {
       if (snapshot.block.addn(1).eq(block)) {
         snapshot.block = snapshot.block.addn(1)
