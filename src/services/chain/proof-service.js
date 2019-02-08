@@ -110,12 +110,11 @@ class ProofSerivce extends BaseService {
     // If the root is '0x00....', then this block was empty.
     if (root === EMPTY_BLOCK_HASH) {
       if (transaction.transfers.length > 0) {
-        this.logger(`
-          WARNING: Block #${
-  transaction.block
-} is empty but received a non-empty proof element.
-          Proof will likely be rejected. This is probably due to an error in the operator.
-        `)
+        this.logger(
+          `WARNING: Block #${
+            transaction.block
+          } is empty but received a non-empty proof element. Proof will likely be rejected. This is probably due to an error in the operator.`
+        )
       }
       transaction.isEmptyBlockTransaction = true
       return true

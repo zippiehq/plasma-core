@@ -111,7 +111,7 @@ class HttpOperatorProvider extends BaseOperatorProvider {
     })
 
     const emptyProofs = []
-    for (let i = earliestBlock; i < Math.max(...nonEmptyBlocks); i++) {
+    for (let i = earliestBlock + 1; i < Math.max(...nonEmptyBlocks); i++) {
       if (!nonEmptyBlocks.includes(i)) {
         emptyProofs.push({
           transaction: {
