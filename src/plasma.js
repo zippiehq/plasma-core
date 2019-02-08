@@ -6,8 +6,7 @@ const defaultOptions = {
   operatorProvider: services.OperatorProviders.DefaultOperatorProvider,
   walletProvider: services.WalletProviders.DefaultWalletProvider,
   contractProvider: services.ContractProviders.DefaultContractProvider,
-  web3Provider: services.Web3Provider,
-  registryAddress: services.defaultRegistryAddress
+  web3Provider: services.Web3Provider
 }
 
 /**
@@ -71,8 +70,8 @@ class Plasma {
       services.ChainDB,
       services.SyncDB,
       this.options.walletProvider,
-      this.options.operatorProvider,
       this.options.contractProvider,
+      this.options.operatorProvider,
       services.ProofService,
       services.ChainService,
       services.JSONRPCService,
