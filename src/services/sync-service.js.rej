@@ -1,8 +1,0 @@
-diff a/src/services/sync-service.js b/src/services/sync-service.js	(rejected hunks)
-@@ -148,2 +148,4 @@ class SyncService extends BaseService {
--    if (tx.transfers[0].sender === NULL_ADDRESS ||
--        (await this.services.chaindb.hasTransaction(tx.hash))) {
-+    if (
-+      tx.transfers[0].sender === NULL_ADDRESS ||
-+      (await this.services.chaindb.hasTransaction(tx.hash))
-+    ) {

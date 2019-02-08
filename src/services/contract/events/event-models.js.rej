@@ -1,6 +1,0 @@
-diff a/src/services/contract/events/event-models.js b/src/services/contract/events/event-models.js	(rejected hunks)
-@@ -76 +76,3 @@ class ChainCreatedEvent {
--    this.operatorEndpoint = encodeURI(web3Utils.hexToAscii(unparsed.PlasmaChainIP)).replace(/%00/gi, '')
-+    this.operatorEndpoint = encodeURI(
-+      web3Utils.hexToAscii(unparsed.PlasmaChainIP)
-+    ).replace(/%00/gi, '')
