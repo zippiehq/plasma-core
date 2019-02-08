@@ -1,0 +1,60 @@
+diff a/src/services/operator/http-provider.js b/src/services/operator/http-provider.js	(rejected hunks)
+@@ -59 +59,5 @@ class HttpOperatorProvider extends BaseOperatorProvider {
+-    const txs = await this._handle('getTransactions', [address, startBlock, endBlock])
++    const txs = await this._handle('getTransactions', [
++      address,
++      startBlock,
++      endBlock
++    ])
+@@ -99,3 +103,5 @@ class HttpOperatorProvider extends BaseOperatorProvider {
+-    const earliestBlock = deposits.reduce((a, b) => {
+-      return a.block.lt(b.block) ? a : b
+-    }).block.toNumber()
++    const earliestBlock = deposits
++      .reduce((a, b) => {
++        return a.block.lt(b.block) ? a : b
++      })
++      .block.toNumber()
+@@ -122,16 +128,21 @@ class HttpOperatorProvider extends BaseOperatorProvider {
+-    const txProofs = nonEmptyBlocks.sort((a, b) => {
+-      return new BigNum(a, 10).sub(new BigNum(b, 10))
+-    }).reduce((proofs, block) => {
+-      return proofs.concat(rawProof.transactionHistory[block])
+-    }, []).concat(emptyProofs).map((txProof) => {
+-      return {
+-        transaction: new UnsignedTransaction(txProof.transaction),
+-        proof: txProof.transactionProof.transferProofs.map(
+-          (transferProof) => {
+-            return new TransferProof(transferProof)
+-          }
+-        )
+-      }
+-    }).sort((a, b) => {
+-      return a.transaction.block.sub(b.transaction.block)
+-    })
++    const txProofs = nonEmptyBlocks
++      .sort((a, b) => {
++        return new BigNum(a, 10).sub(new BigNum(b, 10))
++      })
++      .reduce((proofs, block) => {
++        return proofs.concat(rawProof.transactionHistory[block])
++      }, [])
++      .concat(emptyProofs)
++      .map((txProof) => {
++        return {
++          transaction: new UnsignedTransaction(txProof.transaction),
++          proof: txProof.transactionProof.transferProofs.map(
++            (transferProof) => {
++              return new TransferProof(transferProof)
++            }
++          )
++        }
++      })
++      .sort((a, b) => {
++        return a.transaction.block.sub(b.transaction.block)
++      })
+@@ -173 +184,3 @@ class HttpOperatorProvider extends BaseOperatorProvider {
+-      baseURL: this.endpoint.startsWith('http') ? this.endpoint : `https://${this.endpoint}`
++      baseURL: this.endpoint.startsWith('http')
++        ? this.endpoint
++        : `https://${this.endpoint}`

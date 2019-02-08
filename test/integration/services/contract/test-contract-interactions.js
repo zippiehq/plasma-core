@@ -53,7 +53,7 @@ describe('Contract Interactions', () => {
 
     contract = new ContractProvider({ app: app })
     app.services.contract = contract
-    contract.initContract()
+    contract._initContract()
 
     // Deploy and initialize the contract.
     const deployed = await contract.contract.deploy({
