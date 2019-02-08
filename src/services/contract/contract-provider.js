@@ -3,6 +3,7 @@ const BaseContractProvider = require('./base-provider')
 const compiledContracts = require('plasma-contracts')
 const plasmaChainCompiled = compiledContracts.plasmaChainCompiled
 const erc20Compiled = compiledContracts.erc20Compiled
+const registryCompiled = compiledContracts.plasmaRegistryCompiled
 const eventModels = require('./events/event-models')
 const DepositEvent = eventModels.DepositEvent
 
@@ -43,6 +44,20 @@ class ContractProvider extends BaseContractProvider {
   }
 
   /**
+   * @return {string} Plasma Chain contract name.
+   */
+  get plasmaChainName () {
+    return this.options.plasmaChainName
+  }
+
+  /**
+   * @return {string} Plasma Chain Registry contract address.
+   */
+  get registryAddress () {
+    return this.options.registryAddress
+  }
+
+  /**
    * Initializes the contract instance.
    */
   initContract () {
@@ -52,16 +67,18 @@ class ContractProvider extends BaseContractProvider {
 
   /**
    * Initializes the contract address.
-   * Currently just queries the address from the operator
-   * but should really be getting it from the registry.
+   * Queries address from the registry.
    */
   async initContractAddress () {
-    // TODO: Replace this because we should really be getting
-    // the address from the registry.
-    if (this.services.operator.getEthInfo) {
-      await this.services.operator.waitForConnection()
-      const ethInfo = await this.services.operator.getEthInfo()
-      this.contract.options.address = ethInfo.plasmaChainAddress
+    if (this.plasmaChainName) {
+      const registryContract = this.web3.eth.Contract(
+        registryCompiled.abi,
+        this.registryAddress
+      )
+      const contractAddress = await registryContract.methods
+        .plasmaChainNames(this.plasmaChainName)
+        .call()
+      this.contract.options.address = contractAddress
     }
     this.logger(`Contract address set: ${this.address}`)
   }
