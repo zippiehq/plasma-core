@@ -38,7 +38,7 @@ class PrettyPrint {
    * Converts BigNums to decimal strings.
    * @return {string} JSON string.
    */
-  toJSON () {
+  prettify () {
     const parsed = {}
     Object.keys(this).forEach((key) => {
       const value = this[key]
@@ -131,6 +131,21 @@ class Snapshot extends PrettyPrint {
       }
     })
   }
+
+  /**
+   * Creates a Snapshot from an Exit.
+   * @param {Exit} exit An Exit object.
+   * @return {Snapshot} The snapshot object.
+   */
+  static fromExit (exit) {
+    return Snapshot.fromTransfer({
+      ...exit,
+      ...{
+        sender: exit.exiter,
+        recipient: NULL_ADDRESS
+      }
+    })
+  }
 }
 
 /**
@@ -201,47 +216,6 @@ class TransferComponent extends PrettyPrint {
     this.sender = transfer.sender
     this.recipient = transfer.recipient
     this.implicit = transfer.implicit || false
-    this.special = transfer.special || false
-  }
-
-  /**
-   * Creates a TransferComponent from an Exit.
-   * @param {Exit} exit An Exit object.
-   * @return {TransferComponent} The component object.
-   */
-  static fromExit (exit) {
-    const serialized = new Transfer({
-      ...exit,
-      ...{
-        sender: exit.exiter,
-        recipient: NULL_ADDRESS
-      }
-    })
-
-    return new TransferComponent({
-      ...serialized,
-      ...{
-        block: exit.block,
-        start: serialized.typedStart,
-        end: serialized.typedEnd,
-        special: true
-      }
-    })
-  }
-
-  /**
-   * Creates a TransferComponent from a Snapshot.
-   * @param {Snapshot} snapshot A Snapshot object.
-   * @return {TransferComponent} The component object.
-   */
-  static fromSnapshot (snapshot) {
-    return new TransferComponent({
-      ...snapshot,
-      ...{
-        recipient: snapshot.owner,
-        special: true
-      }
-    })
   }
 }
 
@@ -280,10 +254,10 @@ class SnapshotManager {
    * @param {SnapshotManager} other Other manager.
    */
   merge (other) {
+    this.debug('Merging snapshots')
     for (const snapshot of other.state) {
-      const component = TransferComponent.fromSnapshot(snapshot)
       try {
-        this._applyTransferComponent(component)
+        this._addSnapshot(snapshot)
       } catch (err) {
         // TODO: Handle errors here? They don't really break anything.
       }
@@ -369,8 +343,8 @@ class SnapshotManager {
    * @param {Exit} exit Exit to apply.
    */
   applyExit (exit) {
-    const component = TransferComponent.fromExit(exit)
-    this._applyTransferComponent(component)
+    const snapshot = Snapshot.fromExit(exit)
+    this._addSnapshot(snapshot)
   }
 
   /**
@@ -380,18 +354,17 @@ class SnapshotManager {
    * @param {Transaction} transaction Transaction to apply.
    */
   applySentTransaction (transaction) {
-    const components = transaction.transfers.map((transfer) => {
-      return new TransferComponent({
+    const snapshots = transaction.transfers.map((transfer) => {
+      return Snapshot.fromTransfer({
         ...transfer,
         ...{
-          block: transaction.block,
-          special: true
+          block: transaction.block
         }
       })
     })
 
-    for (const component of components) {
-      this._applyTransferComponent(component)
+    for (const snapshot of snapshots) {
+      this._addSnapshot(snapshot)
     }
   }
 
@@ -432,7 +405,7 @@ class SnapshotManager {
    * @param {TransferComponent} component Component to apply.
    */
   _applyTransferComponent (component) {
-    this.debug(`Applying transaction component: ${component.toJSON()}`)
+    this.debug(`Applying transaction component: ${component.prettify()}`)
 
     // Determine which snapshots overlap with this component.
     const overlapping = this.snapshots.filter((snapshot) => {
@@ -445,10 +418,7 @@ class SnapshotManager {
     // Apply this component to each snapshot that it overlaps.
     for (const snapshot of overlapping) {
       if (!this._validStateTransition(snapshot, component)) {
-        this.debug(
-          `ERROR: Failed when applying component to snapshot: ${snapshot.toJSON()}`
-        )
-        throw new Error('Invalid state transition')
+        continue
       }
 
       // Remove the old snapshot.
@@ -490,11 +460,13 @@ class SnapshotManager {
     if (!snapshot.valid) {
       throw new Error('Invalid snapshot')
     }
+    this.debug(`Adding snapshot: ${snapshot.prettify()}`)
 
     this.snapshots.push(snapshot)
     this.snapshots.sort((a, b) => {
       return a.start.sub(b.start)
     })
+    this.snapshots = this._removeOverlapping(this.snapshots)
     this.snapshots = this._mergeSnapshots(this.snapshots)
   }
 
@@ -516,7 +488,7 @@ class SnapshotManager {
    * @return {Array<Snapshot>} The merged list of Snapshot objects.
    */
   _mergeSnapshots (snapshots) {
-    let merged = []
+    const merged = []
 
     snapshots.forEach((snapshot) => {
       let left, right
@@ -545,6 +517,71 @@ class SnapshotManager {
     })
 
     return merged
+  }
+
+  /**
+   * Removes any overlapping snapshots by giving preference to the later snapshot.
+   * @param {Array<Snapshot>} snapshots A list of snapshots.
+   * @return {Array<Snapshot>} The list with overlapping snapshots resolved.
+   */
+  _removeOverlapping (snapshots) {
+    // Sort by start, then end.
+    snapshots.sort((a, b) => {
+      if (!a.start.eq(b.start)) {
+        return a.start.sub(b.start)
+      } else {
+        return a.end.sub(b.end)
+      }
+    })
+
+    // Clear up any overlap by picking the snapshot with the greatest block.
+    let reduced = []
+    for (let s of snapshots) {
+      // Catches overlap since we've sorted by start and end/
+      const overlapping = reduced.filter((r) => {
+        return s.start.lt(r.end)
+      })
+
+      // Break up overlapping components.
+      let remainder = true
+      for (let r of overlapping) {
+        if (s.block.gte(r.block)) {
+          // New snapshot comes after old one, so overwrite.
+
+          // Remove the old snapshot.
+          reduced = reduced.filter((el) => {
+            return !el.equals(r)
+          })
+
+          // Add the new overlapping part.
+          reduced.push(
+            new Snapshot({
+              ...s,
+              ...{ end: r.end }
+            })
+          )
+        }
+
+        if (s.end.gt(r.end)) {
+          // Repeat the process with the part that didn't overlap.
+          s = new Snapshot({
+            ...s,
+            ...{ start: r.end }
+          })
+        } else {
+          // Everything overlapped, so there's no remainder.
+          remainder = false
+          break
+        }
+      }
+
+      // Add any remainder.
+      if (remainder) {
+        reduced.push(s)
+      }
+    }
+
+    return reduced
   }
 
   /**
@@ -603,10 +640,9 @@ class SnapshotManager {
    * @return {boolean} `true` if the transition is valid, `false` otherwise.
    */
   _validStateTransition (snapshot, transfer) {
-    const specialCase = transfer.special && snapshot.block.lt(transfer.block)
     const validSender = transfer.implicit || snapshot.owner === transfer.sender
     const validBlock = snapshot.block.addn(1).eq(transfer.block)
-    return specialCase || (validSender && validBlock)
+    return validSender && validBlock
   }
 
   /**

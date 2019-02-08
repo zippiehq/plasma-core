@@ -2,7 +2,7 @@ const chai = require('chai')
 const BigNum = require('bn.js')
 const utils = require('plasma-utils')
 
-const should = chai.should()
+chai.should()
 
 const SnapshotManager = require('../../../../src/services/chain/snapshot-manager')
 const constants = utils.constants
@@ -129,7 +129,7 @@ describe('SnapshotManager', () => {
     snapshotManager._equals(expected).should.be.true
   })
 
-  it('should not apply a transaction with an invalid sender', () => {
+  it('should not verify a transaction with an invalid sender', () => {
     const transaction = {
       block: 1,
       transfers: [
@@ -140,8 +140,6 @@ describe('SnapshotManager', () => {
     const snapshotManager = new SnapshotManager()
     snapshotManager.applyDeposit(deposit)
 
-    should.Throw(() => {
-      snapshotManager.applyTransaction(transaction)
-    }, 'Invalid state transition')
+    snapshotManager.validateTransaction(transaction).should.be.false
   })
 })
