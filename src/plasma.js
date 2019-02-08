@@ -6,7 +6,8 @@ const defaultOptions = {
   operatorProvider: services.OperatorProviders.DefaultOperatorProvider,
   walletProvider: services.WalletProviders.DefaultWalletProvider,
   contractProvider: services.ContractProviders.DefaultContractProvider,
-  web3Provider: services.Web3Provider
+  web3Provider: services.Web3Provider,
+  registryAddress: services.defaultRegistryAddress
 }
 
 /**

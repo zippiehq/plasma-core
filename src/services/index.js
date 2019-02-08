@@ -13,6 +13,8 @@ const WalletProviders = require('./wallet/index')
 const Web3Provider = require('./web3-provider')
 const EventHandler = require('./contract/events/event-handler')
 const EventWatcher = require('./contract/events/event-watcher')
+// Should this address value perhaps be kept in a seperate file?
+const defaultRegistryAddress = '0xA1f90e4933F9AF055e4a309DB54316552E7Fd10c'
 
 module.exports = {
   BaseService,
@@ -28,6 +30,7 @@ module.exports = {
   ProofService,
   WalletProviders,
   Web3Provider,
+  EventHandler,
   EventWatcher,
-  EventHandler
+  defaultRegistryAddress
 }
