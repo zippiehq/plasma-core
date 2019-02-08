@@ -130,6 +130,24 @@ class EventWatcher extends BaseService {
       )
 
       if (events.length > 0) {
+        /*
+         * Ensure no duplicate events exist:
+         *
+         * 1. Calculate unique event hash
+         * 2. Check if event does not exist by querying DB for event hash
+         *      If doesn't exist, log it,
+         *      else, remove it from events array
+         */
+        for (let i = 0; i < events.length; i++) {
+          let hash = this.services.web3.utils.sha3(
+            events[i].transactionHash + events[i].logIndex
+          )
+          if (!(await this.services.db.exists(hash))) {
+            await this.services.db.set(`event:${hash}`, true)
+          } else {
+            events.splice(i, 1)
+          }
+        }
         for (let listener of this.subscriptions[eventName]) {
           try {
             listener(events)
