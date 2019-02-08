@@ -102,63 +102,72 @@ class EventWatcher extends BaseService {
     let lastFinalBlock = block - this.options.finalityDepth
     lastFinalBlock = lastFinalBlock < 0 ? 0 : lastFinalBlock
 
-    for (let eventName in this.events) {
-      if (
-        !this.events[eventName].active ||
-        !this.services.contract.hasAddress
-      ) {
-        continue
+    await Promise.all(
+      Object.keys(this.events).map((eventName) =>
+        this._checkEvent(eventName, lastFinalBlock)
+      )
+    )
+  }
+
+  async _checkEvent (eventName, lastFinalBlock) {
+    if (!this.events[eventName].active || !this.services.contract.hasAddress) {
+      return
+    }
+
+    let lastLoggedBLock = await this.services.db.get(
+      `lastlogged:${eventName}`,
+      -1
+    )
+    let firstUnsyncedBlock = lastLoggedBLock + 1
+    if (firstUnsyncedBlock > lastFinalBlock) return
+    this.logger(
+      `Checking for new ${eventName} events between blocks ${firstUnsyncedBlock} and ${lastFinalBlock}`
+    )
+
+    // TODO: Remove any events that have already been seen.
+    let events = await this.services.contract.contract.getPastEvents(
+      eventName,
+      {
+        fromBlock: firstUnsyncedBlock,
+        toBlock: lastFinalBlock
       }
+    )
 
-      let lastLoggedBLock = await this.services.db.get(
-        `lastlogged:${eventName}`,
-        -1
-      )
-      let firstUnsyncedBlock = lastLoggedBLock + 1
-      if (firstUnsyncedBlock > lastFinalBlock) return
-      this.logger(
-        `Checking for new ${eventName} events between blocks ${firstUnsyncedBlock} and ${lastFinalBlock}`
-      )
-
-      // TODO: Remove any events that have already been seen.
-      let events = await this.services.contract.contract.getPastEvents(
-        eventName,
-        {
-          fromBlock: firstUnsyncedBlock,
-          toBlock: lastFinalBlock
-        }
-      )
-
-      if (events.length > 0) {
-        /*
-         * Ensure no duplicate events exist:
-         *
-         * 1. Calculate unique event hash
-         * 2. Check if event does not exist by querying DB for event hash
-         *      If doesn't exist, log it,
-         *      else, remove it from events array
-         */
-        for (let i = 0; i < events.length; i++) {
-          let hash = this.services.web3.utils.sha3(
-            events[i].transactionHash + events[i].logIndex
-          )
+    if (events.length > 0) {
+      /*
+       * Ensure no duplicate events exist:
+       *
+       * 1. Calculate unique event hash
+       * 2. Check if event does not exist by querying DB for event hash
+       *      If doesn't exist, log it,
+       *      else, remove it from events array
+       */
+      const isUniq = await Promise.all(
+        events.map(async (event) => {
+          const hash = this._getEventHash(event)
           if (!(await this.services.db.exists(hash))) {
             await this.services.db.set(`event:${hash}`, true)
-          } else {
-            events.splice(i, 1)
+            return true
           }
-        }
-        for (let listener of this.subscriptions[eventName]) {
-          try {
-            listener(events)
-          } catch (err) {
-            console.log(err) // TODO: Handle this.
-          }
+        })
+      )
+
+      events = events.filter((event, i) => isUniq[i])
+
+      for (let listener of this.subscriptions[eventName]) {
+        try {
+          listener(events)
+        } catch (err) {
+          console.log(err) // TODO: Handle this.
         }
       }
-
-      await this.services.db.set(`lastlogged:${eventName}`, lastFinalBlock)
     }
+
+    await this.services.db.set(`lastlogged:${eventName}`, lastFinalBlock)
+  }
+
+  _getEventHash ({ transactionHash, logIndex }) {
+    return this.services.web3.utils.sha3(transactionHash + logIndex)
   }
 
   /**
