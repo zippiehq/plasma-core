@@ -1,23 +1,33 @@
 const BigNum = require('bn.js')
 const BaseContractProvider = require('./base-provider')
+const utils = require('plasma-utils')
 const compiledContracts = require('plasma-contracts')
 const plasmaChainCompiled = compiledContracts.plasmaChainCompiled
 const erc20Compiled = compiledContracts.erc20Compiled
 const registryCompiled = compiledContracts.plasmaRegistryCompiled
 const eventModels = require('./events/event-models')
 const DepositEvent = eventModels.DepositEvent
+const ChainCreatedEvent = eventModels.ChainCreatedEvent
+
+const defaultOptions = {
+  registryAddress: '0x18d8BD44a01fb8D5f295a2B3Ab15789F26385df7'
+}
 
 /**
  * Wraps contract calls for clean access.
  */
 class ContractProvider extends BaseContractProvider {
+  constructor (options) {
+    super(options, defaultOptions)
+  }
+
   get dependencies () {
-    return ['web3', 'operator', 'wallet']
+    return ['web3', 'wallet']
   }
 
   async _onStart () {
-    this.initContract()
-    this.initContractAddress()
+    this._initContract()
+    this._initContractInfo()
   }
 
   /**
@@ -35,6 +45,13 @@ class ContractProvider extends BaseContractProvider {
   }
 
   /**
+   * @return {boolean} `true` if the contract is ready to be used, `false` otherwise.
+   */
+  get ready () {
+    return this.hasAddress && this.operatorEndpoint
+  }
+
+  /**
    * Returns the current web3 instance.
    * Mainly used for convenience.
    * @return {*} The current web3 instance.
@@ -48,39 +65,6 @@ class ContractProvider extends BaseContractProvider {
    */
   get plasmaChainName () {
     return this.options.plasmaChainName
-  }
-
-  /**
-   * @return {string} Plasma Chain Registry contract address.
-   */
-  get registryAddress () {
-    return this.options.registryAddress
-  }
-
-  /**
-   * Initializes the contract instance.
-   */
-  initContract () {
-    if (this.contract) return
-    this.contract = new this.web3.eth.Contract(plasmaChainCompiled.abi)
-  }
-
-  /**
-   * Initializes the contract address.
-   * Queries address from the registry.
-   */
-  async initContractAddress () {
-    if (this.plasmaChainName) {
-      const registryContract = this.web3.eth.Contract(
-        registryCompiled.abi,
-        this.registryAddress
-      )
-      const contractAddress = await registryContract.methods
-        .plasmaChainNames(this.plasmaChainName)
-        .call()
-      this.contract.options.address = contractAddress
-    }
-    this.logger(`Contract address set: ${this.address}`)
   }
 
   /**
@@ -237,7 +221,7 @@ class ContractProvider extends BaseContractProvider {
     return this.contract.methods.depositETH().send({
       from: owner,
       value: amount,
-      gas: 6000000 // TODO: Figure out how much this should be.
+      gas: 150000 // TODO: Figure out how much this should be.
     })
   }
 
@@ -279,7 +263,7 @@ class ContractProvider extends BaseContractProvider {
     await this.checkAccountUnlocked(owner)
     return this.contract.methods.beginExit(token, block, start, end).send({
       from: owner,
-      gas: 1000000
+      gas: 200000
     })
   }
 
@@ -294,7 +278,7 @@ class ContractProvider extends BaseContractProvider {
     await this.checkAccountUnlocked(owner)
     return this.contract.methods.finalizeExit(exitId, exitableEnd).send({
       from: owner,
-      gas: 6000000
+      gas: 100000
     })
   }
 
@@ -312,6 +296,69 @@ class ContractProvider extends BaseContractProvider {
     return this.contract.methods.submitBlock(hash).send({
       from: operator
     })
+  }
+
+  /**
+   * Waits for the contract to be initialized.
+   * @return {Promise} Promise that resolves once the contract is ready to use.
+   */
+  async waitForInit () {
+    return new Promise((resolve) => {
+      if (this.hasAddress) resolve()
+      setInterval(() => {
+        if (this.hasAddress) resolve()
+      }, 100)
+    })
+  }
+
+  /**
+   * Initializes the contract instance.
+   */
+  _initContract () {
+    if (this.contract) return
+    this.contract = new this.web3.eth.Contract(plasmaChainCompiled.abi)
+    this.registryContract = new this.web3.eth.Contract(
+      registryCompiled.abi,
+      this.options.registryAddress
+    )
+  }
+
+  /**
+   * Initializes the contract address and operator endpoint.
+   * Queries information from the registry.
+   */
+  async _initContractInfo () {
+    if (!this.plasmaChainName) {
+      throw new Error('ERROR: Plasma chain name not provided.')
+    }
+
+    const plasmaChainName = utils.utils.web3Utils
+      .asciiToHex(this.plasmaChainName)
+      .padEnd(66, '0')
+    const operator = await this.registryContract.methods
+      .plasmaChainNames(plasmaChainName)
+      .call()
+    const events = await this.registryContract.getPastEvents('NewPlasmaChain', {
+      filter: {
+        OperatorAddress: operator
+      },
+      fromBlock: 0
+    })
+    const event = events.find((event) => {
+      return event.returnValues.PlasmaChainName === plasmaChainName
+    })
+
+    if (!event) {
+      throw new Error('ERROR: Plasma chain name not found in registry.')
+    }
+
+    const parsed = new ChainCreatedEvent(event)
+    this.contract.options.address = parsed.plasmaChainAddress
+    this.operatorEndpoint = parsed.operatorEndpoint
+
+    this.logger(`Connected to plasma chain: ${this.plasmaChainName}`)
+    this.logger(`Contract address set: ${this.address}`)
+    this.logger(`Operator endpoint set: ${this.operatorEndpoint}`)
   }
 }
 

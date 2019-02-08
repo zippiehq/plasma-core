@@ -121,10 +121,9 @@ class EventWatcher extends BaseService {
     let firstUnsyncedBlock = lastLoggedBLock + 1
     if (firstUnsyncedBlock > lastFinalBlock) return
     this.logger(
-      `Checking for new ${eventName} events between blocks ${firstUnsyncedBlock} and ${lastFinalBlock}`
+      `Checking for new ${eventName} events between Ethereum blocks ${firstUnsyncedBlock} and ${lastFinalBlock}`
     )
 
-    // TODO: Remove any events that have already been seen.
     let events = await this.services.contract.contract.getPastEvents(
       eventName,
       {
@@ -134,14 +133,6 @@ class EventWatcher extends BaseService {
     )
 
     if (events.length > 0) {
-      /*
-       * Ensure no duplicate events exist:
-       *
-       * 1. Calculate unique event hash
-       * 2. Check if event does not exist by querying DB for event hash
-       *      If doesn't exist, log it,
-       *      else, remove it from events array
-       */
       const isUniq = await Promise.all(
         events.map(async (event) => {
           const hash = this._getEventHash(event)

@@ -24,7 +24,9 @@ const submitDeposits = async (deposits) => {
 
 const submitBlocks = async (blocks) => {
   for (let block of blocks) {
-    await app.services.contract.submitBlock(block)
+    const blockNum = new BigNum(block.number, 10)
+    await app.services.chaindb.addBlockHeader(blockNum, block.hash)
+    await app.services.contract.submitBlock(block.hash)
   }
 }
 
@@ -94,8 +96,14 @@ const proof = [
 ]
 
 const blocks = [
-  hash(transaction1),
-  hash(transaction2)
+  {
+    number: 1,
+    hash: hash(transaction1)
+  },
+  {
+    number: 2,
+    hash: hash(transaction2)
+  }
 ]
 
 describe('ProofService', async () => {
@@ -204,7 +212,16 @@ describe('ProofService', async () => {
     ]
 
     await submitDeposits(manyDeposits)
-    await submitBlocks([hash(manyDepositTx1), hash(manyDepositTx2)])
+    await submitBlocks([
+      {
+        number: 3,
+        hash: hash(manyDepositTx1)
+      },
+      {
+        number: 4,
+        hash: hash(manyDepositTx2)
+      }
+    ])
 
     const validity = await verifier.checkProof(manyDepositTx2, manyDeposits, manyDepositProof)
 
@@ -216,57 +233,57 @@ describe('ProofService', async () => {
       { token: 0, block: 0, start: 0, end: 10, owner: accounts[0].address }
     ]
 
-    verifier.checkProof(transaction2, invalidDeposits, proof).should.be.rejectedWith('Invalid deposit')
+    await verifier.checkProof(transaction2, invalidDeposits, proof).should.be.rejectedWith('Invalid deposit')
   })
 
-  it('should not verify an invalid range', () => {
+  it('should not verify an invalid range', async () => {
     let invalidTransaction = _.cloneDeep(transaction2)
     invalidTransaction.transfers[0].start = 50
     invalidTransaction.transfers[0].end = 0
     invalidTransaction = autoSign(invalidTransaction)
 
-    verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid state transition')
+    await verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid state transition')
   })
 
-  it('should not verify a zero-length range', () => {
+  it('should not verify a zero-length range', async () => {
     let invalidTransaction = _.cloneDeep(transaction2)
     invalidTransaction.transfers[0].end = 0
     invalidTransaction = autoSign(invalidTransaction)
 
-    verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid state transition')
+    await verifier.checkProof(invalidTransaction, deposits, proof).should.be.rejectedWith('Invalid state transition')
   })
 
-  it('should not verify with missing chunks of history', () => {
+  it('should not verify with missing chunks of history', async () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].transaction.transfers[0].end = 25
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
-    app.services.contract.blocks[1] = hash(invalidProof[0].transaction)
+    await app.services.chaindb.addBlockHeader(new BigNum(1), hash(invalidProof[0].transaction))
 
-    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
+    await verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
 
-  it('should not verify an invalid history', () => {
+  it('should not verify an invalid history', async () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].transaction.transfers[0].sender = accounts[1].address
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].sender, invalidProof[0].transaction)
-    app.services.contract.blocks[1] = hash(invalidProof[0].transaction)
+    await app.services.chaindb.addBlockHeader(new BigNum(1), hash(invalidProof[0].transaction))
 
-    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
+    await verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid state transition')
   })
 
-  it('should not verify a transaction with an invalid signature', () => {
+  it('should not verify a transaction with an invalid signature', async () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].proof[0].signature = sign(invalidProof[0].transaction.transfers[0].recipient, invalidProof[0].transaction)
 
-    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid transaction')
+    await verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid transaction')
   })
 
-  it('should not verify a transaction with an invalid inclusion proof', () => {
+  it('should not verify a transaction with an invalid inclusion proof', async () => {
     let invalidProof = _.cloneDeep(proof)
     invalidProof[0].proof[0].inclusionProof = [
       '0000000000000000000000000000000000000000000000000000000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
     ]
 
-    verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid transaction')
+    await verifier.checkProof(transaction2, deposits, invalidProof).should.be.rejectedWith('Invalid transaction')
   })
 })

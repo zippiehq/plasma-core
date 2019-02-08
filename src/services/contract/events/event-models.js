@@ -1,5 +1,6 @@
 const BigNum = require('bn.js')
 const utils = require('plasma-utils')
+const web3Utils = utils.utils.web3Utils
 
 /**
  * Parses an Ethereum event.
@@ -66,9 +67,23 @@ class ExitFinalizedEvent {
   }
 }
 
+class ChainCreatedEvent {
+  constructor (event) {
+    const unparsed = Object.assign({}, event.returnValues)
+
+    this.plasmaChainAddress = unparsed.PlasmaChainAddress
+    this.plasmaChainName = web3Utils.hexToAscii(unparsed.PlasmaChainName)
+    this.operatorEndpoint = encodeURI(
+      web3Utils.hexToAscii(unparsed.PlasmaChainIP)
+    ).replace(/%00/gi, '')
+    this.operatorAddress = unparsed.OperatorAddress
+  }
+}
+
 module.exports = {
   DepositEvent,
   BlockSubmittedEvent,
   ExitStartedEvent,
-  ExitFinalizedEvent
+  ExitFinalizedEvent,
+  ChainCreatedEvent
 }
