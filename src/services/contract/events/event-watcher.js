@@ -102,58 +102,63 @@ class EventWatcher extends BaseService {
     let lastFinalBlock = block - this.options.finalityDepth
     lastFinalBlock = lastFinalBlock < 0 ? 0 : lastFinalBlock
 
-    for (const eventName in this.events) {
-      if (
-        !this.events[eventName].active ||
-        !this.services.contract.hasAddress
-      ) {
-        continue
-      }
-
-      const lastLoggedBLock = await this.services.db.get(
-        `lastlogged:${eventName}`,
-        -1
+    await Promise.all(
+      Object.keys(this.events).map((eventName) =>
+        this._checkEvent(eventName, lastFinalBlock)
       )
-      const firstUnsyncedBlock = lastLoggedBLock + 1
-      if (firstUnsyncedBlock > lastFinalBlock) return
-      this.logger(
-        `Checking for new ${eventName} events between Ethereum blocks ${firstUnsyncedBlock} and ${lastFinalBlock}`
-      )
+    )
+  }
 
-      const events = await this.services.contract.contract.getPastEvents(
-        eventName,
-        {
-          fromBlock: firstUnsyncedBlock,
-          toBlock: lastFinalBlock
-        }
-      )
-
-      if (events.length > 0) {
-        // Filter out duplicate events.
-        for (let i = 0; i < events.length; i++) {
-          // Compute a unique event hash.
-          const hash = this.services.web3.utils.sha3(
-            events[i].transactionHash + events[i].logIndex
-          )
-          // Check that the event hasn't been seen before.
-          if (!(await this.services.db.exists(`event:${hash}`))) {
-            await this.services.db.set(`event:${hash}`, true)
-          } else {
-            events.splice(i, 1)
-          }
-        }
-
-        for (const listener of this.subscriptions[eventName]) {
-          try {
-            listener(events)
-          } catch (err) {
-            console.log(err) // TODO: Handle this.
-          }
-        }
-      }
-
-      await this.services.db.set(`lastlogged:${eventName}`, lastFinalBlock)
+  async _checkEvent (eventName, lastFinalBlock) {
+    if (!this.events[eventName].active || !this.services.contract.hasAddress) {
+      return
     }
+
+    let lastLoggedBLock = await this.services.db.get(
+      `lastlogged:${eventName}`,
+      -1
+    )
+    let firstUnsyncedBlock = lastLoggedBLock + 1
+    if (firstUnsyncedBlock > lastFinalBlock) return
+    this.logger(
+      `Checking for new ${eventName} events between Ethereum blocks ${firstUnsyncedBlock} and ${lastFinalBlock}`
+    )
+
+    let events = await this.services.contract.contract.getPastEvents(
+      eventName,
+      {
+        fromBlock: firstUnsyncedBlock,
+        toBlock: lastFinalBlock
+      }
+    )
+
+    if (events.length > 0) {
+      const isUniq = await Promise.all(
+        events.map(async (event) => {
+          const hash = this._getEventHash(event)
+          if (!(await this.services.db.exists(hash))) {
+            await this.services.db.set(`event:${hash}`, true)
+            return true
+          }
+        })
+      )
+
+      events = events.filter((event, i) => isUniq[i])
+
+      for (let listener of this.subscriptions[eventName]) {
+        try {
+          listener(events)
+        } catch (err) {
+          console.log(err) // TODO: Handle this.
+        }
+      }
+    }
+
+    await this.services.db.set(`lastlogged:${eventName}`, lastFinalBlock)
+  }
+
+  _getEventHash ({ transactionHash, logIndex }) {
+    return this.services.web3.utils.sha3(transactionHash + logIndex)
   }
 
   /**

@@ -128,7 +128,10 @@ describe('Contract Interactions', () => {
     it('should detect a new block', async () => {
       let fake = sinon.fake()
       watcher.subscribe('SubmitBlockEvent', (events) => {
-        const event = events[1]
+        // first block is from above test
+        if (events[0].blockNumber === '1') return
+
+        const event = events[0]
         fake({
           block: event.returnValues.blockNumber,
           hash: event.returnValues.submittedHash
