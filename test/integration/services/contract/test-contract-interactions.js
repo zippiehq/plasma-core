@@ -53,7 +53,7 @@ describe('Contract Interactions', () => {
 
     contract = new ContractProvider({ app: app })
     app.services.contract = contract
-    contract.initContract()
+    contract._initContract()
 
     // Deploy and initialize the contract.
     const deployed = await contract.contract.deploy({
@@ -128,7 +128,10 @@ describe('Contract Interactions', () => {
     it('should detect a new block', async () => {
       let fake = sinon.fake()
       watcher.subscribe('SubmitBlockEvent', (events) => {
-        const event = events[1]
+        // first block is from above test
+        if (events[0].blockNumber === '1') return
+
+        const event = events[0]
         fake({
           block: event.returnValues.blockNumber,
           hash: event.returnValues.submittedHash

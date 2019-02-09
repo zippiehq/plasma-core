@@ -219,18 +219,23 @@ class ChainService extends BaseService {
     }
     this.logger(`Verified transaction proof for: ${tx.hash}`)
 
-    this.logger(`Adding transaction to database: ${tx.hash}`)
     // Calculate the new state.
+    this.logger(`Computing new verified state for: ${tx.hash}`)
     const tempManager = new SnapshotManager()
     this.services.proof.applyProof(tempManager, deposits, proof)
+    this.logger(`Computed new verified state for: ${tx.hash}`)
 
     // Merge and save the new head state.
+    this.logger(`Saving head state for: ${tx.hash}`)
     await this.lock.acquire('state', async () => {
       const stateManager = await this.loadState()
       stateManager.merge(tempManager)
       this.saveState(stateManager)
     })
+    this.logger(`Saved head state for: ${tx.hash}`)
+
     // Store the transaction and proof information.
+    this.logger(`Adding transaction to database: ${tx.hash}`)
     await this.services.chaindb.setTransaction(tx)
     await this.services.chaindb.setTransactionProof(tx.hash, proof)
     this.logger(`Added transaction to database: ${tx.hash}`)

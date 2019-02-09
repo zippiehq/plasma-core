@@ -10,7 +10,6 @@ const TransferProof = models.TransferProof
 const BaseOperatorProvider = require('./base-provider')
 
 const defaultOptions = {
-  operatorEndpoint: 'http://localhost:9898',
   operatorPingInterval: 10000
 }
 
@@ -20,13 +19,15 @@ const defaultOptions = {
 class HttpOperatorProvider extends BaseOperatorProvider {
   constructor (options) {
     super(options, defaultOptions)
-    this.http = axios.create({
-      baseURL: options.operatorEndpoint
-    })
     this.online = false
   }
 
+  get dependencies () {
+    return ['contract']
+  }
+
   async _onStart () {
+    this._initConnection()
     this._pingInterval()
   }
 
@@ -55,7 +56,11 @@ class HttpOperatorProvider extends BaseOperatorProvider {
    * @return {Array<string>} List of encoded transactions.
    */
   async getTransactions (address, startBlock, endBlock) {
-    const txs = await this._handle('getTransactions', [address, startBlock, endBlock])
+    const txs = await this._handle('getTransactions', [
+      address,
+      startBlock,
+      endBlock
+    ])
     return txs.map((tx) => {
       return Buffer.from(tx).toString('hex')
     })
@@ -95,36 +100,39 @@ class HttpOperatorProvider extends BaseOperatorProvider {
         return a
       }, [])
 
-    const earliestBlock = deposits.reduce((a, b) => {
-      return a.block.lt(b.block) ? a : b
-    }).block
+    const earliestBlock = deposits
+      .reduce((a, b) => {
+        return a.block.lt(b.block) ? a : b
+      })
+      .block.toNumber()
 
-    // TODO: This is really ugly and should be broken out for readibility.
-    let prevBlock = earliestBlock
-    const txProofs = Object.keys(rawProof.transactionHistory)
+    const nonEmptyBlocks = Object.keys(rawProof.transactionHistory).map((i) => {
+      return parseInt(i)
+    })
+
+    const emptyProofs = []
+    for (let i = earliestBlock + 1; i < Math.max(...nonEmptyBlocks); i++) {
+      if (!nonEmptyBlocks.includes(i)) {
+        emptyProofs.push({
+          transaction: {
+            block: new BigNum(i, 10),
+            transfers: []
+          },
+          transactionProof: {
+            transferProofs: []
+          }
+        })
+      }
+    }
+
+    const txProofs = nonEmptyBlocks
       .sort((a, b) => {
         return new BigNum(a, 10).sub(new BigNum(b, 10))
       })
       .reduce((proofs, block) => {
-        // Fill in any missing blocks with fake transactions.
-        while (!prevBlock.addn(1).eq(new BigNum(block, 10))) {
-          proofs = proofs.concat([
-            {
-              transaction: {
-                block: prevBlock.addn(1),
-                transfers: []
-              },
-              transactionProof: {
-                transferProofs: []
-              }
-            }
-          ])
-          prevBlock = prevBlock.addn(1)
-        }
-        prevBlock = new BigNum(block, 10)
-
         return proofs.concat(rawProof.transactionHistory[block])
       }, [])
+      .concat(emptyProofs)
       .map((txProof) => {
         return {
           transaction: new UnsignedTransaction(txProof.transaction),
@@ -138,16 +146,6 @@ class HttpOperatorProvider extends BaseOperatorProvider {
       .sort((a, b) => {
         return a.transaction.block.sub(b.transaction.block)
       })
-      .reduce((a, b) => {
-        // Remove any duplicates.
-        if (
-          a.length === 0 ||
-          a.slice(-1)[0].transaction.hash !== b.transaction.hash
-        ) {
-          a.push(b)
-        }
-        return a
-      }, [])
 
     return {
       transaction: tx,
@@ -176,15 +174,16 @@ class HttpOperatorProvider extends BaseOperatorProvider {
   }
 
   /**
-   * Waits for a connection to the operator.
+   * Initializes the connection to the operator.
+   * Must wait until the contract to pull operator info.
    */
-  async waitForConnection () {
-    // Do this as a promise to avoid recursion limits.
-    return new Promise((resolve) => {
-      if (this.online) resolve()
-      setInterval(() => {
-        if (this.online) resolve()
-      }, this.options.operatorPingInterval / 10)
+  async _initConnection () {
+    await this.services.contract.waitForInit()
+    this.endpoint = this.services.contract.operatorEndpoint
+    this.http = axios.create({
+      baseURL: this.endpoint.startsWith('http')
+        ? this.endpoint
+        : `https://${this.endpoint}`
     })
   }
 
@@ -221,11 +220,13 @@ class HttpOperatorProvider extends BaseOperatorProvider {
    */
   async _pingInterval () {
     try {
-      await this.getEthInfo()
-      if (!this.online) {
-        this.logger('Successfully connected to operator')
+      if (this.endpoint) {
+        await this.getEthInfo()
+        if (!this.online) {
+          this.logger('Successfully connected to operator')
+        }
+        this.online = true
       }
-      this.online = true
     } catch (err) {
       this.online = false
       this.logger(

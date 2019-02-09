@@ -28,6 +28,6 @@ module.exports = {
   ProofService,
   WalletProviders,
   Web3Provider,
-  EventWatcher,
-  EventHandler
+  EventHandler,
+  EventWatcher
 }

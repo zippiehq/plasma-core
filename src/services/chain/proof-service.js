@@ -5,6 +5,9 @@ const models = utils.serialization.models
 const SignedTransaction = models.SignedTransaction
 const TransactionProof = models.TransactionProof
 
+const EMPTY_BLOCK_HASH =
+  '0x0000000000000000000000000000000000000000000000000000000000000000'
+
 /**
  * Service that handles checking history proofs.
  */
@@ -25,10 +28,6 @@ class ProofSerivce extends BaseService {
    * @return {boolean} `true` if the transaction is valid.
    */
   async checkProof (transaction, deposits, proof) {
-    // TODO: Fix utils so we don't need to do this.
-    transaction.signatures = transaction.signatures.map((signature) => {
-      return utils.utils.stringToSignature(signature)
-    })
     transaction = new SignedTransaction(transaction)
 
     this.logger(`Checking signatures for: ${transaction.hash}`)
@@ -97,28 +96,26 @@ class ProofSerivce extends BaseService {
    * @return {boolean} `true` if the transaction is valid, `false` otherwise.
    */
   async _transactionValid (transaction, proof) {
-    // TODO: Fix utils so we don't need to do this.
-    proof.forEach((element) => {
-      element.signature = utils.utils.stringToSignature(element.signature)
-    })
-
     const serializedProof = new TransactionProof({
       transferProofs: proof
     })
 
-    // TODO: Fix problem when latest operator block is > latest plasma block.
     let root = await this.services.chaindb.getBlockHeader(transaction.block)
     if (root === null) {
-      root = await this.services.contract.getBlock(transaction.block)
-      await this.services.chaindb.addBlockHeader(transaction.block, root)
+      throw new Error(
+        `Received transaction for non-existent block #${transaction.block}`
+      )
     }
 
-    // If the root is zero, then this block was empty so insert a fake transfer.
-    // TODO: There's probably a cleaner way to do this but it works for now.
-    if (
-      root ===
-      '0x0000000000000000000000000000000000000000000000000000000000000000'
-    ) {
+    // If the root is '0x00....', then this block was empty.
+    if (root === EMPTY_BLOCK_HASH) {
+      if (transaction.transfers.length > 0) {
+        this.logger(
+          `WARNING: Block #${
+            transaction.block
+          } is empty but received a non-empty proof element. Proof will likely be rejected. This is probably due to an error in the operator.`
+        )
+      }
       transaction.isEmptyBlockTransaction = true
       return true
     }

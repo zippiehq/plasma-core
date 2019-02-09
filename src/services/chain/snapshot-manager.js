@@ -1,6 +1,7 @@
 const _ = require('lodash')
 const BigNum = require('bn.js')
 const utils = require('plasma-utils')
+const debug = require('debug')
 const models = utils.serialization.models
 const Transfer = models.Transfer
 
@@ -29,10 +30,35 @@ const getValueFromTyped = (typedValue) => {
 }
 
 /**
+ * Base class that allows for printing objects in a prettified manner.
+ */
+class PrettyPrint {
+  /**
+   * Returns the object as a pretty JSON string.
+   * Converts BigNums to decimal strings.
+   * @return {string} JSON string.
+   */
+  prettify () {
+    const parsed = {}
+    Object.keys(this).forEach((key) => {
+      const value = this[key]
+      if (BigNum.isBN(value)) {
+        parsed[key] = value.toString(10)
+      } else {
+        parsed[key] = value
+      }
+    })
+    return JSON.stringify(parsed, null, 2)
+  }
+}
+
+/**
  * Represents a single state component ("snapshot").
  */
-class Snapshot {
+class Snapshot extends PrettyPrint {
   constructor (snapshot) {
+    super()
+
     this.start = new BigNum(snapshot.start, 'hex')
     this.end = new BigNum(snapshot.end, 'hex')
     this.block = new BigNum(snapshot.block, 'hex')
@@ -105,13 +131,30 @@ class Snapshot {
       }
     })
   }
+
+  /**
+   * Creates a Snapshot from an Exit.
+   * @param {Exit} exit An Exit object.
+   * @return {Snapshot} The snapshot object.
+   */
+  static fromExit (exit) {
+    return Snapshot.fromTransfer({
+      ...exit,
+      ...{
+        sender: exit.exiter,
+        recipient: NULL_ADDRESS
+      }
+    })
+  }
 }
 
 /**
  * Version of Snapshot that uses untyped (token/value) values.
  */
-class UntypedSnapshot {
+class UntypedSnapshot extends PrettyPrint {
   constructor (snapshot) {
+    super()
+
     this.token = new BigNum(snapshot.token, 'hex')
     this.start = new BigNum(snapshot.start, 'hex')
     this.end = new BigNum(snapshot.end, 'hex')
@@ -139,8 +182,10 @@ class UntypedSnapshot {
 /**
  * Represents a simplified state component ("range").
  */
-class Range {
+class Range extends PrettyPrint {
   constructor (range) {
+    super()
+
     this.token = new BigNum(range.token, 'hex')
     this.start = new BigNum(range.start, 'hex')
     this.end = new BigNum(range.end, 'hex')
@@ -161,55 +206,16 @@ class Range {
 /**
  * Represents an implicit or explicit piece of a transfer.
  */
-class TransferComponent {
+class TransferComponent extends PrettyPrint {
   constructor (transfer) {
+    super()
+
     this.start = new BigNum(transfer.start, 'hex')
     this.end = new BigNum(transfer.end, 'hex')
     this.block = new BigNum(transfer.block, 'hex')
     this.sender = transfer.sender
     this.recipient = transfer.recipient
     this.implicit = transfer.implicit || false
-    this.special = transfer.special || false
-  }
-
-  /**
-   * Creates a TransferComponent from an Exit.
-   * @param {Exit} exit An Exit object.
-   * @return {TransferComponent} The component object.
-   */
-  static fromExit (exit) {
-    const serialized = new Transfer({
-      ...exit,
-      ...{
-        sender: exit.exiter,
-        recipient: NULL_ADDRESS
-      }
-    })
-
-    return new TransferComponent({
-      ...serialized,
-      ...{
-        block: exit.block,
-        start: serialized.typedStart,
-        end: serialized.typedEnd,
-        special: true
-      }
-    })
-  }
-
-  /**
-   * Creates a TransferComponent from a Snapshot.
-   * @param {Snapshot} snapshot A Snapshot object.
-   * @return {TransferComponent} The component object.
-   */
-  static fromSnapshot (snapshot) {
-    return new TransferComponent({
-      ...snapshot,
-      ...{
-        recipient: snapshot.owner,
-        special: true
-      }
-    })
   }
 }
 
@@ -221,6 +227,7 @@ class SnapshotManager {
     this.snapshots = snapshots.map((snapshot) => {
       return new Snapshot(snapshot)
     })
+    this.debug = debug('debug:snapshots')
   }
 
   /**
@@ -247,9 +254,13 @@ class SnapshotManager {
    * @param {SnapshotManager} other Other manager.
    */
   merge (other) {
-    for (const snapshot in other.snapshots) {
-      const component = TransferComponent.fromSnapshot(snapshot)
-      this._applyTransferComponent(component)
+    this.debug('Merging snapshots')
+    for (const snapshot of other.state) {
+      try {
+        this._addSnapshot(snapshot)
+      } catch (err) {
+        // TODO: Handle errors here? They don't really break anything.
+      }
     }
   }
 
@@ -270,11 +281,13 @@ class SnapshotManager {
    * @return {Array<UntypedSnapshot>} List of owned snapshots.
    */
   getOwnedSnapshots (address) {
-    return this.snapshots.map((snapshot) => {
-      return UntypedSnapshot.fromSnapshot(snapshot)
-    }).filter((snapshot) => {
-      return snapshot.owner === address
-    })
+    return this.snapshots
+      .map((snapshot) => {
+        return UntypedSnapshot.fromSnapshot(snapshot)
+      })
+      .filter((snapshot) => {
+        return snapshot.owner === address
+      })
   }
 
   /**
@@ -312,7 +325,7 @@ class SnapshotManager {
         ...transfer,
         ...{ block: transaction.block }
       })
-      return (this._hasSnapshot(snapshot) && snapshot.valid)
+      return this._hasSnapshot(snapshot) && snapshot.valid
     })
   }
 
@@ -330,8 +343,8 @@ class SnapshotManager {
    * @param {Exit} exit Exit to apply.
    */
   applyExit (exit) {
-    const component = TransferComponent.fromExit(exit)
-    this._applyTransferComponent(component)
+    const snapshot = Snapshot.fromExit(exit)
+    this._addSnapshot(snapshot)
   }
 
   /**
@@ -341,18 +354,17 @@ class SnapshotManager {
    * @param {Transaction} transaction Transaction to apply.
    */
   applySentTransaction (transaction) {
-    const components = transaction.transfers.map((transfer) => {
-      return new TransferComponent({
+    const snapshots = transaction.transfers.map((transfer) => {
+      return Snapshot.fromTransfer({
         ...transfer,
         ...{
-          block: transaction.block,
-          special: true
+          block: transaction.block
         }
       })
     })
 
-    for (const component of components) {
-      this._applyTransferComponent(component)
+    for (const snapshot of snapshots) {
+      this._addSnapshot(snapshot)
     }
   }
 
@@ -361,6 +373,7 @@ class SnapshotManager {
    * @param {number} block The block number.
    */
   applyEmptyBlock (block) {
+    this.debug(`Applying empty block: ${block.toString(10)}`)
     for (let snapshot of this.snapshots) {
       if (snapshot.block.addn(1).eq(block)) {
         snapshot.block = snapshot.block.addn(1)
@@ -375,10 +388,12 @@ class SnapshotManager {
   applyTransaction (transaction) {
     // Pull out all of the transfer components (implicit and explicit).
     const components = transaction.transfers.reduce((components, transfer) => {
-      return components.concat(this._getTransferComponents({
-        ...transfer,
-        ...{ block: transaction.block }
-      }))
+      return components.concat(
+        this._getTransferComponents({
+          ...transfer,
+          ...{ block: transaction.block }
+        })
+      )
     }, [])
 
     for (const component of components) {
@@ -391,15 +406,20 @@ class SnapshotManager {
    * @param {TransferComponent} component Component to apply.
    */
   _applyTransferComponent (component) {
+    this.debug(`Applying transaction component: ${component.prettify()}`)
+
     // Determine which snapshots overlap with this component.
     const overlapping = this.snapshots.filter((snapshot) => {
-      return Math.max(snapshot.start, component.start) < Math.min(snapshot.end, component.end)
+      return (
+        Math.max(snapshot.start, component.start) <
+        Math.min(snapshot.end, component.end)
+      )
     })
 
     // Apply this component to each snapshot that it overlaps.
     for (const snapshot of overlapping) {
       if (!this._validStateTransition(snapshot, component)) {
-        throw new Error('Invalid state transition')
+        continue
       }
 
       // Remove the old snapshot.
@@ -407,23 +427,29 @@ class SnapshotManager {
 
       // Insert any newly created snapshots.
       if (snapshot.start.lt(component.start)) {
-        this._addSnapshot(new Snapshot({
-          ...snapshot,
-          ...{ end: component.start }
-        }))
+        this._addSnapshot(
+          new Snapshot({
+            ...snapshot,
+            ...{ end: component.start }
+          })
+        )
       }
       if (snapshot.end.gt(component.end)) {
-        this._addSnapshot(new Snapshot({
-          ...snapshot,
-          ...{ start: component.end }
-        }))
+        this._addSnapshot(
+          new Snapshot({
+            ...snapshot,
+            ...{ start: component.end }
+          })
+        )
       }
-      this._addSnapshot(new Snapshot({
-        start: Math.max(snapshot.start, component.start),
-        end: Math.min(snapshot.end, component.end),
-        block: component.block,
-        owner: component.implicit ? snapshot.owner : component.recipient
-      }))
+      this._addSnapshot(
+        new Snapshot({
+          start: Math.max(snapshot.start, component.start),
+          end: Math.min(snapshot.end, component.end),
+          block: component.block,
+          owner: component.implicit ? snapshot.owner : component.recipient
+        })
+      )
     }
   }
 
@@ -435,11 +461,13 @@ class SnapshotManager {
     if (!snapshot.valid) {
       throw new Error('Invalid snapshot')
     }
+    this.debug(`Adding snapshot: ${snapshot.prettify()}`)
 
     this.snapshots.push(snapshot)
     this.snapshots.sort((a, b) => {
       return a.start.sub(b.start)
     })
+    this.snapshots = this._removeOverlapping(this.snapshots)
     this.snapshots = this._mergeSnapshots(this.snapshots)
   }
 
@@ -461,15 +489,12 @@ class SnapshotManager {
    * @return {Array<Snapshot>} The merged list of Snapshot objects.
    */
   _mergeSnapshots (snapshots) {
-    let merged = []
+    const merged = []
 
     snapshots.forEach((snapshot) => {
       let left, right
       merged.forEach((s, i) => {
-        if (
-          !s.block.eq(snapshot.block) ||
-          s.owner !== snapshot.owner
-        ) {
+        if (!s.block.eq(snapshot.block) || s.owner !== snapshot.owner) {
           return
         }
 
@@ -496,6 +521,71 @@ class SnapshotManager {
   }
 
   /**
+   * Removes any overlapping snapshots by giving preference to the later snapshot.
+   * @param {Array<Snapshot>} snapshots A list of snapshots.
+   * @return {Array<Snapshot>} The list with overlapping snapshots resolved.
+   */
+  _removeOverlapping (snapshots) {
+    // Sort by start, then end.
+    snapshots.sort((a, b) => {
+      if (!a.start.eq(b.start)) {
+        return a.start.sub(b.start)
+      } else {
+        return a.end.sub(b.end)
+      }
+    })
+
+    // Clear up any overlap by picking the snapshot with the greatest block.
+    let reduced = []
+    for (let s of snapshots) {
+      // Catches overlap since we've sorted by start and end/
+      const overlapping = reduced.filter((r) => {
+        return s.start.lt(r.end)
+      })
+
+      // Break up overlapping components.
+      let remainder = true
+      for (let r of overlapping) {
+        if (s.block.gte(r.block)) {
+          // New snapshot comes after old one, so overwrite.
+
+          // Remove the old snapshot.
+          reduced = reduced.filter((el) => {
+            return !el.equals(r)
+          })
+
+          // Add the new overlapping part.
+          reduced.push(
+            new Snapshot({
+              ...s,
+              ...{ end: r.end }
+            })
+          )
+        }
+
+        if (s.end.gt(r.end)) {
+          // Repeat the process with the part that didn't overlap.
+          s = new Snapshot({
+            ...s,
+            ...{ start: r.end }
+          })
+        } else {
+          // Everything overlapped, so there's no remainder.
+          remainder = false
+          break
+        }
+      }
+
+      // Add any remainder.
+      if (remainder) {
+        reduced.push(s)
+      }
+    }
+
+    return reduced
+  }
+
+  /**
    * Merges and reduces a list of ranges.
    * Combines any ranges that share the same start or end
    * and also share the same owner.
@@ -504,8 +594,7 @@ class SnapshotManager {
    */
   _mergeRanges (ranges) {
     const orderRanges = (rangeA, rangeB) => {
-      if (rangeA.owner !== rangeB.owner ||
-          rangeA.end.lt(rangeB.start)) {
+      if (rangeA.owner !== rangeB.owner || rangeA.end.lt(rangeB.start)) {
         return [rangeA, rangeB]
       } else if (rangeA.start.eq(rangeB.end)) {
         rangeB.end = rangeA.end
@@ -552,10 +641,9 @@ class SnapshotManager {
    * @return {boolean} `true` if the transition is valid, `false` otherwise.
    */
   _validStateTransition (snapshot, transfer) {
-    const specialCase = transfer.special && snapshot.block.lt(transfer.block)
     const validSender = transfer.implicit || snapshot.owner === transfer.sender
     const validBlock = snapshot.block.addn(1).eq(transfer.block)
-    return specialCase || (validSender && validBlock)
+    return validSender && validBlock
   }
 
   /**
@@ -579,26 +667,30 @@ class SnapshotManager {
 
     // Left implicit component.
     if (!serialized.start.eq(serialized.implicitStart)) {
-      components.push(new TransferComponent({
-        ...serialized,
-        ...{
-          start: serialized.implicitStart,
-          end: serialized.start,
-          implicit: true
-        }
-      }))
+      components.push(
+        new TransferComponent({
+          ...serialized,
+          ...{
+            start: serialized.implicitStart,
+            end: serialized.start,
+            implicit: true
+          }
+        })
+      )
     }
 
     // Right implicit component.
     if (!serialized.end.eq(serialized.implicitEnd)) {
-      components.push(new TransferComponent({
-        ...serialized,
-        ...{
-          start: serialized.end,
-          end: serialized.implicitEnd,
-          implicit: true
-        }
-      }))
+      components.push(
+        new TransferComponent({
+          ...serialized,
+          ...{
+            start: serialized.end,
+            end: serialized.implicitEnd,
+            implicit: true
+          }
+        })
+      )
     }
 
     // Transfer (non-implicit) component.
@@ -618,11 +710,13 @@ class SnapshotManager {
     token = new BigNum(token, 'hex')
     amount = new BigNum(amount, 'hex')
 
-    const available = arr.filter((item) => {
-      return item.token.eq(token)
-    }).sort((a, b) => {
-      return b.end.sub(b.start).sub(a.end.sub(a.start))
-    })
+    const available = arr
+      .filter((item) => {
+        return item.token.eq(token)
+      })
+      .sort((a, b) => {
+        return b.end.sub(b.start).sub(a.end.sub(a.start))
+      })
     const picked = []
 
     while (amount.gtn(0)) {

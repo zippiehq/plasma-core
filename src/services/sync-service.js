@@ -81,25 +81,30 @@ class SyncService extends BaseService {
     const lastSyncedBlock = await this.services.syncdb.getLastSyncedBlock()
     const firstUnsyncedBlock = lastSyncedBlock + 1
     const currentBlock = await this.services.chaindb.getLatestBlock()
-    if (firstUnsyncedBlock > currentBlock) return
-    this.logger(
-      `Checking for new transactions between blocks ${firstUnsyncedBlock} and ${currentBlock}`
-    )
+    const prevFailed = await this.services.syncdb.getFailedTransactions()
+
+    if (firstUnsyncedBlock <= currentBlock) {
+      this.logger(
+        `Checking for new transactions between plasma blocks ${firstUnsyncedBlock} and ${currentBlock}`
+      )
+    } else if (prevFailed.length > 0) {
+      this.logger(`Attempting to apply failed transactions`)
+    } else {
+      return
+    }
 
     // TODO: Figure out how handle operator errors.
     const addresses = await this.services.wallet.getAccounts()
     for (let address of addresses) {
-      this.pending = this.pending.concat(
-        await this.services.operator.getTransactions(
-          address,
-          firstUnsyncedBlock,
-          currentBlock
-        )
+      const received = await this.services.operator.getTransactions(
+        address,
+        firstUnsyncedBlock,
+        currentBlock
       )
+      this.pending = this.pending.concat(received)
     }
 
     // Add any previously failed transactions to try again.
-    const prevFailed = await this.services.syncdb.getFailedTransactions()
     this.pending = this.pending.concat(prevFailed)
 
     // Remove any duplicates
@@ -109,6 +114,14 @@ class SyncService extends BaseService {
     for (let i = 0; i < this.pending.length; i++) {
       const encoded = this.pending[i]
       const tx = new SignedTransaction(encoded)
+
+      // Make sure we're not importing transactions we don't have blocks for.
+      // Necessary because of a bug in the operator.
+      // TODO: Fix operator so this isn't necessary.
+      if (tx.block.gtn(currentBlock)) {
+        continue
+      }
+
       try {
         await this.addTransaction(tx)
       } catch (err) {
@@ -132,11 +145,10 @@ class SyncService extends BaseService {
    */
   async addTransaction (tx) {
     // TODO: The operator should really be avoiding this.
-    if (tx.transfers[0].sender === NULL_ADDRESS) {
-      return
-    }
-
-    if (await this.services.chaindb.hasTransaction(tx.hash)) {
+    if (
+      tx.transfers[0].sender === NULL_ADDRESS ||
+      (await this.services.chaindb.hasTransaction(tx.hash))
+    ) {
       return
     }
 
