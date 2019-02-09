@@ -67,7 +67,7 @@ class ChainService extends BaseService {
     })
 
     // Weird quirk in how we handle exits.
-    // TODO: Add link to something that explains this.
+    // For more information, see: https://github.com/plasma-group/plasma-contracts/issues/44.
     await this.services.chaindb.addExitableEnd(deposit.token, deposit.end)
 
     this.logger(`Added deposit to database`)
@@ -88,14 +88,7 @@ class ChainService extends BaseService {
     const challengePeriod = 20
 
     for (let exit of exits) {
-      // TODO: Remove when we have a better way to handle BigNum parsing automatically.
-      exit.token = new BigNum(exit.token, 'hex')
-      exit.start = new BigNum(exit.start, 'hex')
-      exit.end = new BigNum(exit.end, 'hex')
-
-      exit.completed = new BigNum(exit.block, 'hex')
-        .addn(challengePeriod)
-        .ltn(currentBlock)
+      exit.completed = exit.block.addn(challengePeriod).ltn(currentBlock)
       exit.finalized = await this.services.chaindb.checkFinalized(exit)
     }
 
@@ -243,7 +236,7 @@ class ChainService extends BaseService {
 
   /**
    * Sends a transaction to the operator.
-   * @param {*} transaction A transaction object.
+   * @param {SignedTransaction} transaction A signed transaction.
    */
   async sendTransaction (transaction) {
     const tx = new SignedTransaction(transaction)

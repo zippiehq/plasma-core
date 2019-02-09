@@ -538,7 +538,7 @@ class SnapshotManager {
     // Clear up any overlap by picking the snapshot with the greatest block.
     let reduced = []
     for (let s of snapshots) {
-      // Catches overlap since we've sorted by start and end/
+      // Catches overlap since we've sorted by start and end.
       const overlapping = reduced.filter((r) => {
         return s.start.lt(r.end)
       })
@@ -554,11 +554,29 @@ class SnapshotManager {
             return !el.equals(r)
           })
 
+          // Add any of the old snapshot that didn't overlap.
+          if (r.start.lt(s.start)) {
+            reduced.push(
+              new Snapshot({
+                ...r,
+                ...{ end: s.start }
+              })
+            )
+          }
+          if (r.end.gt(s.end)) {
+            reduced.push(
+              new Snapshot({
+                ...r,
+                ...{ start: s.end }
+              })
+            )
+          }
+
           // Add the new overlapping part.
           reduced.push(
             new Snapshot({
               ...s,
-              ...{ end: r.end }
+              ...{ end: Math.min(s.end, r.end) }
             })
           )
         }
