@@ -1,19 +1,17 @@
 const fs = require('fs')
 const path = require('path')
-const appRoot = require('app-root-path')
+const paths = require('../../paths')
 const BaseWalletProvider = require('./base-provider')
 
 const defaultOptions = {
-  keystoreDir: path.join(appRoot.toString(), 'plasma-keystore')
+  keystoreDir: paths.KEYSTORE_DIR
 }
 
 class LocalWalletProvider extends BaseWalletProvider {
   constructor (options) {
     super(options, defaultOptions)
 
-    if (!fs.existsSync(this.options.keystoreDir)) {
-      fs.mkdirSync(this.options.keystoreDir)
-    }
+    paths.createIfNotExists(this.options.keystoreDir)
   }
 
   get dependencies () {
