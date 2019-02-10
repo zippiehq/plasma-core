@@ -1,117 +1,156 @@
-======
-Proof Structure and Checking
-======
-Unlike traditional blockchain systems, full plasma nodes don't store every single transaction, they only ever need to store information relevant to assets they own. This means that the ``sender`` has to prove to the ``recipient`` that the sender actually owns the given range. A complete proof contains all the information sufficient to guaranteed that, if the Ethereum chain itself does not fork, tokens are redeemable on the main chain.
+================================
+Proof Structure and Verification
+================================
 
-Proofs primarily consist of the inclusion for transactions, which update the chain of custody for those coins. The inclusion roots must be checked against the block hashes submitted by the operator to the smart contract on the main chain. By tracing the chain of custody as verified in the proof scheme, from a token's initial deposit into the contract  through to the present, ability to redeem is guaranteed.
+What are History Proofs?
+========================
+Unlike traditional blockchain nodes, our full plasma nodes don't store every single transaction.
+Instead, they only ever need to store information relevant to assets they own.
+This means that when you're receiving an asset, you don't have all of the information necessary to know that the person sending that asset is, in fact, the true owner.
+The ``sender`` needs to explicitly prove to the ``recipient`` that the ``sender`` actually owns the asset being sent.
 
-``plasma-core`` follows a relatively simple methodology for verifying incoming transaction proofs. This section describes that methodology.
+Currently, the ``sender`` needs to give the ``recipient`` a list of every single transaction that has ever moved the asset around.
+The ``sender`` also needs to provide proof that they're not omitting any transactions.
+Once the ``recipient`` checks this proof, they can see the whole chain of custody for the asset and be convinced that the ``sender`` is the current owner.
+Generally, we call this proof a "history proof" because it tells the ``recipient`` about the history of an asset.
 
-Proof Format
-=====
-History proofs consist of a set of deposit records and long list of relevant ``Transactions`` with corresponding ``TransctionProofs``.
+This page describes the methodology ``plasma-core`` follows to verify these history proofs.
 
-``plasma-utils`` exposes a ``static checkTransactionProof(transaction, transactionProof, root)`` method, which is used by ``plasma-core`` `here` via calls to the ``ProofService``.
+Proof Structure
+===============
+History proofs consist of a set of Deposits_ a long list of relevant Transactions_ with corresponding TransactionProofs_.
+Here we'll discuss all of the various components of the proof.
+
+Deposits
+--------
+Deposits_ form the beginning of each history proof.
+An asset's history always starts from the point at which it was created.
+When we're talking about a range_, we might need to provide more than one deposit.
+
+Let's look at an example.
+Imagine that a sender is trying to create a proof for the range ``(0, 100)``. 
+The range ``(0, 25)`` was created in deposit #1, and the range ``(25, 100)`` was created in deposit #2. 
+The sender **must** provide these two deposits as part of the proof.
 
 Transaction Proofs
-=====
-A `TransactionProof` object contains all the necessary information to check the validity of a given `Transaction`. Namely, it is `simply` an array of ``TransferProof`` objects. As per the block spec's section on atomic multisends, a given ``TransactionProof`` is valid if and only if all its ``TransferProofs`` are valid.
+------------------
+A TransactionProof_ contains all the necessary information to check the validity of a given Transaction_.
+Namely, it is simply an array of TransferProof_ objects (described below).
+A given TransactionProof_ is valid if and only if all its TransferProofs_ are valid.
 
 Transfer Proofs
-=====
-``TransferProofs`` contain all the necessary information required to recover the inclusion of a valid branch corresponding to the given ``Transfer`` in the ``Transaction`` at the correct block number. This constitutes:
+---------------
+A TransferProof_ contains all the necessary information required to check that a specific Transfer_ inside of a Transaction_ is valid.
+This includes:
 
-* The actual nodes of the Merkle sum tree which represent the branch's full `inclusionProof`
-* The index of the leaf to calculate the binary path traced by the branch
-* The parsed bottom .sum as described in the sum tree spec above
-* The signature for that particular sender.
+* The Merkle tree branch that shows the transaction was included in a block.
+* The position of the Merkle tree in which the transaction was included.
+* The "parsed sum" for that transaction - a special value necessary to verify the Merkle proof.
+* The transaction signature from the sender of the transfer.
 
-Right from the ``plasma-utils`` schema:
+Here's the schema taken right from ``plasma-utils``:
 
 .. _code-block:: javascript
 
-const TransferProofSchema = new Schema({
- parsedSum: {
-   type: Number,
-   length: 16
- },
- leafIndex: {
-   type: Number,
-   length: 16
- },
- signature: {
-   type: SignatureSchema
- },
- inclusionProof: {
-   type: [Bytes],
-   length: 48
- }
-})
+    const TransferProofSchema = new Schema({
+      parsedSum: {
+        type: Number,
+        length: 16
+      },
+      leafIndex: {
+        type: Number,
+        length: 16
+      },
+      signature: {
+        type: SignatureSchema
+      },
+      inclusionProof: {
+        type: [Bytes],
+        length: 48
+      }
+    })
 
-Note that the `inclusionProof` is a variable-length array whose size depends on the depth of the tree.
+Note that the ``inclusionProof`` is a variable-length array whose size depends on the depth of the tree.
 
-Proof Steps
-======
-The core of the verification process involves applying each proof element to the current "verified" state, starting with the deposit. If any proof element doesn't result in a valid state transition, we must reject the proof.
-
-The process for applying each proof element is intuitive; we simply apply the transactions at each block as the contract's custody rules dictate.
+Proof Verification
+==================
+The process of verifying a proof for an incoming transaction involves applying each proof element to the current "verified" state, starting with the deposits.
+If any proof element doesn't result in a valid state transition, we simply ignore that element and go onto the next.
+At the very end, we check that each of the transfers in the incoming transaction is part of the verified state.
 
 Snapshot Objects
-======
-The way in which we keep track of historically owned ranges is called a ``snapshot``.
-
-Quite simply, it represents the verified owner of a range at a block:
+----------------
+We keep track of the current owner of a range using an object called a Snapshot_.
+Quite simply, a Snapshot_ represents the verified owner of a range at a block:
 
 ```
 {
-  typedStart: Number,
-  typedEnd: Number,
-  block: Number,
+  start: number,
+  end: number,
+  block: number,
   owner: address
 }
 ```
 
-Deposit records
-====
-Every received range has to come from a corresponding deposit.
+Checking for Exits
+------------------
+Before doing anything else, the verifier **must** check that the ranges being received have no pending or finalized exits.
+If any part of the received ranges have pending or finalized exits, the transaction should be rejected.
 
+Applying Deposits
+-----------------
+Every received range has to come from a corresponding deposit.
 A deposit record consists of its ``token``, ``start``, ``end``, ``depositer``, and ``blockNumber``.
 
-For each deposit record, the verifier must double-check with Ethereum to verify that the claimed deposit did indeed occur, and that no exits have happened in the meantime.
+For each deposit record, the verifier **must** double-check with Ethereum to verify that the claimed deposit did indeed occur.
+The verifier must then add a verified Snapshot_ for each valid deposit, where ``snapshot.owner = deposit.depositer``.
 
-If so, a ``verifiedSnapshots`` array is initialized to these deposits with each ``snapshot.owner`` being the depositer.
-
-Next, we apply all given ``TransactionProof``s, updating ``verifiedSnapshots`` accordingly. For each ``transaction`` and corresponding ``transactionProof``, the verifier performs the following steps:
-
-1. Verify that the given proof element is valid. If not, throw an error.
-2. For each ``transfer`` in the ``transaction``, do the following:
-  a. "Split" any snapshots which were updated above at ``transfer.typedStart``, ``transfer.typedEnd``, ``implicitStart``, and ``implicitEnd``
-  b. Increment the ``.block`` number for all resulting ``verifiedSnapshots`` which have a ``block`` equalling ``transaction.blockNumber - 1``
-  c. For each split ``snapshot`` which fell between ``transfer.start`` and ``transfer.end``:
-    i. verify that ``snapshot.owner === transfer.from``. If not, throw an error.
-    ii. set ``snapshot.owner = transfer.sender``.
-
-TransactionProof Validity
-======
-
-The transaction validity check in step 1. above is equivalent to checking the smart contract's validity condition. The basic validity check, based on the sum tree specification above, is as follows:
+Applying Transactions
+---------------------
+Next, the verifier must apply all given TransactionProofs_ and update the set of verified Snapshots_ accordingly.
+For each Transaction_ and corresponding TransactionProof_, the verifier **must** first perform the following validation steps:
 
 1. Check that the transaction encoding is well-formed.
-2. For each ``transfer`` and corresponding ``transferProof``:
-  a. Check that the ``signature`` resolves to its ``transfer.sender`` address
-  b. verify that the ``inclusionProof`` has a root equal to the root hash for that plasma block, with the binary path defined by the ``leafIndex``
-  c. calculate the ``implicitStart`` and ``implicitEnd`` of the branch, and verify that ``implicitStart <= transfer.start < transfer.end <= implicitEnd``.
+2. For each Transfer_ in the Transaction_:
+  1. Check that the Transfer_ has a corresponding Signature_ created by ``transfer.sender``.
+  2. Check that the Transfer_ was included in the plasma block using the ``inclusionProof``, ``leafIndex``, and ``parsedSum``.
+  3. Calculate the ``implicitStart`` and ``implicitEnd`` of the Transfer, and verify that ``implicitStart <= transfer.start < transfer.end <= implicitEnd``.
 
+If any of the above checks fail, the transaction **must** be ignored and the verifier should continue onto the next transaction.
 
-.. _here: https://github.com/plasma-group/plasma-core/blob/3caa359681db62106ba703eb0fd99171ebb86365/src/services/proof/snapshot-manager.js#L117
-.. _simply: https://github.com/plasma-group/plasma-utils/blob/master/src/serialization/schemas/transaction-proof.js
-.. _schema: https://github.com/plasma-group/plasma-utils/blob/master/src/serialization/schemas/transfer-proof.js
+If all of the checks are successful, the verifier **must** apply each Transfer_ to the verified state:
 
+1. For each Transfer_ in the Transaction_, do the following:
+  1. Break the Transfer_ into *implicit* components (``[implicitStart, typedStart], [typedEnd, implicitEnd]``) and *explicit* components (``[typedStart, typedEnd]``).
+  2. For each component:
+    1. Find all verified Snapshots_ that overlap with the component.
+    2. For each Snapshot_ that overlaps:
+      2. Remove the Snapshot_ from the verified state.
+      3. Split the Snapshot_ into overlapping and non-overlapping components.
+      4. Re-insert any non-overlapping components into the verified state.
+      5. If ``snapshot.block === transaction.blockNumber - 1`` and ``snapshot.owner === component.sender || component.implicit``:
+        1. Increment ``snapshot.block``.
+        2. Set ``snapshot.owner = transfer.sender``.
+      6. Insert the overlapping snapshot back into the verified state.
 
+Verifying Transactions
+----------------------
+Once all Deposits_ and Transactions_ have been applied to the verified state, the verifier can check the validity of the incoming transaction.
+The verifier **must** check that for each Transfer_ in the Transaction_, there exists some Snapshot_ in the verified state such that:
+
+1. ``snapshot.owner === transfer.recipient``.
+2. ``snapshot.start <= transfer.typedStart``.
+3. ``snapshot.end >= transfer.typedEnd``.
+
+If this condition is true for each Transfer_ in the Transaction_, the proof can be accepted.
+
+.. _Deposits: TODO
+.. _Transfer: https://plasma-utils.readthedocs.io/en/latest/models.html#transfer
+.. _Transaction: https://plasma-utils.readthedocs.io/en/latest/models.html#signedtransaction
+.. _Transactions: https://plasma-utils.readthedocs.io/en/latest/models.html#signedtransaction
+.. _TransactionProof: TODO
+.. _TransactionProofs: TODO
+.. _Snapshot: TODO
+.. _Snapshots: TODO
+.. _plasma-utils: https://plasma-utils.readthedocs.io/en/latest/index.html
 .. _range: specs/transactions.html#ranges
-.. _encoding: /encoding.html
-.. _sum tree: sum-tree.html
-.. _Merkle sum tree inclusion proof: specs/sum-tree.html#inclusion-proof
-.. _proof of inclusion: specs/sum-tree.html#inclusion-proof
-.. _proof of non-inclusion: specs/sum-tree#non-inclusion-proof
-.. _deposit: specs/contract.html#deposits
