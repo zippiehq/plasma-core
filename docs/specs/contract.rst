@@ -216,15 +216,18 @@ If so, it cancels the exit immediately.
 
 Optimistic Exits and Inclusion Challenges
 =========================================
-Our contract allows an exit to occur without doing any inclusion checks at all in the optimistic case.
-To allow this, any exit may be challenged directly via
+Our contract allows an exit to occur without actually checking that the transaction referenced in the exit was included in the plasma chain.
+This is called an "optimistic exit," and allows us to reduce gas costs for users who are behaving honestly.
+However, this means that it's possible for someone start an exit from a transaction that never happened.
+
+As a result, we expose a way for someone to challenge this type of exit:
 
 .. code-block:: python
 
     @public
     def challengeInclusion(exitID: uint256)
 
-To which the exiter must directly respond with either the transaction or deposit they are exiting from.
+Then, the user who started the exit can respond by showing that the transaction or deposit from which they are exiting really did happen:
 
 .. code-block:: python
 
@@ -242,23 +245,26 @@ To which the exiter must directly respond with either the transaction or deposit
       depositEnd: uint256
     )
 
-The second case allows users to get their money out if the operator censored all transactions after depositing.
+We need this special second case so that users can withdraw money even if the operator is censoring all transactions after their deposit.
+
 Both responses cancel the challenge if:
 1. The deposit or transaction was indeed at the exit's plasma block number.
 2. The depositer or recipient is indeed the exiter.
 3. The start and end of the exit were within the deposit or transfer's start and end
 
-Invalid History Challenges
-=====
-The most complex challenge-response game, for both vanilla Plasma Cash and this spec, is the case of history invalidity.
+Invalid-History Challenge
+=========================
+The Invalid-History Challenge is the most complex challenge-response game in both vanilla Plasma Cash and this spec.
 This part of the protocol mitigates the attack in which the operator includes an forged "invalid" transaction whose sender is not the previous recipient.
-The solution is called an invalid history challenge: because the rightful owner has not yet spent their coins, they attest to this and challenge: "oh yeah, that coin is yours? Well it was mine earlier, and you can't prove I ever spent it."
+
+Effectively, this challenge allows the rightful owner of a coin to request that the exiter provide a proof that the owner has spent their funds.
+The idea here is that if the rightful owner really is the rightful owner, then the exiter will not be able to provide such a transaction.
 
 Both invalid history challenges and responses can be either deposits or transactions.
 
-**Challenging**
-There are two ways to challenge depending on the current rightful owner:
-
+Challenging
+-----------
+There are two ways to challenge, depending on the current rightful owner:
 
 .. code-block:: python
 
@@ -282,7 +288,7 @@ and
       depositUntypedEnd: uint256
     )
 
-These both call a
+Both of these methods call an additional method, ``challengeInvalidHistory``:
 
 .. code-block:: python
 
@@ -296,15 +302,14 @@ These both call a
       blockNumber: uint256
     )
 
-function which does the legwork of checking that the coinID is within the challenged exit, and that the blockNumber is earlier than the exit.
+This method does the legwork of checking that the ``coinID`` is within the challenged exit, and that the ``blockNumber`` is earlier than the exit.
 
-**Responding to invalid history challenges**
+Responding to Invalid-History Challenges
+----------------------------------------
+Of course it's also possible for someone to submit a fraudulent Invalid-History Challenge.
+Therefore we give exiters two ways to respond to this type of challenge.
 
-Of course, the invalid history challenge may be a grief, where really the challenger did spend their coin, and the chain of custody is indeed valid.
-We must allow this response.
-There are two kinds.
-
-The first is to respond with a transaction showing the challenger's spend:
+The first is to respond with a transaction showing that the challenger did, in fact, spend their money:
 
 .. code-block:: python
 
@@ -321,8 +326,8 @@ The smart contract then performs the following checks:
 2. The ``transferIndex``th ``transfer.sender`` was indeed the claimant for that invalid history challenge.
 3. The transaction's plasma block number lies between the invalid history challenge and the exit.
 
-The other response is to show the challenge came before the coins were actually deposited - making the challenge invalid.
-This is similar to the ``challengeBeforeDeposit`` for exits themselves.
+The second response is to show the challenge came *before* the coins were actually deposited - making the challenge invalid.
+This is similar to a ``challengeBeforeDeposit``, but for the exit itself.
 
 .. code-block:: python
 
@@ -333,15 +338,11 @@ This is similar to the ``challengeBeforeDeposit`` for exits themselves.
     )
 
 In this case, there is no check on the sender being the challenge recipient, since the challenge was invalid.
-So the contract must simply check:
+So the contract just needs to check:
 1. The deposit covers the challenged ``coinID``.
 2. The deposit's plasma block number lies between the challenge and the exit.
 
-If so, the exit is cancelled.
-
-This concludes the complete exit game specification.
-With these building blocks, funds can be kept safe even in the case of a maximally malicious plasma chain.
-
+If all of these conditions are true, the exit is cancelled.
 
 .. _here: https://github.com/plasma-group/plasma-contracts/blob/068954a8584e4168daf38ebeaa3257ec08caa5aa/contracts/PlasmaChain.vy#L380
 .. _this great post: https://ethresear.ch/t/plasma-cash-with-smaller-exit-procedure-and-a-general-approach-to-safety-proofs/1942
