@@ -148,6 +148,8 @@ If this condition is true for each Transfer_ in the Transaction_, the proof can 
 .. _Transfer: https://plasma-utils.readthedocs.io/en/latest/models.html#transfer
 .. _Transaction: https://plasma-utils.readthedocs.io/en/latest/models.html#signedtransaction
 .. _Transactions: https://plasma-utils.readthedocs.io/en/latest/models.html#signedtransaction
+.. _TransferProof: TODO
+.. _TransferProofs: TODO
 .. _TransactionProof: TODO
 .. _TransactionProofs: TODO
 .. _Snapshot: TODO
