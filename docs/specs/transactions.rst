@@ -13,7 +13,6 @@ From the schema_ in ``plasma-utils``:
 
 .. code-block:: javascript
 
-    ...
     const TransferSchema = new Schema({
      sender: {
        type: Address,
@@ -38,7 +37,6 @@ From the schema_ in ``plasma-utils``:
        length: 12,
        required: true
      }
-    ...
 
 (Note that ``length`` is in bytes)
 
