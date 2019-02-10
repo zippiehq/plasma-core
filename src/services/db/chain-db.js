@@ -1,5 +1,12 @@
 const BigNum = require('bn.js')
 const BaseService = require('../base-service')
+const utils = require('plasma-utils')
+const utilModels = utils.serialization.models
+const models = require('./models')
+
+const Exit = models.Exit
+const Deposit = models.Deposit
+const SignedTransaction = utilModels.SignedTransaction
 
 /**
  * Handles chain-related DB calls.
@@ -16,15 +23,16 @@ class ChainDB extends BaseService {
   /**
    * Queries a transaction.
    * @param {string} hash Hash of the transaction.
-   * @return {*} The transaction object.
+   * @return {SignedTransaction} The transaction object.
    */
   async getTransaction (hash) {
-    return this.services.db.get(`transaction:${hash}`, null)
+    const encoded = await this.services.db.get(`transaction:${hash}`, null)
+    return encoded === null ? null : new SignedTransaction(encoded)
   }
 
   /**
    * Adds a transaction to the database.
-   * @param {Transaction} transaction Transaction to store.
+   * @param {SignedTransaction} transaction Transaction to store.
    */
   async setTransaction (transaction) {
     await this.services.db.set(
@@ -81,7 +89,7 @@ class ChainDB extends BaseService {
 
   /**
    * Adds a block header to the database.
-   * @param {*} block Number of the block to add.
+   * @param {number} block Number of the block to add.
    * @param {string} hash Hash of the given block.
    */
   async addBlockHeader (block, hash) {
@@ -123,7 +131,10 @@ class ChainDB extends BaseService {
    * @return {Array<Deposit>} List of known deposits.
    */
   async getDeposits (address) {
-    return this.services.db.get(`deposits:${address}`, [])
+    const deposits = await this.services.db.get(`deposits:${address}`, [])
+    return deposits.map((deposit) => {
+      return new Deposit(deposit)
+    })
   }
 
   /**
@@ -132,7 +143,10 @@ class ChainDB extends BaseService {
    * @return {Array<Exit>} List of known exits.
    */
   async getExits (address) {
-    return this.services.db.get(`exits:${address}`, [])
+    const exits = await this.services.db.get(`exits:${address}`, [])
+    return exits.map((exit) => {
+      return new Exit(exit)
+    })
   }
 
   /**

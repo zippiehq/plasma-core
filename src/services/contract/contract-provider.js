@@ -41,7 +41,7 @@ class ContractProvider extends BaseContractProvider {
    * @return {boolean} `true` if the contract has an address, `false` otherwise.
    */
   get hasAddress () {
-    return this.contract && this.address
+    return this.contract && this.address !== null
   }
 
   /**
@@ -270,7 +270,7 @@ class ContractProvider extends BaseContractProvider {
   /**
    * Finalizes an exit for a user.
    * @param {string} exitId ID of the exit to finalize.
-   * @param {BigNum} exitableEnd Weird quirk in how we handle exits. TODO: Explain.
+   * @param {BigNum} exitableEnd Weird quirk in how we handle exits. For more information, see: https://github.com/plasma-group/plasma-contracts/issues/44.
    * @param {string} owner Address that owns this exit.
    * @return {EthereumTransaction} Finalization transaction receipt.
    */

@@ -1,3 +1,4 @@
+const fs = require('fs')
 const levelup = require('levelup')
 const leveldown = require('leveldown')
 const AsyncLock = require('async-lock')
@@ -13,6 +14,9 @@ class LevelDBProvider extends BaseDBProvider {
 
     this.lock = new AsyncLock()
     this.dbPath = options.dbPath
+    if (!fs.existsSync(this.dbPath)) {
+      fs.mkdirSync(this.dbPath, { recursive: true })
+    }
     this.db = levelup(leveldown(this.dbPath))
   }
 

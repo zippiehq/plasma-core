@@ -1,3 +1,4 @@
+const paths = require('./paths')
 const services = require('./services/index')
 const debug = require('debug')
 
@@ -6,7 +7,8 @@ const defaultOptions = {
   operatorProvider: services.OperatorProviders.DefaultOperatorProvider,
   walletProvider: services.WalletProviders.DefaultWalletProvider,
   contractProvider: services.ContractProviders.DefaultContractProvider,
-  web3Provider: services.Web3Provider
+  web3Provider: services.Web3Provider,
+  dbPath: paths.CHAIN_DIR
 }
 
 /**
