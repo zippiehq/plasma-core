@@ -19,6 +19,7 @@ Documentation for ``plasma-extension`` is available at the `plasma-extension doc
    :maxdepth: 2
    :caption: Specifications
 
+   specs/operator
    specs/coin-assignment
    specs/transactions
    specs/proofs
