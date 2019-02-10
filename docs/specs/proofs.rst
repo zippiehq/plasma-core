@@ -50,7 +50,7 @@ This includes:
 
 Here's the schema taken right from ``plasma-utils``:
 
-.. _code-block:: javascript
+.. code-block:: javascript
 
     const TransferProofSchema = new Schema({
       parsedSum: {
@@ -83,14 +83,14 @@ Snapshot Objects
 We keep track of the current owner of a range using an object called a Snapshot_.
 Quite simply, a Snapshot_ represents the verified owner of a range at a block:
 
-```
-{
-  start: number,
-  end: number,
-  block: number,
-  owner: address
-}
-```
+.. code-block:: json
+
+    {
+      start: number,
+      end: number,
+      block: number,
+      owner: address
+    }
 
 Checking for Exits
 ------------------
