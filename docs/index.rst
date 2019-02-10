@@ -24,7 +24,6 @@ Documentation for ``plasma-extension`` is available at the `plasma-extension doc
    specs/transactions
    specs/proofs
    specs/contract
-   specs/encoding
    specs/sum-tree
    specs/jsonrpc
 
@@ -32,7 +31,7 @@ Documentation for ``plasma-extension`` is available at the `plasma-extension doc
    :maxdepth: 2
    :caption: Service API Reference
 
-   services/eth
+   services/contract
    services/operator
    services/jsonrpc
    services/proof

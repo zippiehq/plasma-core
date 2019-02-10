@@ -2,28 +2,22 @@
 JSONRPCService
 ==============
 
-Description
-===========
 ``JSONRPCService`` handles incoming JSON-RPC method calls.
 A full list of methods is documented at the `JSON-RPC Methods Specification`_.
 Note that ``JSONRPCService`` does **not** expose any form of external interface (such as an HTTP server).
 Full nodes should implement these services so that users can interact with the node.
 For more information about these external services, see our document on `extending plasma-core`_.
 
+------------------------------------------------------------------------------
 
-API
-===
+getAllMethods
+=============
+
 .. code-block:: javascript
 
-    getAllMethods ()
+    jsonrpc.getAllMethods()
 
 Returns all available RPC methods.
-
-----------
-Parameters
-----------
-
-N/A
 
 -------
 Returns
@@ -33,9 +27,12 @@ Returns
 
 ------------------------------------------------------------------------------
 
+getMethod
+=========
+
 .. code-block:: javascript
 
-    getMethod (name)
+    jsonrpc.getMethod(name)
 
 Returns a method by its name.
 
@@ -43,7 +40,7 @@ Returns a method by its name.
 Parameters
 ----------
 
-1. ``name`` - ``String``: Name of the method.
+1. ``name`` - ``string``: Name of the method.
 
 -------
 Returns
@@ -53,9 +50,12 @@ Returns
 
 ------------------------------------------------------------------------------
 
+callMethod
+==========
+
 .. code-block:: javascript
 
-    async callMethod (name, params = [])
+    jsonrpc.callMethod(name, params = [])
 
 Calls a method with the given name and params.
 
@@ -63,20 +63,23 @@ Calls a method with the given name and params.
 Parameters
 ----------
 
-1. ``name`` - ``String``: Name of the method to call.
+1. ``name`` - ``string``: Name of the method to call.
 2. ``params`` - ``Array``: An array of parameters.
 
 -------
 Returns
 -------
 
-``any``: The result of the method call.
+``Promise<any>``: The result of the method call.
 
 ------------------------------------------------------------------------------
 
+handle
+======
+
 .. code-block:: javascript
 
-    async handle (request)
+    jsonrpc.handle(request)
 
 Handles a raw `JSON-RPC request`_.
 
@@ -90,7 +93,8 @@ Parameters
 Returns
 -------
 
-``Object``: A JSON-RPC `response object`_.
+``Promise<Object>``: A JSON-RPC `response object`_.
+
 
 .. _JSON-RPC Methods Specification: specs/jsonrpc.html
 .. _extending plasma-core: extending-plasma-core.html

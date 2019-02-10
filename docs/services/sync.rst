@@ -2,28 +2,23 @@
 SyncService
 ===========
 
-Description
-===========
 ``SyncService`` makes sure that the client's wallet is always synchronized.
 This service automatically pulls any pending transactions and keeps `transaction proofs`_ up to date.
 
-API
-===
+------------------------------------------------------------------------------
+
+isSyncing
+=========
+
 .. code-block:: javascript
 
-    isSyncing ()
-
-----------
-Parameters
-----------
-
-N/A
+    sync.isSyncing()
 
 -------
 Returns
 -------
 
-``boolean``: Whether or not the sync service is currently active.
+``boolean``: ``true`` if SyncService is currently syncing, ``false`` otherwise.
 
 
 .. _transaction proofs: specs/proofs.html

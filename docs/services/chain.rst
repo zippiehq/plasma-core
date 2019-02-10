@@ -2,17 +2,18 @@
 ChainService
 ============
 
-Description
-===========
 ``ChainService`` does most of the heavy lifting when it comes to receiving and sending transactions.
 This service handles inserting new transactions into the local store of transactions.
 It also handles updating the database whenever the user spends a transaction.
 
-API
-===
+------------------------------------------------------------------------------
+
+getOwnedRanges
+==============
+
 .. code-block:: javascript
 
-    getOwnedRanges (address)
+    chain.getOwnedRanges(address)
 
 Returns the list of ranges that the user owns.
 
@@ -20,19 +21,22 @@ Returns the list of ranges that the user owns.
 Parameters
 ----------
 
-1. ``address`` - ``String``: Address of the user to query.
+1. ``address`` - ``string``: Address of the user to query.
 
 -------
 Returns
 -------
 
-``Array<{ start: Number, end: Number }>``: A list of ranges owned by that address.
+``Array<{ start: number, end: number }>``: A list of ranges owned by that address.
 
 ------------------------------------------------------------------------------
 
+getBalances
+===========
+
 .. code-block:: javascript
 
-    getBalances (address)
+    chain.getBalances(address)
 
 Returns a list of balances for a user.
 
@@ -40,7 +44,7 @@ Returns a list of balances for a user.
 Parameters
 ----------
 
-1. ``address`` - ``String``: Address of the user to query.
+1. ``address`` - ``string``: Address of the user to query.
 
 -------
 Returns
@@ -50,9 +54,12 @@ Returns
 
 ------------------------------------------------------------------------------
 
+getTransaction
+==============
+
 .. code-block:: javascript
 
-    getTransaction (hash)
+    chain.getTransaction(hash)
 
 Returns the transaction with the given hash.
 
@@ -60,7 +67,7 @@ Returns the transaction with the given hash.
 Parameters
 ----------
 
-1. ``hash`` - ``String``: Hash of the transaction to query.
+1. ``hash`` - ``string``: Hash of the transaction to query.
 
 -------
 Returns
@@ -70,9 +77,12 @@ Returns
 
 ------------------------------------------------------------------------------
 
+hasTransaction
+==============
+
 .. code-block:: javascript
 
-    hasTransaction (hash)
+    chain.hasTransaction(hash)
 
 Checks if the database has a specific transaction.
 
@@ -80,7 +90,7 @@ Checks if the database has a specific transaction.
 Parameters
 ----------
 
-1. ``hash`` - ``String``: Hash of the transaction to check.
+1. ``hash`` - ``string``: Hash of the transaction to check.
 
 -------
 Returns
@@ -90,9 +100,12 @@ Returns
 
 ------------------------------------------------------------------------------
 
+getBlockHeader
+==============
+
 .. code-block:: javascript
 
-    getBlockHeader (block)
+    chain.getBlockHeader(block)
 
 Returns the header of the block with the given number.
 
@@ -100,19 +113,22 @@ Returns the header of the block with the given number.
 Parameters
 ----------
 
-1. ``block`` - ``Number``: Number of the block to query.
+1. ``block`` - ``number``: Number of the block to query.
 
 -------
 Returns
 -------
 
-``String``: A block hash.
+``string``: A block hash.
 
 ------------------------------------------------------------------------------
 
+addBlockHeader
+==============
+
 .. code-block:: javascript
 
-    addBlockHeader (block, header)
+    chain.addBlockHeader(block, header)
 
 Stores a block header.
 
@@ -120,20 +136,17 @@ Stores a block header.
 Parameters
 ----------
 
-1. ``block`` - ``Number``: Number of the block to store.
-2. ``header`` - ``String``: Hash of the given block.
-
--------
-Returns
--------
-
-N/A
+1. ``block`` - ``number``: Number of the block to store.
+2. ``header`` - ``string``: Hash of the given block.
 
 ------------------------------------------------------------------------------
 
+addTransaction
+==============
+
 .. code-block:: javascript
 
-    addTransaction (transaction, proof)
+    chain.addTransaction(transaction, proof)
 
 Adds a transaction to the database if it's valid.
 
@@ -143,6 +156,7 @@ Parameters
 
 1. ``transaction`` - ``Transaction``: A Transaction_ object.
 2. ``proof`` - ``Proof``: A Proof_ object.
+
 
 .. _Transaction: specs/transactions.html#transaction-object
 .. _Proof: specs/proofs.html#proof-object

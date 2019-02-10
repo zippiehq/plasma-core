@@ -2,16 +2,17 @@
 OperatorService
 ===============
 
-Description
-===========
-``OperatorService`` handles all interaction with the Operator_.
+``OperatorService`` handles all interaction with the operator_.
 This includes things like sending transactions and pulling any pending transactions.
 
-API
-===
+------------------------------------------------------------------------------
+
+getPendingTransactions
+======================
+
 .. code-block:: javascript
 
-    async getPendingTransactions (address)
+    operator.getPendingTransactions(address)
 
 Gets any pending transactions for an address.
 Because we're currently using the operator as a `transaction relay`_, the client must regularly check for and import pending transactions.
@@ -20,19 +21,22 @@ Because we're currently using the operator as a `transaction relay`_, the client
 Parameters
 ----------
 
-1. ``address`` - ``String``: Address of the account to query.
+1. ``address`` - ``string``: Address of the account to query.
 
 -------
 Returns
 -------
 
-``Array<String>``: Hashes of pending transactions for that address.
+``Promise<Array>``: Hashes of pending transactions for that address.
 
 ------------------------------------------------------------------------------
 
+getTransaction
+==============
+
 .. code-block:: javascript
 
-    async getTransaction (hash)
+    operator.getTransaction(hash)
 
 Returns information about a single transaction.
 
@@ -40,19 +44,22 @@ Returns information about a single transaction.
 Parameters
 ----------
 
-1. ``hash`` - ``String``: Hash of the transaction.
+1. ``hash`` - ``string``: Hash of the transaction.
 
 -------
 Returns
 -------
 
-``Transaction``: A Transaction_ object.
+``Promise<SignedTransaction>``: A Transaction_ object.
 
 ------------------------------------------------------------------------------
 
+sendTransaction
+===============
+
 .. code-block:: javascript
 
-    async sendTransaction (transaction)
+    operator.sendTransaction(transaction)
 
 ----------
 Parameters
@@ -64,8 +71,9 @@ Parameters
 Returns
 -------
 
-``Object``: A transaction receipt.
+``Promise<string>``: A transaction receipt.
 
-.. _Operator: TODO
+
+.. _operator: specs/operator.html
 .. _transaction relay: TODO
 .. _Transaction: specs/transactions.html#transaction-object

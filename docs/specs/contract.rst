@@ -304,8 +304,8 @@ Both of these methods call an additional method, ``challengeInvalidHistory``:
 
 This method does the legwork of checking that the ``coinID`` is within the challenged exit, and that the ``blockNumber`` is earlier than the exit.
 
-Responding to Invalid-History Challenges
-----------------------------------------
+Responding
+----------
 Of course it's also possible for someone to submit a fraudulent Invalid-History Challenge.
 Therefore we give exiters two ways to respond to this type of challenge.
 
