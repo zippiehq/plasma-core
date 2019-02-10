@@ -33,7 +33,7 @@ describe('LocalWalletProvider', async () => {
 
   it('should return dependencies', () => {
     const dependencies = wallet.dependencies
-    dependencies.should.deep.equal(['web3'])
+    dependencies.should.deep.equal(['web3', 'db'])
   })
 
   it('should allow creating new accounts', async () => {
