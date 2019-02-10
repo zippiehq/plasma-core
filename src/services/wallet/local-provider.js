@@ -1,32 +1,17 @@
-const fs = require('fs')
-const path = require('path')
-const paths = require('../../paths')
 const BaseWalletProvider = require('./base-provider')
 
-const defaultOptions = {
-  keystoreDir: paths.KEYSTORE_DIR
-}
-
 class LocalWalletProvider extends BaseWalletProvider {
-  constructor (options) {
-    super(options, defaultOptions)
-
-    paths.createIfNotExists(this.options.keystoreDir)
-  }
-
   get dependencies () {
-    return ['web3']
+    return ['web3', 'db']
   }
 
   async getAccounts () {
-    // TODO: Should probably actually read the files instead
-    // of just looking at the file names.
-    const accounts = fs.readdirSync(this.options.keystoreDir)
+    const accounts = await this.services.db.get('accounts', [])
     return accounts
   }
 
   async sign (address, data) {
-    const account = this._getAccount(address)
+    const account = await this._getAccount(address)
     return account.sign(data)
   }
 
@@ -34,8 +19,11 @@ class LocalWalletProvider extends BaseWalletProvider {
     // TODO: Support encrypted accounts.
     const account = this.services.web3.eth.accounts.create()
 
-    const keystorePath = path.join(this.options.keystoreDir, account.address)
-    fs.writeFileSync(keystorePath, JSON.stringify(account))
+    const accounts = await this.getAccounts()
+    accounts.push(account.address)
+    await this.services.db.set('accounts', accounts)
+
+    await this.services.db.set(`keystore:${account.address}`, account)
     await this.addAccountToWallet(account.address)
     return account.address
   }
@@ -49,7 +37,7 @@ class LocalWalletProvider extends BaseWalletProvider {
     const accounts = await this.services.web3.eth.accounts.wallet
     if (address in accounts) return
 
-    const account = this._getAccount(address)
+    const account = await this._getAccount(address)
     await this.services.web3.eth.accounts.wallet.add(account.privateKey)
   }
 
@@ -58,13 +46,12 @@ class LocalWalletProvider extends BaseWalletProvider {
    * @param {string} address Adress of the account.
    * @return {*} A Web3 account object.
    */
-  _getAccount (address) {
-    const keystorePath = path.join(this.options.keystoreDir, address)
-    if (!fs.existsSync(keystorePath)) {
+  async _getAccount (address) {
+    const keystore = await this.services.db.get(`keystore:${address}`, null)
+    if (!keystore) {
       throw new Error('Account not found')
     }
 
-    const keystore = JSON.parse(fs.readFileSync(keystorePath))
     return this.services.web3.eth.accounts.privateKeyToAccount(
       keystore.privateKey
     )

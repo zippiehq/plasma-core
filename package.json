@@ -63,7 +63,9 @@
     "prettier": "^1.15.3",
     "rimraf": "^2.6.3",
     "sinon": "^7.2.3",
-    "sinon-chai": "^3.3.0"
+    "sinon-chai": "^3.3.0",
+    "webpack": "^4.29.3",
+    "webpack-cli": "^3.2.3"
   },
   "dependencies": {
     "async-lock": "^1.1.3",

@@ -14,6 +14,14 @@ const Web3Provider = require('./web3-provider')
 const EventHandler = require('./contract/events/event-handler')
 const EventWatcher = require('./contract/events/event-watcher')
 
+const BaseDBProvider = require('./db/backends/base-provider')
+const BaseWalletProvider = require('./wallet/base-provider')
+
+const base = {
+  BaseDBProvider,
+  BaseWalletProvider
+}
+
 module.exports = {
   BaseService,
   GuardService,
@@ -29,5 +37,6 @@ module.exports = {
   WalletProviders,
   Web3Provider,
   EventHandler,
-  EventWatcher
+  EventWatcher,
+  base
 }
