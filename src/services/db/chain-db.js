@@ -160,7 +160,7 @@ class ChainDB extends BaseService {
 
   /**
    * Adds an "exitable end" to the database.
-   * TODO: Add link that explains this.
+   * For more information, see: https://github.com/plasma-group/plasma-contracts/issues/44.
    * @param {BigNum} token Token of the range.
    * @param {BigNum} end End of the range.
    */

@@ -221,7 +221,7 @@ class ContractProvider extends BaseContractProvider {
     return this.contract.methods.depositETH().send({
       from: owner,
       value: amount,
-      gas: 150000 // TODO: Figure out how much this should be.
+      gas: 150000
     })
   }
 
@@ -290,7 +290,6 @@ class ContractProvider extends BaseContractProvider {
    * @return {EthereumTransaction} Block submission transaction receipt.
    */
   async submitBlock (hash) {
-    // TODO: Rewrite when we add generic signature support.
     const operator = await this.getOperator()
     await this.checkAccountUnlocked(operator)
     return this.contract.methods.submitBlock(hash).send({

@@ -109,6 +109,11 @@ class EventWatcher extends BaseService {
     )
   }
 
+  /**
+   * Checks for new instances of an event.
+   * @param {string} eventName Name of the event.
+   * @param {number} lastFinalBlock Number of the latest block known to be final.
+   */
   async _checkEvent (eventName, lastFinalBlock) {
     if (!this.events[eventName].active || !this.services.contract.hasAddress) {
       return
