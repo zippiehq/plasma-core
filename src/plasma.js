@@ -104,14 +104,12 @@ class Plasma {
       }
     }
 
-    service
-      .start()
-      .then(() => {
-        this.loggers['core:bootstrap'](`${service.name}: STARTED`)
-      })
-      .catch((err) => {
-        console.log(err)
-      })
+    try {
+      await service.start()
+      this.loggers['core:bootstrap'](`${service.name}: STARTED`)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   /**
@@ -120,14 +118,13 @@ class Plasma {
    */
   async stopService (name) {
     let service = this.services[name]
-    service
-      .stop()
-      .then(() => {
-        this.loggers['core:bootstrap'](`${service.name}: STOPPED`)
-      })
-      .catch((err) => {
-        console.log(err)
-      })
+
+    try {
+      await service.stop()
+      this.loggers['core:bootstrap'](`${service.name}: STOPPED`)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   /**
