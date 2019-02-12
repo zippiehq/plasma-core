@@ -182,18 +182,9 @@ class ChainDB extends BaseService {
    */
   async getExitableEnd (token, end) {
     const startKey = this._getTypedValue(token, end)
-    const it = this.services.db.iterator({
-      gte: `exitable:${startKey}`,
-      keyAsBuffer: false,
-      valueAsBuffer: false
-    })
-
-    let result = await this._itNext(it)
-    while (!result.key.startsWith('exitable')) {
-      result = await this._itNext(it)
-    }
-
-    return new BigNum(result.value, 'hex')
+    const nextKey = await this.services.db.findNextKey(`exitable:${startKey}`)
+    const exitableEnd = await this.services.db.get(nextKey)
+    return new BigNum(exitableEnd, 'hex')
   }
 
   /**
@@ -256,22 +247,6 @@ class ChainDB extends BaseService {
    */
   async setState (state) {
     await this.services.db.set('state:latest', state)
-  }
-
-  /**
-   * Promsified version of `iterator.next`.
-   * @param {*} it LevelDB iterator.
-   * @return {*} The key and value returned by the iterator.
-   */
-  async _itNext (it) {
-    return new Promise((resolve, reject) => {
-      it.next((err, key, value) => {
-        if (err) {
-          reject(err)
-        }
-        resolve({ key, value })
-      })
-    })
   }
 
   /**
