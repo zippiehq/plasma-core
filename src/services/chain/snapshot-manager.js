@@ -8,6 +8,26 @@ const Transfer = models.Transfer
 const NULL_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 /**
+ * Determines the less of two BigNums.
+ * @param {BigNum} a First BigNum.
+ * @param {BigNum} b Second BigNum.
+ * @return {BigNum} The less of the two.
+ */
+const bnMin = (a, b) => {
+  return a.lt(b) ? a : b
+}
+
+/**
+ * Determines the greater of two BigNums.
+ * @param {BigNum} a First BigNum.
+ * @param {BigNum} b Second BigNum.
+ * @return {BigNum} The greater of the two.
+ */
+const bnMax = (a, b) => {
+  return a.gt(b) ? a : b
+}
+
+/**
  * Pulls out the token from a typed value.
  * @param {BigNum} typedValue A typed value.
  * @return {BigNum} The token.
@@ -411,8 +431,8 @@ class SnapshotManager {
     // Determine which snapshots overlap with this component.
     const overlapping = this.snapshots.filter((snapshot) => {
       return (
-        Math.max(snapshot.start, component.start) <
-        Math.min(snapshot.end, component.end)
+        bnMax(snapshot.start, component.start) <
+        bnMin(snapshot.end, component.end)
       )
     })
 
@@ -444,8 +464,8 @@ class SnapshotManager {
       }
       this._addSnapshot(
         new Snapshot({
-          start: Math.max(snapshot.start, component.start),
-          end: Math.min(snapshot.end, component.end),
+          start: bnMax(snapshot.start, component.start),
+          end: bnMin(snapshot.end, component.end),
           block: component.block,
           owner: component.implicit ? snapshot.owner : component.recipient
         })
@@ -576,7 +596,7 @@ class SnapshotManager {
           reduced.push(
             new Snapshot({
               ...s,
-              ...{ end: Math.min(s.end, r.end) }
+              ...{ end: bnMin(s.end, r.end) }
             })
           )
         }
