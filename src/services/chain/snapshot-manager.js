@@ -430,8 +430,7 @@ class SnapshotManager {
 
     // Determine which snapshots overlap with this component.
     const overlapping = this.snapshots.filter((snapshot) => {
-      return (
-        bnMax(snapshot.start, component.start) <
+      return bnMax(snapshot.start, component.start).lt(
         bnMin(snapshot.end, component.end)
       )
     })

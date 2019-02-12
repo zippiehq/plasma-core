@@ -179,7 +179,7 @@ class ChainService extends BaseService {
   async finalizeExits (address) {
     const exits = await this.getExitsWithStatus(address)
     const completed = exits.filter((exit) => {
-      return exit.completed
+      return exit.completed && !exit.finalized
     })
 
     let finalized = []

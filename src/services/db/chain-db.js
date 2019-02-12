@@ -280,7 +280,7 @@ class ChainDB extends BaseService {
     return new BigNum(
       token.toString('hex', 8) + value.toString('hex', 24),
       'hex'
-    )
+    ).toString('hex', 32)
   }
 
   /**
