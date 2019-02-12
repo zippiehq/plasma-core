@@ -137,19 +137,28 @@ class EventWatcher extends BaseService {
       }
     )
 
+    // Filter out events that we've already seen.
+    events.forEach((event) => {
+      event.hash = this._getEventHash(event)
+    })
+    const isUnique = await Promise.all(
+      events.map(async (event) => {
+        return !(await this.services.db.exists(`event:${event.hash}`))
+      })
+    )
+    events = events.filter((_, i) => isUnique[i])
+
     if (events.length > 0) {
-      const isUniq = await Promise.all(
-        events.map(async (event) => {
-          const hash = this._getEventHash(event)
-          if (!(await this.services.db.exists(hash))) {
-            await this.services.db.set(`event:${hash}`, true)
-            return true
-          }
-        })
-      )
+      // Mark these events as seen.
+      const objects = events.map((event) => {
+        return {
+          key: `event:${event.hash}`,
+          value: true
+        }
+      })
+      await this.services.db.bulkPut(objects)
 
-      events = events.filter((event, i) => isUniq[i])
-
+      // Alert any listeners.
       for (let listener of this.subscriptions[eventName]) {
         try {
           listener(events)

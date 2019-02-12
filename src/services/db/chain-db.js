@@ -1,6 +1,7 @@
 const BigNum = require('bn.js')
 const BaseService = require('../base-service')
 const utils = require('plasma-utils')
+const AsyncLock = require('async-lock')
 const utilModels = utils.serialization.models
 const models = require('./models')
 
@@ -12,6 +13,11 @@ const SignedTransaction = utilModels.SignedTransaction
  * Handles chain-related DB calls.
  */
 class ChainDB extends BaseService {
+  constructor (options) {
+    super(options)
+    this.lock = new AsyncLock()
+  }
+
   get name () {
     return 'chaindb'
   }
@@ -72,10 +78,12 @@ class ChainDB extends BaseService {
    * @param {number} block A block number.
    */
   async setLatestBlock (block) {
-    const latest = await this.getLatestBlock()
-    if (block > latest) {
-      await this.services.db.set('latestblock', block)
-    }
+    return this.lock.acquire('latestblock', async () => {
+      const latest = await this.getLatestBlock()
+      if (block > latest) {
+        await this.services.db.set('latestblock', block)
+      }
+    })
   }
 
   /**
@@ -108,21 +116,13 @@ class ChainDB extends BaseService {
     })
     await this.setLatestBlock(latest.number)
 
-    if (this.services.db.db.batch) {
-      // Add each header as a batch operation.
-      const ops = blocks.map((block) => {
-        return {
-          type: 'put',
-          key: `header:${block.number}`,
-          value: block.hash
-        }
-      })
-      await this.services.db.db.batch(ops)
-    } else {
-      for (let block of blocks) {
-        await this.addBlockHeader(block.number, block.hash)
+    const objects = blocks.map((block) => {
+      return {
+        key: `header:${block.number}`,
+        value: block.hash
       }
-    }
+    })
+    await this.services.db.bulkPut(objects)
   }
 
   /**
@@ -165,13 +165,34 @@ class ChainDB extends BaseService {
    * @param {BigNum} end End of the range.
    */
   async addExitableEnd (token, end) {
-    token = new BigNum(token, 'hex')
-    end = new BigNum(end, 'hex')
-
-    const key = this._getTypedValue(token, end)
-    await this.services.db.set(`exitable:${key}`, end.toString('hex'))
+    await this.addExitableEnds([
+      {
+        token: token,
+        end: end
+      }
+    ])
 
     this.logger(`Added exitable end to database: ${token}:${end}`)
+  }
+
+  /**
+   * Adds multiple "exitable ends" to the database in bulk
+   * For more information, see: https://github.com/plasma-group/plasma-contracts/issues/44.
+   * @param {*} exitable Ends to add to the database.
+   */
+  async addExitableEnds (exitables) {
+    const objects = exitables.map((exitable) => {
+      const token = new BigNum(exitable.token, 'hex')
+      const end = new BigNum(exitable.end, 'hex')
+
+      const key = this.getTypedValue(token, end)
+      return {
+        key: `exitable:${key}`,
+        value: end.toString('hex')
+      }
+    })
+
+    await this.services.db.bulkPut(objects)
   }
 
   /**
@@ -181,7 +202,7 @@ class ChainDB extends BaseService {
    * @return {BigNum} The exitable end.
    */
   async getExitableEnd (token, end) {
-    const startKey = this._getTypedValue(token, end)
+    const startKey = this.getTypedValue(token, end)
     const nextKey = await this.services.db.findNextKey(`exitable:${startKey}`)
     const exitableEnd = await this.services.db.get(nextKey)
     return new BigNum(exitableEnd, 'hex')
@@ -250,27 +271,29 @@ class ChainDB extends BaseService {
   }
 
   /**
-   * Helper function for pushing to an array stored at a key in the database.
-   * @param {string} key The key at which the array is stored.
-   * @param {*} value Value to add to the array.
-   */
-  async _dbArrayPush (key, value) {
-    const current = await this.services.db.get(key, [])
-    current.push(value)
-    await this.services.db.set(key, current)
-  }
-
-  /**
    * Returns the "typed" version of a start or end.
    * @param {BigNum} token The token ID.
    * @param {BigNum} value The value to type.
    * @return {BigNum} The typed value.
    */
-  _getTypedValue (token, value) {
+  getTypedValue (token, value) {
     return new BigNum(
       token.toString('hex', 8) + value.toString('hex', 24),
       'hex'
     )
+  }
+
+  /**
+   * Helper function for pushing to an array stored at a key in the database.
+   * @param {string} key The key at which the array is stored.
+   * @param {*} value Value to add to the array.
+   */
+  async _dbArrayPush (key, value) {
+    return this.lock.acquire(key, async () => {
+      const current = await this.services.db.get(key, [])
+      current.push(value)
+      await this.services.db.set(key, current)
+    })
   }
 }
 

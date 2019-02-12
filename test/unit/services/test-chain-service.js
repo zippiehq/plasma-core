@@ -25,6 +25,6 @@ describe('ChainService', () => {
   it('should allow deposits', async () => {
     const expected = { token: '0x0', start: 0, end: 100 }
     const deposit = { ...expected, owner: accounts[0] }
-    await chain.addDeposit(deposit)
+    await chain.addDeposits([deposit])
   })
 })

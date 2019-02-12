@@ -52,6 +52,12 @@ class EphemDBProvider extends BaseDBProvider {
         return k > key
       })
   }
+
+  async bulkPut (objects) {
+    for (let object of objects) {
+      await this.set(object.key, object.value)
+    }
+  }
 }
 
 module.exports = EphemDBProvider

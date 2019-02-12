@@ -180,9 +180,7 @@ class SyncService extends BaseService {
    * @param {Array<DepositEvent>} deposits Deposit events.
    */
   async _onDeposit (deposits) {
-    for (let deposit of deposits) {
-      await this.services.chain.addDeposit(deposit)
-    }
+    await this.services.chain.addDeposits(deposits)
   }
 
   /**

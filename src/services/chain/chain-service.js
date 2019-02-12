@@ -50,27 +50,36 @@ class ChainService extends BaseService {
   }
 
   /**
-   * Adds a record of a deposit for a user.
-   * @param {Deposit} deposit Deposit to add.
+   * Adds deposit records to the database.
+   * @param {Array<Deposit>} deposits Deposits to add.
    */
-  async addDeposit (deposit) {
-    const exited = await this.services.chaindb.checkExited(deposit)
-    if (exited) {
-      this.logger(`Skipping adding deposit that has already been exited.`)
-    }
+  async addDeposits (deposits) {
+    // Filter out any ranges that have already been exited.
+    const isNotExited = await Promise.all(
+      deposits.map(async (deposit) => {
+        return !(await this.services.chaindb.checkExited(deposit))
+      })
+    )
+    deposits = deposits.filter((_, i) => isNotExited[i])
 
-    // Add the deposit to head state.
+    // Add the deposit to the head state.
     await this.lock.acquire('state', async () => {
       const stateManager = await this.loadState()
-      stateManager.applyDeposit(deposit)
+      for (const deposit of deposits) {
+        stateManager.applyDeposit(deposit)
+      }
       await this.saveState(stateManager)
     })
 
-    // Weird quirk in how we handle exits.
-    // For more information, see: https://github.com/plasma-group/plasma-contracts/issues/44.
-    await this.services.chaindb.addExitableEnd(deposit.token, deposit.end)
+    await this.services.chaindb.addExitableEnds(deposits)
 
-    this.logger(`Added deposit to database`)
+    for (const deposit of deposits) {
+      this.logger(
+        `Added deposit to database: ${deposit.owner}, ${deposit.amount}, [${
+          deposit.token
+        }]`
+      )
+    }
   }
 
   /**
