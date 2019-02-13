@@ -1,6 +1,6 @@
 {
   "name": "plasma-core",
-  "version": "0.0.4-beta.34",
+  "version": "0.0.4-beta.35",
   "description": "Core PG plasma node",
   "main": "index.js",
   "scripts": {
