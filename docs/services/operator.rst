@@ -7,27 +7,69 @@ This includes things like sending transactions and pulling any pending transacti
 
 ------------------------------------------------------------------------------
 
-getPendingTransactions
-======================
+getNextBlock
+============
 
 .. code-block:: javascript
 
-    operator.getPendingTransactions(address)
+    chain.getExitsWithStatus(address)
 
-Gets any pending transactions for an address.
-Because we're currently using the operator as a `transaction relay`_, the client must regularly check for and import pending transactions.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``: Address of the account to query.
+1. ``address`` - ``string``:
 
 -------
 Returns
 -------
 
-``Promise<Array>``: Hashes of pending transactions for that address.
+``Array``:
+
+------------------------------------------------------------------------------
+
+getEthInfo
+==========
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+getTransactions
+===============
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
 
 ------------------------------------------------------------------------------
 
@@ -36,21 +78,20 @@ getTransaction
 
 .. code-block:: javascript
 
-    operator.getTransaction(hash)
+    chain.getExitsWithStatus(address)
 
-Returns information about a single transaction.
 
 ----------
 Parameters
 ----------
 
-1. ``hash`` - ``string``: Hash of the transaction.
+1. ``address`` - ``string``:
 
 -------
 Returns
 -------
 
-``Promise<SignedTransaction>``: A Transaction_ object.
+``Array``:
 
 ------------------------------------------------------------------------------
 
@@ -59,19 +100,44 @@ sendTransaction
 
 .. code-block:: javascript
 
-    operator.sendTransaction(transaction)
+    chain.getExitsWithStatus(address)
+
 
 ----------
 Parameters
 ----------
 
-1. ``transaction`` - ``Transaction``: A signed Transaction_.
+1. ``address`` - ``string``:
 
 -------
 Returns
 -------
 
-``Promise<string>``: A transaction receipt.
+``Array``:
+
+------------------------------------------------------------------------------
+
+submitBlock
+===========
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
 
 
 .. _operator: specs/operator.html

@@ -24,7 +24,7 @@ Parameters
 ----------
 
 1. ``transaction`` - ``Object``: A Transaction_ object.
-2. ``deposits`` - ``Array<Object>``: An array of Deposits.
+2. ``deposits`` - ``Array<Deposit>``: An array of Deposits_.
 2. ``proof`` - ``Object``: A Proof_ object.
 
 -------
@@ -35,5 +35,6 @@ Returns
 
 
 .. _transaction proof specification: specs/proofs.html
+.. _Deposits: TODO
 .. _Transaction: specs/transactions.html#transaction-object
 .. _Proof: specs/proofs.html#proof-object

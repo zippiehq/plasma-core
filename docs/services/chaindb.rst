@@ -1,79 +1,34 @@
-================
-ContractProvider
-================
-
-``ContractProvider`` is a wrapper that interacts with the plasma chain smart contract.
-
-------------------------------------------------------------------------------
-
-address
+=======
+ChainDB
 =======
 
+------------------------------------------------------------------------------
+
+getTransaction
+==============
+
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.getTransaction(hash)
 
+Returns the transaction with the given hash.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``hash`` - ``string``: Hash of the transaction to query.
 
 -------
 Returns
 -------
 
-``Array``:
+``Object``: A Transaction_ object.
 
 ------------------------------------------------------------------------------
 
-hasAddress
-==========
-
-.. code-block:: javascript
-
-    chain.getExitsWithStatus(address)
-
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
-
-ready
-=====
-
-.. code-block:: javascript
-
-    chain.getExitsWithStatus(address)
-
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
-
-web3
-====
+setTransaction
+==============
 
 .. code-block:: javascript
 
@@ -94,7 +49,115 @@ Returns
 
 ------------------------------------------------------------------------------
 
-plasmaChainName
+hasTransaction
+==============
+
+.. code-block:: javascript
+
+    chain.hasTransaction(hash)
+
+Checks if the database has a specific transaction.
+
+----------
+Parameters
+----------
+
+1. ``hash`` - ``string``: Hash of the transaction to check.
+
+-------
+Returns
+-------
+
+``boolean``: ``true`` if the database has the transaction, ``false`` otherwise.
+
+------------------------------------------------------------------------------
+
+getLatestBlock
+==============
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+setLatestBlock
+==============
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+getBlockHeader
+==============
+
+.. code-block:: javascript
+
+    chain.getBlockHeader(block)
+
+Returns the header of the block with the given number.
+
+----------
+Parameters
+----------
+
+1. ``block`` - ``number``: Number of the block to query.
+
+-------
+Returns
+-------
+
+``string``: A block hash.
+
+------------------------------------------------------------------------------
+
+addBlockHeader
+==============
+
+.. code-block:: javascript
+
+    chain.addBlockHeader(block, header)
+
+Stores a block header.
+
+----------
+Parameters
+----------
+
+1. ``block`` - ``number``: Number of the block to store.
+2. ``header`` - ``string``: Hash of the given block.
+
+------------------------------------------------------------------------------
+
+addBlockHeaders
 ===============
 
 .. code-block:: javascript
@@ -116,8 +179,8 @@ Returns
 
 ------------------------------------------------------------------------------
 
-checkAccountUnlocked
-====================
+getDeposits
+===========
 
 .. code-block:: javascript
 
@@ -138,7 +201,7 @@ Returns
 
 ------------------------------------------------------------------------------
 
-getBlock
+getExits
 ========
 
 .. code-block:: javascript
@@ -160,8 +223,8 @@ Returns
 
 ------------------------------------------------------------------------------
 
-getNextBlock
-============
+addExit
+=======
 
 .. code-block:: javascript
 
@@ -182,7 +245,29 @@ Returns
 
 ------------------------------------------------------------------------------
 
-getCurrentBlock
+addExitableEnd
+==============
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+addExitableEnds
 ===============
 
 .. code-block:: javascript
@@ -204,73 +289,7 @@ Returns
 
 ------------------------------------------------------------------------------
 
-getOperator
-===========
-
-.. code-block:: javascript
-
-    chain.getExitsWithStatus(address)
-
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
-
-getTokenAddress
-===============
-
-.. code-block:: javascript
-
-    chain.getExitsWithStatus(address)
-
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
-
-listToken
-=========
-
-.. code-block:: javascript
-
-    chain.getExitsWithStatus(address)
-
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
-
-getChallengePeriod
+getExitableEnd
 ==================
 
 .. code-block:: javascript
@@ -292,7 +311,7 @@ Returns
 
 ------------------------------------------------------------------------------
 
-getTokenId
+markExited
 ==========
 
 .. code-block:: javascript
@@ -314,99 +333,118 @@ Returns
 
 ------------------------------------------------------------------------------
 
-depositValid
-============
-
-.. code-block:: javascript
-
-    chain.getExitsWithStatus(address)
-
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
-
-deposit
-=======
-
-.. code-block:: javascript
-
-    contract.deposit(address, token, amount)
-
-Deposits some value of a token to the plasma smart contract.
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``: Address to deposit with.
-1. ``token`` - ``string``: Address of the token to deposit.
-2. ``amount`` - ``number``: Amount to deposit.
-
--------
-Returns
--------
-
-``EthereumTransaction``: An Ethereum transaction receipt.
-
-------------------------------------------------------------------------------
-
-startExit
-=========
-
-.. code-block:: javascript
-
-    chain.getExitsWithStatus(address)
-
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
-
-finalizeExit
-============
-
-.. code-block:: javascript
-
-    chain.getExitsWithStatus(address)
-
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
-
-submitBlock
+checkExited
 ===========
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+markFinalized
+=============
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+checkFinalized
+==============
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+getState
+========
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+setState
+========
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+getTypedValue
+=============
 
 .. code-block:: javascript
 

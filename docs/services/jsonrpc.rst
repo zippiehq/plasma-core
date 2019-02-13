@@ -50,12 +50,12 @@ Returns
 
 ------------------------------------------------------------------------------
 
-callMethod
-==========
+handle
+======
 
 .. code-block:: javascript
 
-    jsonrpc.callMethod(name, params = [])
+    jsonrpc.handle(method, params = [])
 
 Calls a method with the given name and params.
 
@@ -63,7 +63,7 @@ Calls a method with the given name and params.
 Parameters
 ----------
 
-1. ``name`` - ``string``: Name of the method to call.
+1. ``method`` - ``string``: Name of the method to call.
 2. ``params`` - ``Array``: An array of parameters.
 
 -------
@@ -74,12 +74,12 @@ Returns
 
 ------------------------------------------------------------------------------
 
-handle
-======
+handleRawRequest
+================
 
 .. code-block:: javascript
 
-    jsonrpc.handle(request)
+    jsonrpc.handleRawRequest(request)
 
 Handles a raw `JSON-RPC request`_.
 

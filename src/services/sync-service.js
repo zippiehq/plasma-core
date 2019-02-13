@@ -123,7 +123,7 @@ class SyncService extends BaseService {
       }
 
       try {
-        await this.addTransaction(tx)
+        await this._addTransaction(tx)
       } catch (err) {
         failed.push(encoded)
         this.logger(`ERROR: ${err}`)
@@ -143,7 +143,7 @@ class SyncService extends BaseService {
    * Tries to add any newly received transactions.
    * @param {*} encoded An encoded transaction.
    */
-  async addTransaction (tx) {
+  async _addTransaction (tx) {
     // TODO: The operator should really be avoiding this.
     if (
       tx.transfers[0].sender === NULL_ADDRESS ||

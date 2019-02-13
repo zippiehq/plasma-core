@@ -298,19 +298,6 @@ class ContractProvider extends BaseContractProvider {
   }
 
   /**
-   * Waits for the contract to be initialized.
-   * @return {Promise} Promise that resolves once the contract is ready to use.
-   */
-  async waitForInit () {
-    return new Promise((resolve) => {
-      if (this.hasAddress) resolve()
-      setInterval(() => {
-        if (this.hasAddress) resolve()
-      }, 100)
-    })
-  }
-
-  /**
    * Initializes the contract instance.
    */
   _initContract () {
@@ -354,6 +341,8 @@ class ContractProvider extends BaseContractProvider {
     const parsed = new ChainCreatedEvent(event)
     this.contract.options.address = parsed.plasmaChainAddress
     this.operatorEndpoint = parsed.operatorEndpoint
+
+    this.emit('initialized')
 
     this.logger(`Connected to plasma chain: ${this.plasmaChainName}`)
     this.logger(`Contract address set: ${this.address}`)

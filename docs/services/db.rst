@@ -17,7 +17,6 @@ Backends
 1. ``EphemDBProvider``, an in-memory database (mostly for testing).
 2. ``LevelDBProvider``, a wrapper for LevelDB_.
 
-
 ------------------------------------------------------------------------------
 
 get
