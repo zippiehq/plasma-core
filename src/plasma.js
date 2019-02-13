@@ -57,6 +57,11 @@ class Plasma {
       service.app = this
     }
 
+    // Relay lifecycle events.
+    service.on('initialized', () => {
+      this.emit(`${service.name}:initialized`)
+    })
+
     this.services[service.name] = service
   }
 
