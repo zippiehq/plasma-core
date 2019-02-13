@@ -127,6 +127,7 @@ class ContractProvider extends BaseContractProvider {
    * Lists a token with the given address
    * so that it can be deposited.
    * @param {string} tokenAddress Address of the token.
+   * @param {string} senderAddress Address of the account sending the listToken transaction.
    * @return {EthereumTransaction} The Ethereum transaction result.
    */
   async listToken (tokenAddress, senderAddress) {
