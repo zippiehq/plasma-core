@@ -63,7 +63,7 @@ class JSONRPCService extends BaseService {
 
   /**
    * Returns a single method.
-   * @param {*} name Name of the method to return.
+   * @param {string} name Name of the method to return.
    * @return {function} The method with the given name or
    * `undefined` if the method does not exist.
    */
@@ -76,21 +76,21 @@ class JSONRPCService extends BaseService {
 
   /**
    * Calls the method with the given name and parameters.
-   * @param {*} name Name of the method to call.
-   * @param {*} params Parameters to be used as arguments to the method.
+   * @param {string} method Name of the method to call.
+   * @param {Array} params Parameters to be used as arguments to the method.
    * @return {*} Result of the function call.
    */
-  async callMethod (name, params = []) {
-    const method = this.getMethod(name)
-    return method(...params)
+  async handle (method, params = []) {
+    const fn = this.getMethod(method)
+    return fn(...params)
   }
 
   /**
    * Handles a raw (JSON) JSON-RPC request.
-   * @param {*} request A JSON-RPC request.
-   * @return {*} Result of the JSON-RPC call.
+   * @param {Object} request A JSON-RPC request object.
+   * @return {string} Result of the JSON-RPC call.
    */
-  async handle (request) {
+  async handleRawRequest (request) {
     if (!('method' in request && 'id' in request)) {
       return this._buildError('INVALID_REQUEST', null)
     }
@@ -101,7 +101,7 @@ class JSONRPCService extends BaseService {
 
     let result
     try {
-      result = await this.callMethod(request.method, request.params)
+      result = await this.handle(request.method, request.params)
     } catch (err) {
       this.logger(`ERROR: ${err}`)
       return this._buildError('INTERNAL_ERROR', request.id, err)
@@ -116,8 +116,8 @@ class JSONRPCService extends BaseService {
 
   /**
    * Builds a JSON-RPC error response.
-   * @param {*} type Error type.
-   * @param {*} id RPC command ID.
+   * @param {string} type Error type.
+   * @param {string} id RPC command ID.
    * @return {Object} A stringified JSON-RPC error response.
    */
   _buildError (type, id, err) {
