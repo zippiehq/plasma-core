@@ -6,6 +6,7 @@ const ChainDB = require('./db/chain-db')
 const SyncDB = require('./db/sync-db')
 const DBProviders = require('./db/backends/index')
 const ContractProviders = require('./contract/index')
+const ETHService = require('./eth-service')
 const JSONRPCService = require('./jsonrpc/jsonrpc-service')
 const OperatorProviders = require('./operator/index')
 const ProofService = require('./chain/proof-service')
@@ -31,6 +32,7 @@ module.exports = {
   SyncDB,
   DBProviders,
   ContractProviders,
+  ETHService,
   JSONRPCService,
   OperatorProviders,
   ProofService,

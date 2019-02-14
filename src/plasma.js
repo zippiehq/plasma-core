@@ -77,6 +77,7 @@ class Plasma {
       this.options.walletProvider,
       this.options.contractProvider,
       this.options.operatorProvider,
+      services.ETHService,
       services.ProofService,
       services.ChainService,
       services.JSONRPCService,

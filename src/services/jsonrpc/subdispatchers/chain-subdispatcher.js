@@ -18,6 +18,7 @@ class ChainSubdispatcher extends BaseSubdispatcher {
     return {
       getBlockHeader: chaindb.getBlockHeader.bind(chaindb),
       getTransaction: chaindb.getTransaction.bind(chaindb),
+      getLastSyncedBlock: chaindb.getLatestBlock.bind(chaindb),
       sendTransaction: chain.sendTransaction.bind(chain),
       pickRanges: chain.pickRanges.bind(chain),
       startExit: chain.startExit.bind(chain),
