@@ -1,3 +1,4 @@
+const BigNum = require('bn.js')
 const BaseService = require('./base-service')
 
 class ETHService extends BaseService {
@@ -9,11 +10,22 @@ class ETHService extends BaseService {
     return ['web3']
   }
 
-  getBalance (address) {
-    return this.services.web3.eth.getBalance(address)
+  /**
+   * Returns the current ETH balance of an address.
+   * Queries the main chain, *not* the plasma chain.
+   * @param {string} address Address to query.
+   * @return {BigNum} The account's ETH balance.
+   */
+  async getBalance (address) {
+    const balance = await this.services.web3.eth.getBalance(address)
+    return new BigNum(balance, 10)
   }
 
-  getCurrentBlock () {
+  /**
+   * Returns the current ETH block.
+   * @return {number} The current ETH block.
+   */
+  async getCurrentBlock () {
     return this.services.web3.getBlockNumber()
   }
 }
