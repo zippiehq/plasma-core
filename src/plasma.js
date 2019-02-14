@@ -1,5 +1,6 @@
-const services = require('./services/index')
 const debug = require('debug')
+const EventEmitter = require('events').EventEmitter
+const services = require('./services/index')
 
 const defaultOptions = {
   dbProvider: services.DBProviders.DefaultDBProvider,
@@ -12,8 +13,10 @@ const defaultOptions = {
 /**
  * Main class that runs and manages all services.
  */
-class Plasma {
+class Plasma extends EventEmitter {
   constructor (options = {}) {
+    super()
+
     this.options = Object.assign({}, defaultOptions, options)
 
     if (this.options.debug) {
