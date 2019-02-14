@@ -39,6 +39,25 @@ class EphemDBProvider extends BaseDBProvider {
   async exists (key) {
     return this.db.has(key)
   }
+
+  async findNextKey (key) {
+    const prefix = key.split(':')[0]
+    return this.db
+      .keys()
+      .filter((k) => {
+        return k.startsWith(prefix)
+      })
+      .sort()
+      .find((k) => {
+        return k > key
+      })
+  }
+
+  async bulkPut (objects) {
+    for (let object of objects) {
+      await this.set(object.key, object.value)
+    }
+  }
 }
 
 module.exports = EphemDBProvider

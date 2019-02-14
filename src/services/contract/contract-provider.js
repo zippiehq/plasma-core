@@ -221,7 +221,7 @@ class ContractProvider extends BaseContractProvider {
     return this.contract.methods.depositETH().send({
       from: owner,
       value: amount,
-      gas: 150000 // TODO: Figure out how much this should be.
+      gas: 150000
     })
   }
 
@@ -290,24 +290,10 @@ class ContractProvider extends BaseContractProvider {
    * @return {EthereumTransaction} Block submission transaction receipt.
    */
   async submitBlock (hash) {
-    // TODO: Rewrite when we add generic signature support.
     const operator = await this.getOperator()
     await this.checkAccountUnlocked(operator)
     return this.contract.methods.submitBlock(hash).send({
       from: operator
-    })
-  }
-
-  /**
-   * Waits for the contract to be initialized.
-   * @return {Promise} Promise that resolves once the contract is ready to use.
-   */
-  async waitForInit () {
-    return new Promise((resolve) => {
-      if (this.hasAddress) resolve()
-      setInterval(() => {
-        if (this.hasAddress) resolve()
-      }, 100)
     })
   }
 
@@ -355,6 +341,8 @@ class ContractProvider extends BaseContractProvider {
     const parsed = new ChainCreatedEvent(event)
     this.contract.options.address = parsed.plasmaChainAddress
     this.operatorEndpoint = parsed.operatorEndpoint
+
+    this.emit('initialized')
 
     this.logger(`Connected to plasma chain: ${this.plasmaChainName}`)
     this.logger(`Contract address set: ${this.address}`)

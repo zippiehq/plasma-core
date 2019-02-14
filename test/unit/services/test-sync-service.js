@@ -47,10 +47,10 @@ describe('SyncService', async () => {
 
   it('should react to new deposits', () => {
     const deposit = { token: '0x0', start: 0, end: 100, owner: '0x123' }
-    app.services.chain.addDeposit = sinon.fake()
+    app.services.chain.addDeposits = sinon.fake()
     app.services.eventHandler.emit('event:Deposit', [deposit])
 
-    app.services.chain.addDeposit.should.be.calledWith(deposit)
+    app.services.chain.addDeposits.should.be.calledWith([deposit])
   })
 
   it('should react to new blocks', () => {
@@ -95,7 +95,7 @@ describe('SyncService', async () => {
     app.services.operator.getTransaction = sinon.fake.returns(fakeTxInfo)
     app.services.chain.addTransaction = sinon.fake()
 
-    await sync.addTransaction(tx)
+    await sync._addTransaction(tx)
 
     app.services.chain.addTransaction.should.be.calledWith(
       fakeTxInfo.transaction,
@@ -116,7 +116,7 @@ describe('SyncService', async () => {
     app.services.chaindb.hasTransaction = sinon.fake.returns(true)
     app.services.chain.addTransaction = sinon.fake()
 
-    await sync.addTransaction(tx)
+    await sync._addTransaction(tx)
 
     app.services.chain.addTransaction.should.not.be.called
   })
@@ -132,7 +132,7 @@ describe('SyncService', async () => {
     }
     app.services.chain.addTransaction = sinon.fake()
 
-    await sync.addTransaction(tx)
+    await sync._addTransaction(tx)
 
     app.services.chain.addTransaction.should.not.be.called
   })
@@ -150,7 +150,7 @@ describe('SyncService', async () => {
     app.services.operator.getTransaction = sinon.fake.rejects('ERROR')
     app.services.chain.addTransaction = sinon.fake()
 
-    sync.addTransaction(tx).should.eventually.be.rejectedWith('ERROR')
+    sync._addTransaction(tx).should.eventually.be.rejectedWith('ERROR')
 
     app.services.chain.addTransaction.should.not.be.called
   })

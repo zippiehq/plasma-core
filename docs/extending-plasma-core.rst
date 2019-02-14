@@ -1,6 +1,6 @@
-=========================
-Extending ``plasma-core``
-=========================
+=====================
+Extending plasma-core
+=====================
 **Note:** This article is for developers who want to build their own full plasma nodes using ``plasma-core``.
 
 ------------------------------------------------------------------------------

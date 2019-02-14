@@ -19,7 +19,8 @@ Parameters
 -------
 Returns
 -------
-A list of token balances in the form `(token, balance)`.
+
+``Array``: A list of token balances in the form `(token, balance)`.
 
 ------------------------------------------------------------------------------
 
@@ -29,7 +30,7 @@ pg_getBlock
 
     pg_getBlock
 
-Pulls information about the block at a specific height.
+Pulls the hash of the block at a specific height.
 
 ----------
 Parameters
@@ -41,7 +42,7 @@ Parameters
 Returns
 -------
 
-Information about the specified block.
+``string``: The block hash.
 
 ------------------------------------------------------------------------------
 
@@ -63,7 +64,7 @@ Parameters
 Returns
 -------
 
-Information about the specified transaction.
+``SignedTransaction``: The specified transaction.
 
 ------------------------------------------------------------------------------
 
@@ -89,7 +90,7 @@ Parameters
 Returns
 -------
 
-The hash of the transaction.
+``string``: The transaction receipt.
 
 ------------------------------------------------------------------------------
 
@@ -99,19 +100,19 @@ pg_sendRawTransaction
 
     pg_sendRawTransaction
 
-Sends a signed transaction to the node to be processed.
+Sends an encoded SignedTransaction_ to the node to be processed.
 
 ----------
 Parameters
 ----------
 
-1. ``transaction`` - ``string``: Raw signed transaction data.
+1. ``transaction`` - ``string``: Encoded signed transaction.
 
 -------
 Returns
 -------
 
-``String``: The hash of the transaction.
+``string``: The transaction receipt.
 
 ------------------------------------------------------------------------------
 
@@ -123,17 +124,11 @@ pg_getHeight
 
 Returns the current plasma block height.
 
-----------
-Parameters
-----------
-
-N/A
-
 -------
 Returns
 -------
 
-``Number``: The current block height.
+``number``: The current block height.
 
 ------------------------------------------------------------------------------
 
@@ -150,36 +145,30 @@ Because there are a *lot* of transactions in each block, this method is paginate
 Parameters
 ----------
 
-1. ``start`` - ``Number``: Start of the range of recent transactions to return.
-2. ``end`` - ``Number``: End of range of recent transactions to return.
+1. ``start`` - ``number``: Start of the range of recent transactions to return.
+2. ``end`` - ``number``: End of range of recent transactions to return.
 
 -------
 Returns
 -------
 
-``Array``: A list of Transaction_ objects.
+``Array<SignedTransaction>``: A list of SignedTransaction_ objects.
 
 ------------------------------------------------------------------------------
 
-pg_getAccount
-=============
+pg_getAccounts
+==============
 .. code-block:: javascript
 
-    pg_getAccount
+    pg_getAccounts
 
-Returns information about an account.
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``String``: The account address.
+Returns a list of all available accounts.
 
 -------
 Returns
 -------
 
-``Account``: An Account_ object.
+``Array<string>``: A list of account addresses.
 
 ------------------------------------------------------------------------------
 
@@ -197,15 +186,14 @@ Limited to a total of **25** transactions at a time.
 Parameters
 ----------
 
-1. ``address - ``String``: The address to query.
-2. ``start`` - ``Number``: Start of the range of recent transactions to return.
-3. ``end`` - ``Number``: End of range of recent transactions to return.
+1. ``address - ``string``: The address to query.
+2. ``start`` - ``number``: Start of the range of recent transactions to return.
+3. ``end`` - ``number``: End of range of recent transactions to return.
 
 -------
 Returns
 -------
 
-``Array``: A list of Transaction_ objects.
+``Array<SignedTransaction>``: A list of SignedTransaction_ objects.
 
-.. _Transaction: specs/transactions.html#transaction-objects
-.. _Account: TODO
+.. _SignedTransaction: https://plasma-utils.readthedocs.io/en/latest/models.html#signedtransaction

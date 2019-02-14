@@ -1,6 +1,6 @@
-// const paths = require('./paths')
-const services = require('./services/index')
 const debug = require('debug')
+const EventEmitter = require('events').EventEmitter
+const services = require('./services/index')
 
 const defaultOptions = {
   dbProvider: services.DBProviders.DefaultDBProvider,
@@ -8,14 +8,15 @@ const defaultOptions = {
   walletProvider: services.WalletProviders.DefaultWalletProvider,
   contractProvider: services.ContractProviders.DefaultContractProvider,
   web3Provider: services.Web3Provider
-  //  dbPath: paths.CHAIN_DIR
 }
 
 /**
  * Main class that runs and manages all services.
  */
-class Plasma {
+class Plasma extends EventEmitter {
   constructor (options = {}) {
+    super()
+
     this.options = Object.assign({}, defaultOptions, options)
 
     if (this.options.debug) {
@@ -59,6 +60,11 @@ class Plasma {
       service.app = this
     }
 
+    // Relay lifecycle events.
+    service.on('initialized', () => {
+      this.emit(`${service.name}:initialized`)
+    })
+
     this.services[service.name] = service
   }
 
@@ -74,6 +80,7 @@ class Plasma {
       this.options.walletProvider,
       this.options.contractProvider,
       this.options.operatorProvider,
+      services.ETHService,
       services.ProofService,
       services.ChainService,
       services.JSONRPCService,
@@ -106,14 +113,12 @@ class Plasma {
       }
     }
 
-    service
-      .start()
-      .then(() => {
-        this.loggers['core:bootstrap'](`${service.name}: STARTED`)
-      })
-      .catch((err) => {
-        console.log(err)
-      })
+    try {
+      await service.start()
+      this.loggers['core:bootstrap'](`${service.name}: STARTED`)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   /**
@@ -122,14 +127,13 @@ class Plasma {
    */
   async stopService (name) {
     let service = this.services[name]
-    service
-      .stop()
-      .then(() => {
-        this.loggers['core:bootstrap'](`${service.name}: STOPPED`)
-      })
-      .catch((err) => {
-        console.log(err)
-      })
+
+    try {
+      await service.stop()
+      this.loggers['core:bootstrap'](`${service.name}: STOPPED`)
+    } catch (err) {
+      console.log(err)
+    }
   }
 
   /**

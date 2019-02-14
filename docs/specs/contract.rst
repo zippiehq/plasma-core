@@ -1,120 +1,186 @@
-==============
+=============================
 Smart Contract and Exit Games
-==============
-The proof for a chain of custody isn't useful unless it can also be passed to the main chain to keep funds secure. The mechanism which accepts proofs on-chain is the core of plasma's security model, and it is called the "exit game."
+=============================
+The proof for a chain of custody isn't useful unless it can also be passed to the main chain to keep funds secure.
+The mechanism which accepts proofs on-chain is the core of plasma's security model.
+We usually call this mechanism an "exit game".
 
-When a user wants to move their money off a plasma chain, they make an "exit", which opens a dispute period. At the end of the dispute period, if there are no outstanding disputes, the money is sent from the plasma contract on the main chain to the exiter. During the dispute period, users may submit "challenges" which claim the money being exited isn't rightfully owned by the person exiting. The proofs described above guarantee that a "response" to these challenges is always calculable.
+When a user wants to move their money from plasma chain back to Ethereum, they start an "exit".
+However, the user doesn't get their funds immediately.
+Instead, each exit has to stand a "dispute period".
 
-The goal of the exit game is to keep money secured, even in the case of a maximally adversarial operator. Particularly, there are three main attacks which we must mitigate:
+During the dispute period, users may submit "challenges" which claim the money being withdrawn isn't rightfully owned by the person who started the exit.
+If the person who started the exit *does* in fact own the money, they are always able to calculate and present a "challenge response" which closes the challenge.
+If there are no outstanding disputes at the end of the dispute period, the user can finalize their exit and receive the money.
 
-- Data withholding: the operator may publish a root hash to the contract, but not tell anybody what the contents of the block are.
-- Including a forged/invalid transaction: the operator may include a transaction in a block whose ``sender`` was not the previous ``recipient`` in the chain of custody.
-- Censorship: after someone deposits their money, the operator may refuse to publish any transactions sending the money.
+The goal of the exit game is to keep user assets secure, even in the case of a malicious operator.
+Particularly, there are three main attacks which we must mitigate:
 
-In all of these cases, the challenge/response protocol of the exit game makes sure these behaviors do not allow theft, in at most 1 challenge followed by 1 response.
+- **Data withholding:** the operator may publish a root hash to the contract, but not tell anybody what the contents of the block are.
+- **Invalid transactions:** the operator may include a transaction in a block whose ``sender`` was not the previous ``recipient`` in the chain of custody.
+- **Censorship:** the operator may refuse to publish any transactions from a specific user.
 
-Keeping track of deposits and exits
-======
-*Deposits mapping*
-Each time a new set of coins is deposited, the contract updates a mapping which each contain a ``deposit`` struct. From the contract:
+In all of these cases, the challenge/response protocol of the exit game ensures that these behaviors do not allow theft.
+Importantly, we also ensure that each challenge can be closed in at most one response.
 
-..code-block:: python
+Keeping Track of Deposits and Exits
+===================================
 
-  struct deposit:
-   untypedStart: uint256
-   depositer: address
-   precedingPlasmaBlockNumber: uint256
-   
-Note that this struct contains neither the ``untypedEnd`` or ``tokenType`` for the deposit. That's because the contract uses those values as the keys in a mapping of mappings. Accessing, for example, accessing the depositer of a given deposit looks like this: ``someDepositer: address = self.deposits[tokenType][untypedEnd].depositer``
+Deposits Mapping
+----------------
+Each time a new set of coins is deposited, the contract updates a mapping that contains ``deposit`` structs.
 
-This choice saves a little gas, and also makes some of the code cleaner since we don't need to store any sort of deposit ID to reference a deposit.
+From the contract:
 
-*Exitable ranges mapping*
+.. code-block:: python
 
-In addition to adding self.deposits entries each time there's a deposit, the contract needs to somehow keep track of historical exits to prevent multiple exits on the same range. This is a little trickier because exits do not occur in order like deposits, and it would be expensive to search through a list of exits.
+    struct deposit:
+      untypedStart: uint256
+      depositer: address
+      precedingPlasmaBlockNumber: uint256
 
-Our contract implements a constant-sized solution, which instead stores a list of exitable ranges, updating the list as new exits occur. From the smart contract:
+Note that this struct contains neither the ``untypedEnd`` or ``tokenType`` for the deposit.
+That's because the contract uses those values as the keys in a mapping of mappings.
+For example, to access the depositer of a given deposit, we can query ``deposits`` directly:
 
-..code-block:: python
+.. code-block:: python
 
-  struct exitableRange:
-   untypedStart: uint256
-   isSet: bool
+    someDepositer: address = self.deposits[tokenType][untypedEnd].depositer
 
-Again, we use a double-nested mapping with keys ``tokenType`` and ``untypedEnd`` so that we may call ``self.exitable[tokenType][untpyedEnd].untypedStart`` to access the start of the range. Note that Vyper returns 0 for all unset mapping keys, so we need an ``isSet`` bool so that users may not "trick" the contract by passing an unset ``exitableRange``.
+This choice was made to save gas and to simplify the smart contract.
+Namely, it means that we don't need to store any sort of deposit ID in order to reference a deposit.
 
-The contract's ``self.exitable`` ranges are split and deleted based on successful calls to ``finalizeExit`` via a helper function called ``removeFromExitable``. Note that exits on a previously exited range do not even need to be challenged; they will never pass the ``checkRangeExitable`` function called in ``finalizeExit``. You can find that code `here`.
+Exitable Ranges Mapping
+-----------------------
+The contract also needs to keep track of finalized exits in order prevent multiple exits on the same range.
+This is a little trickier because exits don't occur in order like deposits do, and it'd be too expensive to search through a giant list of exits.
 
-Exit games' relationship to vanilla Plasma Cash
-=====
-At heart, the exit games in our spec are very similar to the original Plasma Cash design. Exits are initiated with calls to the function
+Our contract implements a constant-sized solution, which instead stores a list of "exitable ranges".
+This list is updated as new exits occur.
 
-``beginExit(tokenType: uint256, blockNumber: uint256, untypedStart: uint256, untypedEnd: uint256) -> uint256:``
+From the smart contract:
 
-To dispute an exit, all challenges specify a particular coinID called into question, and a Plasma Cash-style challenge game is carried out on that particular coin. Just a single coin needs to be proven invalid to cancel the entire exit.
+.. code-block:: python
 
-Both exits and the two types of respondable challenges are given an ``exitID`` and ``challengeID`` which are assigned in order via an incrementing ``challengeNonce`` and ``exitNonce``.
+    struct exitableRange:
+      untypedStart: uint256
+      isSet: bool
 
-Blocknumber-specified transactions
-=====
-In the original Plasma Cash spec, the exiter is required to specify both the exited transaction and its previous "parent" transaction to prevent the "in-flight" attack where the operator delays including a valid transaction and inserts an invalid one in the block between.
+Again, we use a double-nested mapping with keys ``tokenType`` and ``untypedEnd`` so that we may call ``self.exitable[tokenType][untpyedEnd].untypedStart`` to access the start of the range.
+Note that Vyper returns ``0`` for all unset mapping keys, so we need an ``isSet`` bool so that users may not "trick" the contract by passing an unset ``exitableRange``.
 
-This poses a problem for our range-based schemes, because a transaction may have multiple parents. For example, if Alice sends ``(0, 50]`` to Carol, and Bob sends ``(50, 100]`` to Carol, Carol can now send ``(0, 100]`` to Dave. But, if Dave wants to exit that, both the ``(0, 50]`` and ``(50, 100]`` are parents.
+The contract's ``self.exitable`` ranges are split and deleted based on successful calls to ``finalizeExit`` via a helper function called ``removeFromExitable``.
+Note that exits on a previously exited range do not even need to be challenged; they'll never pass the ``checkRangeExitable`` function called in ``finalizeExit``.
+You can find that code `here`_.
 
-Though specifying multiple parents is definitely doable, this specification would be gas-expensive and seemed more complex to implement. So, we opted for the simpler alternative, in which each transaction specifies the `block` its senders intend for it to go in and is invalidated if included in a different block. This solves the in-flight attack and means the contract does not need a transaction's parents. For those interested in a formal writeup and safety proof for this scheme, it's worth giving `this great post` a look.
+Similarities to Plasma Cash
+===========================
+At heart, the exit games in our spec are very similar to the original Plasma Cash design.
+Exits are initiated with calls to:
 
-Per-coin transaction validity
-=====
-An unintuitive property of our exit games worth noting up front is that a certain transaction might be "valid" for some of the coins in its range, but not on others.
+.. code-block:: python
 
-For example, imagine that Alice sends ``(0, 100]`` to Bob, who in turn sends ``(50, 100]`` to Carol. Carol does not need to verify that Alice was the rightful owner of the full ``(0, 100]``. Carol only needs an assurance that Alice owned ``(50, 100]``  - the part of the custody chain which applies to her receipt. Though the transaction might in a sense be "invalid" if Alice didn't own ``(0, 50]``, the smart contract does not care about that for the purposes of disputes around exits for the coins ``(50, 100]``. So long as the received coins' ownership is verified, the rest of the transactions don't matter.
+    beginExit(tokenType: uint256, blockNumber: uint256, untypedStart: uint256, untypedEnd: uint256) -> uint256
 
-This is a very important requirement to preserve the size of light client proofs. If Carol had to check the full ``(0, 100]``, she might also have to check an overlapping parent of ``(0, 10000]``, and then all of its parents, and so on. This "cascading" effect could massively increase the size of proofs if transactions were very interdependent.
+All exit challenges specify a particular coin ID, and a Plasma Cash-style challenge game is carried out on that particular coin.
+Only a single coin needs to be proven invalid to cancel the entire exit.
 
-Note that this property also applies to atomic multisends which describe multiple ranges being swapped. If Alice trades 1 ETH for Bob's 1 DAI, it is Alice's responsibility to check that Bob owns the 1 Dai before signing. However, after, if Bob then sends the 1 ETH to Carol, Carol need not verify that Bob owned the 1 DAI, only that Alice owned the 1 ETH she sent to Bob. Alice incurred the risk, so Carol doesn't have to.
+Both exits and challenges are assigned a unique ``exitID`` and ``challengeID``.
+These IDs are assigned in order based on an incrementing ``challengeNonce`` and ``exitNonce``.
+
+Block-specific Transactions
+===========================
+In the original Plasma Cash spec, the exiter is required to specify both the exited transaction and its previous "parent" transaction to prevent the "in-flight" attack.
+This attack occurs when the operator delays inclusion of a valid transaction and then inserts an invalid transaction before the valid one.
+
+This poses a problem for our range-based schemes because a transaction may have multiple parents.
+For example, if Alice sends ``(0, 50)`` to Carol, and Bob sends ``(50, 100)`` to Carol, Carol can now send ``(0, 100)`` to Dave.
+If Dave wants to exit ``(0, 100)``, he would need to specify both ``(0, 50)`` and ``(50, 100)`` as parents.
+
+If a range has dozens or even hundreds of parents, it becomes basically impossible to publish all of these parents on chain.
+Instead, we opted for a simpler alternative in which each transaction specifies the block in which it should be included.
+If the transaction is included in a different block, it's no longer valid.
+This solves the in-flight attack because it becomes impossible for the operator to delay inclusion of the transaction.
+
+This does, unfortunately, introduce one downside -- if a transaction isn't included in the specified block (for whatever reason), it needs to be re-signed and re-submitted.
+Hopefully this won't happen too often in practice, but it's something to think about.
+
+For those interested in a formal writeup and safety proof for this scheme, it's worth giving `this great post`_ a look.
+
+Per-coin Transaction Validity
+=============================
+An unintuitive property of our exit games worth that's noting up front is that a certain transaction might be "valid" for some of the coins in its range, but not for others.
+
+For example, imagine that Alice sends ``(0, 100)`` to Bob, who in turn sends ``(50, 100)`` to Carol.
+Carol doesn't need to verify that Alice was the rightful owner of the full ``(0, 100)``.
+Carol only needs an assurance that Alice owned ``(50, 100)`` -- the part of the custody chain which applies to Carol's range.
+
+Though the transaction to Dave might in a sense be "invalid" if Alice didn't own ``(0, 50)``, the smart contract doesn't care for the purposes of disputes on exits for the coins ``(50, 100)``.
+As long as the received coins are valid, invalid transactions on any other coins don't matter.
+
+This is a **very important requirement** to preserve the size of light client proofs.
+If Carol had to check the full ``(0, 100)``, she might also have to check an overlapping parent of ``(0, 10000)``, and then all of its parents, and so on.
+This "cascading" effect could massively increase the size of proofs if transactions were very interdependent.
+
+Note that this property also applies to atomic multisends, in which multiple ranges are *swapped*.
+If Alice trades 1 ETH for Bob's 1 DAI, it is Alice's responsibility to check that Bob owns the 1 DAI before signing.
+However, after, if Bob then sends the 1 ETH to Carol, Carol need not verify that Bob owned the 1 DAI, only that Alice owned the 1 ETH she sent to Bob.
+Alice incurred the risk, so Carol doesn't have to.
 
 From the standpoint of the smart contract, this property is a direct consequence of challenges always being submitted for a particular ``coinID`` within the exit.
 
-How the contract handles transaction checking
-======
-Note that, to be used in exit games at all, ``Transaction``s must pass the ``TransactionProof`` check described in the proofs section above(valid signatures, branch bounds, etc). This check is performed at the contract level in the function
+Transaction Verification
+========================
+Only funds that came from valid transactions can be withdrawn.
+We can check the validity of a transaction at the contract level via:
 
-``def checkTransactionProofAndGetTypedTransfer(
-   transactionEncoding: bytes[277],
-   transactionProofEncoding: bytes[1749],
-   transferIndex: int128
- ) -> (
-   address, # transfer.to
-   address, # transfer.from
-   uint256, # transfer.start (typed)
-   uint256, # transfer.end (typed)
-   uint256 # transaction plasmaBlockNumber
- ):``
+.. code-block:: python
+
+    def checkTransactionProofAndGetTypedTransfer(
+      transactionEncoding: bytes[277],
+      transactionProofEncoding: bytes[1749],
+      transferIndex: int128
+    ) -> (
+      address, # transfer.to
+      address, # transfer.from
+      uint256, # transfer.start (typed)
+      uint256, # transfer.end (typed)
+      uint256  # transaction.blockNumber
+    )
  
- An important note here is the ``transferIndex`` argument. Remember, a transaction may contain multiple transfers, and must be included once in the tree for each transfer. However, since challenges refer to a specific ``coinID``, only a single transfer will be relevant. So, challengers and responders gives a ``transferIndex``  - whichever of the transfers relates to the coin being disputed. The check decodes and checks all the ``TransferProof``s in the ``TransactionProof``, and then checks inclusion for each with the function
+An important feature here is the ``transferIndex`` argument.
+Remember that a transaction may contain multiple transfers and that the transaction must be included in the tree once for each transfer.
+However, since challenges refer to a specific ``coinID``, only a single transfer will be relevant.
+As a result, challengers and responders have to give a ``transferIndex`` -- a reference to the index of the relevant transfer.
+
+Once we decode the ``TransactionProof``, we can check the relevant ``TransferProof``:
  
- ``def checkTransferProofAndGetTypedBounds(
- leafHash: bytes32,
- blockNum: uint256,
- transferProof: bytes[1749]
-) -> (uint256, uint256): # typedimplicitstart, typedimplicitEnd``
+.. code-block:: python
 
-Challenges which immediately cancel exits
-=====
-Two kinds of challenges immediately cancel exits: those on spent coins and those on exits before the deposit occurred.
+    def checkTransferProofAndGetTypedBounds(
+      leafHash: bytes32,
+      blockNum: uint256,
+      transferProof: bytes[1749]
+    ) -> (uint256, uint256)
 
-**Spent coin challenge**
-This challenge is used to demonstrate that the exiter of a transaction already sent the coins to someone else.
+Challenges That Immediately Block Exits
+=======================================
+Two kinds of challenges immediately cancel exits: those that show a specific coin is already spent, and those that show an exit comes before the deposit.
 
-``@public
-def challengeSpentCoin(
- exitID: uint256,
- coinID: uint256,
- transferIndex: int128,
- transactionEncoding: bytes[277],
- transactionProofEncoding: bytes[1749],
-):
-``
+Spent-Coin Challenge
+--------------------
+This challenge is used to demonstrate that coins being withdrawn have already been spent.
+
+.. code-block:: python
+
+    @public
+    def challengeSpentCoin(
+      exitID: uint256,
+      coinID: uint256,
+      transferIndex: int128,
+      transactionEncoding: bytes[277],
+      transactionProofEncoding: bytes[1749],
+    )
 
 It uses ``checkTransactionProofAndGetTypedTransfer`` and then checks the following:
 
@@ -123,124 +189,160 @@ It uses ``checkTransactionProofAndGetTypedTransfer`` and then checks the followi
 3. The ``plasmaBlockNumber`` of the challenge is greater than that of the exit.
 4. The ``transfer.sender`` is the exiter.
 
-The introduction of atomic swaps does mean one thing: the spent coin challenge period must be strictly less than others, because of an edge case in which the operator withholds an atomic swap between two or more parties. In this case, those parties must exit their pre-swapped coins, forcing the operator to make a a spent coin challenge and reveal whether the swap was included or not. BUT, if we allowed the operator to do that at the last minute, it would make for be a race condition where the parties have no time to use the reveal to cancel other exits. Thus, the timeout is made shorter (1/2) than the regular challenge window, eliminating "last-minute response" attacks.
+The introduction of atomic swaps does mean one thing: the spent coin challenge period must be strictly less than others.
+There's an edge case in which the operator withholds an atomic swap between two or more parties.
+Those parties must exit their coins from *before* the swap because they don't know if the swap was included.
+If the swap was not included, then these exits will finalize successfully.
+However, if the swap *was* included, then operator can submit a Spent-Coin Challenge and block these exits.
 
-**Before deposit challenge**
-This challenge is used to demonstrate that an exit comes from an earlier ``plasmaBlockNumber`` than that coin was actually deposited for.
+If we allowed the operator to submit this challenge at the last minute, we'd be creating a race condition in which the parties have no time to use the newly revealed information to cancel other exits.
+Thus, the timeout is made shorter (1/2) than the regular challenge window, eliminating "last-minute response" attacks.
 
-``@public
-def challengeBeforeDeposit(
- exitID: uint256,
- coinID: uint256,
- depositUntypedEnd: uint256
-):``
+Before-Deposit Challenge
+------------------------
+This challenge is used to demonstrate that an exit comes from a ``plasmaBlockNumber`` earlier than the coin's deposit.
 
-The contract looks up ``self.deposits[self.exits[exitID].tokenType][depositUntypedEnd].precedingPlasmaBlockNumber`` and checks that it is later than the exit's block number. If so, it cancels.
+.. code-block:: python
 
-Optimistic exits and inclusion challenges
-======
-Our contract allows an exit to occur without doing any inclusion checks at all in the optimistic case. To allow this, any exit may be challenged directly via
-``@public
-def challengeInclusion(exitID: uint256):``
+    @public
+    def challengeBeforeDeposit(
+      exitID: uint256,
+      coinID: uint256,
+      depositUntypedEnd: uint256
+    )
 
-To which the exiter must directly respond with either the transaction or deposit they are exiting from.
+The contract looks up ``self.deposits[self.exits[exitID].tokenType][depositUntypedEnd].precedingPlasmaBlockNumber`` and checks that it's is later than the exit's block number.
+If so, it cancels the exit immediately.
 
-``@public
-def respondTransactionInclusion(
- challengeID: uint256,
- transferIndex: int128,
- transactionEncoding: bytes[277],
- transactionProofEncoding: bytes[1749],
-):
-...
-@public
-def respondDepositInclusion(
- challengeID: uint256,
- depositEnd: uint256
-):``
+Optimistic Exits and Inclusion Challenges
+=========================================
+Our contract allows an exit to occur without actually checking that the transaction referenced in the exit was included in the plasma chain.
+This is called an "optimistic exit," and allows us to reduce gas costs for users who are behaving honestly.
+However, this means that it's possible for someone start an exit from a transaction that never happened.
 
-The second case allows users to get their money out if the operator censored all transactions after depositing.
+As a result, we expose a way for someone to challenge this type of exit:
+
+.. code-block:: python
+
+    @public
+    def challengeInclusion(exitID: uint256)
+
+Then, the user who started the exit can respond by showing that the transaction or deposit from which they are exiting really did happen:
+
+.. code-block:: python
+
+    @public
+    def respondTransactionInclusion(
+      challengeID: uint256,
+      transferIndex: int128,
+      transactionEncoding: bytes[277],
+      transactionProofEncoding: bytes[1749],
+    )
+    ...
+    @public
+    def respondDepositInclusion(
+      challengeID: uint256,
+      depositEnd: uint256
+    )
+
+We need this special second case so that users can withdraw money even if the operator is censoring all transactions after their deposit.
+
 Both responses cancel the challenge if:
 1. The deposit or transaction was indeed at the exit's plasma block number.
 2. The depositer or recipient is indeed the exiter.
 3. The start and end of the exit were within the deposit or transfer's start and end
 
-Invalid History Challenges
-=====
-The most complex challenge-response game, for both vanilla Plasma Cash and this spec, is the case of history invalidity. This part of the protocol mitigates the attack in which the operator includes an forged "invalid" transaction whose sender is not the previous recipient. The solution is called an invalid history challenge: because the rightful owner has not yet spent their coins, they attest to this and challenge: "oh yeah, that coin is yours? Well it was mine earlier, and you can't prove I ever spent it."
+Invalid-History Challenge
+=========================
+The Invalid-History Challenge is the most complex challenge-response game in both vanilla Plasma Cash and this spec.
+This part of the protocol mitigates the attack in which the operator includes an forged "invalid" transaction whose sender is not the previous recipient.
+
+Effectively, this challenge allows the rightful owner of a coin to request that the exiter provide a proof that the owner has spent their funds.
+The idea here is that if the rightful owner really is the rightful owner, then the exiter will not be able to provide such a transaction.
 
 Both invalid history challenges and responses can be either deposits or transactions.
 
-**Challenging**
-There are two ways to challenge depending on the current rightful owner:
+Challenging
+-----------
+There are two ways to challenge, depending on the current rightful owner:
 
-``@public
-def challengeInvalidHistoryWithTransaction(
- exitID: uint256,
- coinID: uint256,
- transferIndex: int128,
- transactionEncoding: bytes[277],
- transactionProofEncoding: bytes[1749]
-):``
+.. code-block:: python
+
+    @public
+    def challengeInvalidHistoryWithTransaction(
+      exitID: uint256,
+      coinID: uint256,
+      transferIndex: int128,
+      transactionEncoding: bytes[277],
+      transactionProofEncoding: bytes[1749]
+    )
 
 and
 
-``@public
-def challengeInvalidHistoryWithDeposit(
- exitID: uint256,
- coinID: uint256,
- depositUntypedEnd: uint256
-):``
+.. code-block:: python
 
-These both call a
+    @public
+    def challengeInvalidHistoryWithDeposit(
+      exitID: uint256,
+      coinID: uint256,
+      depositUntypedEnd: uint256
+    )
 
-``@private
-def challengeInvalidHistory(
- exitID: uint256,
- coinID: uint256,
- claimant: address,
- typedStart: uint256,
- typedEnd: uint256,
- blockNumber: uint256
-):``
+Both of these methods call an additional method, ``challengeInvalidHistory``:
 
-function which does the legwork of checking that the coinID is within the challenged exit, and that the blockNumber is earlier than the exit.
+.. code-block:: python
 
-**Responding to invalid history challenges**
+    @private
+    def challengeInvalidHistory(
+      exitID: uint256,
+      coinID: uint256,
+      claimant: address,
+      typedStart: uint256,
+      typedEnd: uint256,
+      blockNumber: uint256
+    )
 
-Of course, the invalid history challenge may be a grief, where really the challenger did spend their coin, and the chain of custody is indeed valid. We must allow this response. There are two kinds.
+This method does the legwork of checking that the ``coinID`` is within the challenged exit, and that the ``blockNumber`` is earlier than the exit.
 
-The first is to respond with a transaction showing the challenger's spend:
+Responding
+----------
+Of course it's also possible for someone to submit a fraudulent Invalid-History Challenge.
+Therefore we give exiters two ways to respond to this type of challenge.
 
-``@public
-def respondInvalidHistoryTransaction(
- challengeID: uint256,
- transferIndex: int128,
- transactionEncoding: bytes[277],
- transactionProofEncoding: bytes[1749],
-):``
+The first is to respond with a transaction showing that the challenger did, in fact, spend their money:
+
+.. code-block:: python
+
+    @public
+    def respondInvalidHistoryTransaction(
+      challengeID: uint256,
+      transferIndex: int128,
+      transactionEncoding: bytes[277],
+      transactionProofEncoding: bytes[1749],
+    )
 
 The smart contract then performs the following checks:
 1. The ``transferIndex``th ``Transfer`` in the ``transactionEncoding`` covers the challenged ``coinID``.
 2. The ``transferIndex``th ``transfer.sender`` was indeed the claimant for that invalid history challenge.
 3. The transaction's plasma block number lies between the invalid history challenge and the exit.
 
-The other response is to show the challenge came before the coins were actually deposited - making the challenge invalid. This is similar to the ``challengeBeforeDeposit`` for exits themselves.
+The second response is to show the challenge came *before* the coins were actually deposited - making the challenge invalid.
+This is similar to a ``challengeBeforeDeposit``, but for the exit itself.
 
-``@public
-def respondInvalidHistoryDeposit(
- challengeID: uint256,
- depositUntypedEnd: uint256
-):``
+.. code-block:: python
 
-In this case, there is no check on the sender being the challenge recipient, since the challenge was invalid. So the contract must simply check:
+    @public
+    def respondInvalidHistoryDeposit(
+      challengeID: uint256,
+      depositUntypedEnd: uint256
+    )
+
+In this case, there is no check on the sender being the challenge recipient, since the challenge was invalid.
+So the contract just needs to check:
 1. The deposit covers the challenged ``coinID``.
 2. The deposit's plasma block number lies between the challenge and the exit.
 
-If so, the exit is cancelled.
+If all of these conditions are true, the exit is cancelled.
 
-This concludes the complete exit game specification. With these building blocks, funds can be kept safe even in the case of a maximally malicious plasma chain.
-
-
-.. _here:: https://github.com/plasma-group/plasma-contracts/blob/068954a8584e4168daf38ebeaa3257ec08caa5aa/contracts/PlasmaChain.vy#L380
-.. _`this great post`:: https://ethresear.ch/t/plasma-cash-with-smaller-exit-procedure-and-a-general-approach-to-safety-proofs/1942
+.. _here: https://github.com/plasma-group/plasma-contracts/blob/068954a8584e4168daf38ebeaa3257ec08caa5aa/contracts/PlasmaChain.vy#L380
+.. _this great post: https://ethresear.ch/t/plasma-cash-with-smaller-exit-procedure-and-a-general-approach-to-safety-proofs/1942

@@ -6,6 +6,7 @@ const ChainDB = require('./db/chain-db')
 const SyncDB = require('./db/sync-db')
 const DBProviders = require('./db/backends/index')
 const ContractProviders = require('./contract/index')
+const ETHService = require('./eth-service')
 const JSONRPCService = require('./jsonrpc/jsonrpc-service')
 const OperatorProviders = require('./operator/index')
 const ProofService = require('./chain/proof-service')
@@ -13,6 +14,14 @@ const WalletProviders = require('./wallet/index')
 const Web3Provider = require('./web3-provider')
 const EventHandler = require('./contract/events/event-handler')
 const EventWatcher = require('./contract/events/event-watcher')
+
+const BaseDBProvider = require('./db/backends/base-provider')
+const BaseWalletProvider = require('./wallet/base-provider')
+
+const base = {
+  BaseDBProvider,
+  BaseWalletProvider
+}
 
 module.exports = {
   BaseService,
@@ -23,11 +32,13 @@ module.exports = {
   SyncDB,
   DBProviders,
   ContractProviders,
+  ETHService,
   JSONRPCService,
   OperatorProviders,
   ProofService,
   WalletProviders,
   Web3Provider,
   EventHandler,
-  EventWatcher
+  EventWatcher,
+  base
 }

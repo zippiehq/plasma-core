@@ -4,8 +4,6 @@ const sinonChai = require('sinon-chai')
 const chaiAsPromised = require('chai-as-promised')
 const utils = require('plasma-utils')
 const compiledContracts = require('plasma-contracts')
-const serializerCompiled = compiledContracts.serializerCompiled
-const plasmaChainCompiled = compiledContracts.plasmaChainCompiled
 
 chai.should()
 chai.use(chaiAsPromised)
@@ -18,16 +16,44 @@ const app = require('../../../mock-app')
 const ETH = 0
 const ZERO_HASH = '0x0000000000000000000000000000000000000000000000000000000000000000'
 
-const initSerializer = async (web3, operator) => {
-  const serializer = new web3.eth.Contract(serializerCompiled.abi)
-  const deployed = await serializer.deploy({
-    data: plasmaChainCompiled.bytecode
+const hexify = (value, length) => {
+  return utils.utils.web3Utils.asciiToHex(value).padEnd((length * 2) + 2, '0')
+}
+
+const deployContract = async (web3, deployer, compiled) => {
+  const contract = new web3.eth.Contract(compiled.abi)
+  const deployed = await contract.deploy({
+    data: compiled.bytecode
   }).send({
-    from: operator,
+    from: deployer,
     gas: 7000000,
     gasPrice: '1'
   })
-  return deployed.options.address
+  return deployed
+}
+
+const deployPlasmaChain = async (web3, operator, name, ip) => {
+  name = hexify(name, 32)
+  ip = hexify(ip, 32)
+
+  const serializer = await deployContract(web3, operator, compiledContracts.serializerCompiled)
+  const template = await deployContract(web3, operator, compiledContracts.plasmaChainCompiled)
+  const registry = await deployContract(web3, operator, compiledContracts.plasmaRegistryCompiled)
+
+  await registry.methods.initializeRegistry(template.options.address, serializer.options.address).send({
+    from: operator,
+    gas: 7000000
+  })
+  const receipt = await registry.methods.createPlasmaChain(operator, name, ip).send({
+    from: operator,
+    gas: 7000000
+  })
+  const plasmaChainAddress = receipt.events.NewPlasmaChain.returnValues['PlasmaChainAddress']
+  const registryAddress = registry.options.address
+  return {
+    plasmaChainAddress,
+    registryAddress
+  }
 }
 
 describe('Contract Interactions', () => {
@@ -49,27 +75,21 @@ describe('Contract Interactions', () => {
     // Pick an account to be the operator.
     operator = (await web3.eth.getAccounts())[0]
 
-    const serializer = await initSerializer(web3, operator)
+    const { registryAddress } = await deployPlasmaChain(web3, operator, 'testchain', '0.0.0.0')
 
-    contract = new ContractProvider({ app: app })
+    contract = new ContractProvider({
+      app: app,
+      plasmaChainName: 'testchain',
+      registryAddress: registryAddress
+    })
     app.services.contract = contract
-    contract._initContract()
-
-    // Deploy and initialize the contract.
-    const deployed = await contract.contract.deploy({
-      data: plasmaChainCompiled.bytecode
-    }).send({
-      from: operator,
-      gas: 7000000,
-      gasPrice: '1'
-    })
-    contract.contract.options.address = deployed.options.address
-    await contract.contract.methods.setup(operator, 0, serializer).send({
-      from: operator,
-      gas: 7000000
-    })
 
     await contract.start()
+    await new Promise((resolve) => {
+      contract.on('initialized', () => {
+        resolve()
+      })
+    })
     await watcher.start()
   })
 

@@ -2,37 +2,17 @@
 ChainService
 ============
 
-Description
-===========
 ``ChainService`` does most of the heavy lifting when it comes to receiving and sending transactions.
-This service handles inserting new transactions into the local store of transactions.
-It also handles updating the database whenever the user spends a transaction.
-
-API
-===
-.. code-block:: javascript
-
-    getOwnedRanges (address)
-
-Returns the list of ranges that the user owns.
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``String``: Address of the user to query.
-
--------
-Returns
--------
-
-``Array<{ start: Number, end: Number }>``: A list of ranges owned by that address.
+This service handles processing new transactions and computing the latest state.
 
 ------------------------------------------------------------------------------
 
+getBalances
+===========
+
 .. code-block:: javascript
 
-    getBalances (address)
+    chain.getBalances(address)
 
 Returns a list of balances for a user.
 
@@ -40,109 +20,242 @@ Returns a list of balances for a user.
 Parameters
 ----------
 
-1. ``address`` - ``String``: Address of the user to query.
+1. ``address`` - ``string``: Address of the user to query.
 
 -------
 Returns
 -------
 
-``Object``: An object where keys are tokens and values are the balances.
+``Promise<Object>``: An object where keys are tokens and values are the balances.
 
-------------------------------------------------------------------------------
+-------
+Example
+-------
 
 .. code-block:: javascript
 
-    getTransaction (hash)
+    const balances = await chain.getBalances(address)
+    console.log(balances)
+    > { '0': '1194501', '1': '919ff01' }
 
-Returns the transaction with the given hash.
+------------------------------------------------------------------------------
+
+addDeposits
+===========
+
+.. code-block:: javascript
+
+    chain.addDeposits(deposits)
+
+Applies a series of deposits to the state.
 
 ----------
 Parameters
 ----------
 
-1. ``hash`` - ``String``: Hash of the transaction to query.
+1. ``deposits`` - ``Array<Deposit>``: An array of Deposit_ objects to apply.
+
+------------------------------------------------------------------------------
+
+getExitsWithStatus
+==================
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+Returns any exits started by a specific user.
+Identifies exits that are finalized or ready to be finalized.
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``: Address of the user to query.
 
 -------
 Returns
 -------
 
-``Object``: A Transaction_ object.
+``Array<Exit>``: An array of Exits_ started by the user.
 
 ------------------------------------------------------------------------------
 
+addExit
+=======
+
 .. code-block:: javascript
 
-    hasTransaction (hash)
+    chain.getExitsWithStatus(address)
 
-Checks if the database has a specific transaction.
 
 ----------
 Parameters
 ----------
 
-1. ``hash`` - ``String``: Hash of the transaction to check.
+1. ``address`` - ``string``:
 
 -------
 Returns
 -------
 
-``boolean``: ``true`` if the database has the transaction, ``false`` otherwise.
+``Array``:
 
 ------------------------------------------------------------------------------
 
+pickRanges
+==========
+
 .. code-block:: javascript
 
-    getBlockHeader (block)
+    chain.getExitsWithStatus(address)
 
-Returns the header of the block with the given number.
 
 ----------
 Parameters
 ----------
 
-1. ``block`` - ``Number``: Number of the block to query.
+1. ``address`` - ``string``:
 
 -------
 Returns
 -------
 
-``String``: A block hash.
+``Array``:
 
 ------------------------------------------------------------------------------
 
+pickTransfers
+=============
+
 .. code-block:: javascript
 
-    addBlockHeader (block, header)
+    chain.getExitsWithStatus(address)
 
-Stores a block header.
 
 ----------
 Parameters
 ----------
 
-1. ``block`` - ``Number``: Number of the block to store.
-2. ``header`` - ``String``: Hash of the given block.
+1. ``address`` - ``string``:
 
 -------
 Returns
 -------
 
-N/A
+``Array``:
 
 ------------------------------------------------------------------------------
 
+startExit
+=========
+
 .. code-block:: javascript
 
-    addTransaction (transaction, proof)
+    chain.getExitsWithStatus(address)
 
-Adds a transaction to the database if it's valid.
 
 ----------
 Parameters
 ----------
 
-1. ``transaction`` - ``Transaction``: A Transaction_ object.
-2. ``proof`` - ``Proof``: A Proof_ object.
+1. ``address`` - ``string``:
 
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+finalizeExits
+=============
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+sendTransaction
+===============
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+loadState
+=========
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+------------------------------------------------------------------------------
+
+saveState
+=========
+
+.. code-block:: javascript
+
+    chain.getExitsWithStatus(address)
+
+
+----------
+Parameters
+----------
+
+1. ``address`` - ``string``:
+
+-------
+Returns
+-------
+
+``Array``:
+
+.. _Deposit: TODO
+.. _Exits: TODO
 .. _Transaction: specs/transactions.html#transaction-object
 .. _Proof: specs/proofs.html#proof-object

@@ -1,6 +1,6 @@
-================================================
-Welcome to the documentation of ``plasma-core``!
-================================================
+============================================
+Welcome to the documentation of plasma-core!
+============================================
 Hello and welcome to the documentation of Plasma Group's ``plasma-core``!
 A quick note: ``plasma-core`` is **not** our Chrome extension, ``plasma-extension``.
 Documentation for ``plasma-extension`` is available at the `plasma-extension docs`_.
@@ -19,11 +19,11 @@ Documentation for ``plasma-extension`` is available at the `plasma-extension doc
    :maxdepth: 2
    :caption: Specifications
 
+   specs/operator
    specs/coin-assignment
    specs/transactions
    specs/proofs
    specs/contract
-   specs/encoding
    specs/sum-tree
    specs/jsonrpc
 
@@ -31,7 +31,7 @@ Documentation for ``plasma-extension`` is available at the `plasma-extension doc
    :maxdepth: 2
    :caption: Service API Reference
 
-   services/eth
+   services/contract
    services/operator
    services/jsonrpc
    services/proof

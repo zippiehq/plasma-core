@@ -27,7 +27,9 @@ class HttpOperatorProvider extends BaseOperatorProvider {
   }
 
   async _onStart () {
-    this._initConnection()
+    this.services.contract.on('initialized', () => {
+      this._initConnection()
+    })
     this._pingInterval()
   }
 
@@ -178,7 +180,6 @@ class HttpOperatorProvider extends BaseOperatorProvider {
    * Must wait until the contract to pull operator info.
    */
   async _initConnection () {
-    await this.services.contract.waitForInit()
     this.endpoint = this.services.contract.operatorEndpoint
     this.http = axios.create({
       baseURL: this.endpoint.startsWith('http')
