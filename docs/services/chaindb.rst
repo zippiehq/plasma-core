@@ -2,6 +2,8 @@
 ChainDB
 =======
 
+``ChainDB`` handles chain-related database calls, like accessing block headers or transactions.
+
 ------------------------------------------------------------------------------
 
 getTransaction
