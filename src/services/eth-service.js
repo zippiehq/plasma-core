@@ -26,7 +26,7 @@ class ETHService extends BaseService {
    * @return {number} The current ETH block.
    */
   async getCurrentBlock () {
-    return this.services.web3.getBlockNumber()
+    return this.services.web3.eth.getBlockNumber()
   }
 }
 
