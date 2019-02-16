@@ -137,7 +137,7 @@ class ContractProvider extends BaseContractProvider {
 
     return this.contract.methods.listToken(tokenAddress, 0).send({
       from: sender,
-      gas: 6000000 // TODO: How much should this be?
+      gas: 150000 // TODO: How much should this be?
     })
   }
 

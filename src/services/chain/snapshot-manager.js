@@ -703,13 +703,13 @@ class SnapshotManager {
     const components = []
 
     // Left implicit component.
-    if (!serialized.start.eq(serialized.implicitStart)) {
+    if (!serialized.typedStart.eq(serialized.implicitStart)) {
       components.push(
         new TransferComponent({
           ...serialized,
           ...{
             start: serialized.implicitStart,
-            end: serialized.start,
+            end: serialized.typedStart,
             implicit: true
           }
         })
@@ -717,12 +717,12 @@ class SnapshotManager {
     }
 
     // Right implicit component.
-    if (!serialized.end.eq(serialized.implicitEnd)) {
+    if (!serialized.typedEnd.eq(serialized.implicitEnd)) {
       components.push(
         new TransferComponent({
           ...serialized,
           ...{
-            start: serialized.end,
+            start: serialized.typedEnd,
             end: serialized.implicitEnd,
             implicit: true
           }
@@ -731,7 +731,13 @@ class SnapshotManager {
     }
 
     // Transfer (non-implicit) component.
-    components.push(new TransferComponent(serialized))
+    components.push(new TransferComponent({
+      ...serialized,
+      ...{
+        start: serialized.typedStart,
+        end: serialized.typedEnd
+      }
+    }))
 
     return components
   }
