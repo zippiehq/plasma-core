@@ -135,9 +135,11 @@ class ContractProvider extends BaseContractProvider {
     const sender = accounts[0]
     await this.checkAccountUnlocked(sender)
 
-    return this.contract.methods.listToken(tokenAddress, 0).send({
+    const tx = this.contract.methods.listToken(tokenAddress, 0)
+    const gas = await tx.estimateGas({ from: sender })
+    return tx.send({
       from: sender,
-      gas: 150000 // TODO: How much should this be?
+      gas
     })
   }
 
