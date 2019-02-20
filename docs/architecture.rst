@@ -27,11 +27,15 @@ External services
 These three services are *outside* of the scope of ``plasma-core``.
 Instead, ``plasma-core`` provides interfaces through which it can talk to and hear from these external services.
 
+ContractService
+---------------
+ContractService_ handles interactions with the plasma chain contract, like submitting deposits or starting withdrawals.
+Non-contract specific Ethereum interactions are handled by ETHService_.
+
 ETHService
 ----------
-For communication with Ethereum, we use ETHService_.
-``ETHService`` exposes functionality necessary to read relevant information from Ethereum and make any necessary transactions.
-Other services are expected to go through ``ETHService`` whenever they wish to talk to Ethereum.
+ETHService_ exposes the functionality necessary to read information from Ethereum.
+``ETHService`` is used for non-contract specific interactions.
 
 OperatorService
 ---------------
@@ -73,12 +77,14 @@ DBService_ simply provides a database that ``ChainService`` uses to store user d
 Currently, we support two database backends, LevelDB_ and an in-memory ephemeral database (``EphemDB``).
 Most services talk to ``ChainService`` to retrieve data from ``DBService`` instead of talking to ``DBService`` directly.
 
+
+.. _ContractService: services/contract.html
 .. _ETHService: services/eth.html
 .. _OperatorService: services/operator.html
-.. _operator: TODO
+.. _operator: specs/operator.html
 .. _JSONRPCSErvice: services/jsonrpc.html
 .. _SyncService: services/sync.html
 .. _ChainService: services/chain.html
 .. _GuardService: services/guard.html
 .. _DBService: services/db.html
-.. _LevelDB: http://leveldb.org/
+.. _LevelDB: http://leveldb.org

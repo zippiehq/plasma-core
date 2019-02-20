@@ -2,8 +2,8 @@
 Welcome to the documentation of plasma-core!
 ============================================
 Hello and welcome to the documentation of Plasma Group's ``plasma-core``!
-A quick note: ``plasma-core`` is **not** our Chrome extension, ``plasma-extension``.
-Documentation for ``plasma-extension`` is available at the `plasma-extension docs`_.
+A quick note: ``plasma-core`` is **not** our ``Node.js`` client, ``plasma-client``.
+Documentation for ``plasma-client`` is available at the `plasma-client docs`_.
 
 .. toctree::
    :maxdepth: 2
@@ -40,6 +40,5 @@ Documentation for ``plasma-extension`` is available at the `plasma-extension doc
    services/guard
    services/db
 
-.. _plasma-extension docs: https://plasma-extension.readthedocs.io/en/latest/
-.. _extend plasma-core: extending-plasma-core.html
-.. _architecture: architecture.html
+.. _`plasma-client docs`: https://plasma-client.readthedocs.io/en/latest/
+.. _`extend plasma-core`: extending-plasma-core.html

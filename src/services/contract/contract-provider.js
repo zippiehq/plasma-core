@@ -127,17 +127,25 @@ class ContractProvider extends BaseContractProvider {
    * Lists a token with the given address
    * so that it can be deposited.
    * @param {string} tokenAddress Address of the token.
+   * @param {string} senderAddress Address of the account sending the listToken transaction.
    * @return {EthereumTransaction} The Ethereum transaction result.
    */
-  async listToken (tokenAddress) {
-    // TODO: Add support for different senders.
-    const accounts = await this.services.wallet.getAccounts()
-    const sender = accounts[0]
+  async listToken (tokenAddress, senderAddress) {
+    let sender
+    if (senderAddress === undefined) {
+      const accounts = await this.services.wallet.getAccounts()
+      sender = accounts[0]
+    } else {
+      sender = senderAddress
+    }
+
     await this.checkAccountUnlocked(sender)
 
-    return this.contract.methods.listToken(tokenAddress, 0).send({
+    const tx = this.contract.methods.listToken(tokenAddress, 0)
+    const gas = await tx.estimateGas({ from: sender })
+    return tx.send({
       from: sender,
-      gas: 6000000 // TODO: How much should this be?
+      gas
     })
   }
 

@@ -86,20 +86,16 @@ addExit
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.addExit(exit)
 
+Applies an exit to the local state.
+Internally, sends the exited range to the zero address.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
+1. ``exit`` - ``Exit``: An Exit_ to apply.
 
 ------------------------------------------------------------------------------
 
@@ -108,20 +104,23 @@ pickRanges
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.pickRanges(address, token, amount)
 
+Picks the best ranges_ to use for a transaction.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``address`` - ``string``: Address sending the transaction.
+2. ``token`` - ``BigNum``: ID_ of the token being sent.
+3. ``amoun`` - ``BigNum``: Amount of the token being sent.
 
 -------
 Returns
 -------
 
-``Array``:
+``Array<Range>``: Best ranges for the transaction.
 
 ------------------------------------------------------------------------------
 
@@ -130,20 +129,24 @@ pickTransfers
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.pickTransfers(address, token, amount)
 
+Picks the best Transfers_ to use for an exit.
+This is currently necessary because of a `quirk in how we're processing exits`_.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``address`` - ``string``: Address sending the transaction.
+2. ``token`` - ``BigNum``: ID_ of the token being sent.
+3. ``amoun`` - ``BigNum``: Amount of the token being sent.
 
 -------
 Returns
 -------
 
-``Array``:
+``Array<Range>``: Best ranges for the transaction.
 
 ------------------------------------------------------------------------------
 
@@ -152,20 +155,24 @@ startExit
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.startExit(address, token, amount)
 
+Attempts to start an exit for a user.
+May submit more than one exit if neccessary to withdraw the entire amount.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``address`` - ``string``: Account to withdraw from.
+2. ``token`` - ``BigNum``: ID of the token to exit.
+3. ``amount`` - ``BigNum``: Amount to exit.
 
 -------
 Returns
 -------
 
-``Array``:
+``Array<String>``: An array of Ethereum transaction hashes.
 
 ------------------------------------------------------------------------------
 
@@ -174,20 +181,21 @@ finalizeExits
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.finalizeExits(address)
 
+Attempts to finalize all pending exits for an account.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``address`` - ``string``: Address to finalize exits for.
 
 -------
 Returns
 -------
 
-``Array``:
+``Array<String>``: An array of Etheruem transaction hashes.
 
 ------------------------------------------------------------------------------
 
@@ -196,20 +204,21 @@ sendTransaction
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.sendTransaction(transaction)
 
+Sends a transaction to the operator.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``transaction`` - ``Transaction``: Transaction_ to be sent.
 
 -------
 Returns
 -------
 
-``Array``:
+``string``: The transaction receipt.
 
 ------------------------------------------------------------------------------
 
@@ -218,20 +227,15 @@ loadState
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.loadState()
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Loads the current head state as a SnapshotManager_.
 
 -------
 Returns
 -------
 
-``Array``:
+``SnapshotManager``: The current head state.
 
 ------------------------------------------------------------------------------
 
@@ -240,22 +244,24 @@ saveState
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    chain.saveState(stateManager)
 
+Saves the current head state from a SnapshotManager_.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``stateManager`` - ``SnapshotManager``: A SnapshotManager_ to save.
 
--------
-Returns
--------
-
-``Array``:
 
 .. _Deposit: TODO
+.. _Exit: TODO
 .. _Exits: TODO
+.. _Transfers: TODO
 .. _Transaction: specs/transactions.html#transaction-object
 .. _Proof: specs/proofs.html#proof-object
+.. _ranges: TODO
+.. _ID: TODO
+.. _SnapshotManager: TODO
+.. _`quirk in how we're processing exits`: TODO

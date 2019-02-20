@@ -176,7 +176,7 @@ class ChainDB extends BaseService {
   }
 
   /**
-   * Adds multiple "exitable ends" to the database in bulk
+   * Adds multiple "exitable ends" to the database in bulk.
    * For more information, see: https://github.com/plasma-group/plasma-contracts/issues/44.
    * @param {*} exitable Ends to add to the database.
    */
@@ -274,7 +274,7 @@ class ChainDB extends BaseService {
    * Returns the "typed" version of a start or end.
    * @param {BigNum} token The token ID.
    * @param {BigNum} value The value to type.
-   * @return {BigNum} The typed value.
+   * @return {string} The typed value.
    */
   getTypedValue (token, value) {
     return new BigNum(

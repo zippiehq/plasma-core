@@ -12,20 +12,15 @@ getNextBlock
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    operator.getNextBlock()
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Returns the next block that will be submitted.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<number>``: Next block number.
 
 ------------------------------------------------------------------------------
 
@@ -34,20 +29,15 @@ getEthInfo
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    operator.getEthInfo()
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Returns information about the smart contract.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<Object>``: Smart contract info.
 
 ------------------------------------------------------------------------------
 
@@ -56,20 +46,23 @@ getTransactions
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    operator.getTransactions(address, startBlock, endBlock)
 
+Returns a list of transactions received by an address between two blocks.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``address`` - ``string``: Address to query.
+2. ``startBlock`` - ``number``: Block to query from.
+3. ``endBlock`` - ``number``: Block to query to.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<Array>``: List of encoded transactions.
 
 ------------------------------------------------------------------------------
 
@@ -78,20 +71,21 @@ getTransaction
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    operator.getTransaction(encoded)
 
+Returns a transaction proof for a given transaction.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``encoded`` - ``string``: The encoded transaction.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<Object>``: Proof information for the transaction.
 
 ------------------------------------------------------------------------------
 
@@ -100,20 +94,21 @@ sendTransaction
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    operator.sendTransaction(transaction)
 
+Sends a SignedTransaction_ to the operator.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``transaction`` - ``string``: The encoded SignedTransaction_.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<string>``: The transaction receipt.
 
 ------------------------------------------------------------------------------
 
@@ -122,22 +117,10 @@ submitBlock
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    operator.submitBlock()
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
-
-------------------------------------------------------------------------------
+Attempts to have the operator submit a new block.
+Won't work if the operator is properly configured, but used for testing.
 
 
 .. _operator: specs/operator.html

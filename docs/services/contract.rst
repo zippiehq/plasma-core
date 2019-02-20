@@ -11,20 +11,15 @@ address
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.address
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Returns the contract's address.
 
 -------
 Returns
 -------
 
-``Array``:
+``string``: Address of the connected contract.
 
 ------------------------------------------------------------------------------
 
@@ -33,20 +28,15 @@ hasAddress
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.hasAddress
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Whether or not the contract has an address.
 
 -------
 Returns
 -------
 
-``Array``:
+``boolean``: ``true`` if the contract is ready to be used, ``false`` otherwise.
 
 ------------------------------------------------------------------------------
 
@@ -55,20 +45,15 @@ ready
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.ready
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Whether or not the contract is ready to be used.
 
 -------
 Returns
 -------
 
-``Array``:
+``boolean``: ``true`` if hte contract is ready, ``false`` otherwise.
 
 ------------------------------------------------------------------------------
 
@@ -77,20 +62,15 @@ web3
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.web3
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Returns the web3 instance being used by the contract.
 
 -------
 Returns
 -------
 
-``Array``:
+``Web3``: Contract's web3 instance.
 
 ------------------------------------------------------------------------------
 
@@ -99,20 +79,15 @@ plasmaChainName
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.plasmaChainName
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Name of the plasma chain this contract is connected to.
 
 -------
 Returns
 -------
 
-``Array``:
+``string``: Plasma chain name.
 
 ------------------------------------------------------------------------------
 
@@ -121,20 +96,15 @@ checkAccountUnlocked
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.checkAccountUnlocked(address)
 
+Checks whether an account is unlocked and attempts to unlock it if not.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
-
--------
-Returns
--------
-
-``Array``:
+1. ``address`` - ``string``: Address of the account to check.
 
 ------------------------------------------------------------------------------
 
@@ -143,20 +113,21 @@ getBlock
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.getBlock(block)
 
+Queries the hash of a given block.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``block`` - ``number``: Number of the block to query.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<string>``: Root hash of the block with that number.
 
 ------------------------------------------------------------------------------
 
@@ -165,20 +136,15 @@ getNextBlock
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.getNextBlock()
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Returns the number of the next block that will be submitted.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<number>``: Next block number.
 
 ------------------------------------------------------------------------------
 
@@ -187,20 +153,15 @@ getCurrentBlock
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.getCurrentBlock()
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Returns the number of the last block to be submitted.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<number>``: Last block number.
 
 ------------------------------------------------------------------------------
 
@@ -209,20 +170,15 @@ getOperator
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.getOperator()
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Returns the address of the operator.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<string>``: Plasma chain operator address.
 
 ------------------------------------------------------------------------------
 
@@ -231,20 +187,21 @@ getTokenAddress
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.getTokenAddress(token)
 
+Returns the address for a given token ID.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``token`` - ``string``: A token ID.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<string>``: Address of the contract for that token.
 
 ------------------------------------------------------------------------------
 
@@ -253,20 +210,21 @@ listToken
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.listToken(tokenAddress)
 
+Lists a token with the given address so that it can be deposited.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``tokenAddress`` - ``string``: Address of the token to list.
 
 -------
 Returns
 -------
 
-``Array``:
+``EthereumTransaction``: The Ethereum transaction result.
 
 ------------------------------------------------------------------------------
 
@@ -275,20 +233,15 @@ getChallengePeriod
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.getChallengePeriod()
 
-
-----------
-Parameters
-----------
-
-1. ``address`` - ``string``:
+Returns the current challenge period in number of blocks.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<number>``: Challenge period.
 
 ------------------------------------------------------------------------------
 
@@ -297,20 +250,21 @@ getTokenId
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.getTokenId(tokenAddress)
 
+Gets the token ID for a specific token.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``tokenAddress`` - ``string``: Token contract address.
 
 -------
 Returns
 -------
 
-``Array``:
+``Promise<string>``: ID of the token.
 
 ------------------------------------------------------------------------------
 
@@ -319,20 +273,22 @@ depositValid
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.depositValid(deposit)
 
+Checks whether a Deposit_ actually exists.
+Used when checking transaction proofs.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``deposit`` - ``Deposit``: A Deposit_ to validate.
 
 -------
 Returns
 -------
 
-``Array``:
+``boolean``: ``true`` if the deposit exists, ``false`` otherwise.
 
 ------------------------------------------------------------------------------
 
@@ -366,20 +322,26 @@ startExit
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.startExit(block, token, start, end, owner)
 
+Starts an exit for a user.
+Exits can only be started on *transfers*, meaning you need to specify the block in which the transfer was received.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``block`` - ``BigNum``: Block in which the transfer was received.
+2. ``token`` - ``BigNum``: Token to be exited.
+3. ``start`` - ``BigNum``: Starts of the range received in the transfer.
+4. ``end`` - ``BigNum``: End of the range received in the transfer.
+5. ``owner`` - ``string``: Address to withdraw from.
 
 -------
 Returns
 -------
 
-``Array``:
+``EthereumTransaction``: Exit transaction receipt.
 
 ------------------------------------------------------------------------------
 
@@ -388,20 +350,23 @@ finalizeExit
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.finalizeExit(exitId, exitableEnd, owner)
 
+Finalizes an exit for a user.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``exitId`` - ``string``: ID of the exit to finalize.
+2. ``exitableEnd`` - ``BigNum``: The "exitable end" for that exit.
+3. ``owner`` - ``string``: Address that owns the exit.
 
 -------
 Returns
 -------
 
-``Array``:
+``EthereumTransaction``: Finalization transaction receipt.
 
 ------------------------------------------------------------------------------
 
@@ -410,17 +375,22 @@ submitBlock
 
 .. code-block:: javascript
 
-    chain.getExitsWithStatus(address)
+    contract.submitBlock(hash)
 
+Submits a block with the given hash.
+Will only work if the operator's account is unlocked and available to the node.
 
 ----------
 Parameters
 ----------
 
-1. ``address`` - ``string``:
+1. ``hash`` - ``string``: Hash of the block to submit.
 
 -------
 Returns
 -------
 
-``Array``:
+``EthereumTransaction``: Block submission transaction receipt.
+
+
+.. _Deposit: TODO
