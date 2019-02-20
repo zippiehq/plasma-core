@@ -340,7 +340,12 @@ class ContractProvider extends BaseContractProvider {
 
     const parsed = new ChainCreatedEvent(event)
     this.contract.options.address = parsed.plasmaChainAddress
-    this.operatorEndpoint = parsed.operatorEndpoint
+
+    this.operatorEndpoint = encodeURI(
+      this.web3.utils.hexToAscii(
+        await this.registryContract.methods.plasmaChainIPs(operator).call()
+      )
+    ).replace(/%00/gi, '')
 
     this.emit('initialized')
 
